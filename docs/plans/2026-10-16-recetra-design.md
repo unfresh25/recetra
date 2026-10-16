@@ -279,7 +279,7 @@ Referencia principal: **BitePal**, sobre la base de Recipy.
 - Receta y modo cocinar: [CREME creador](https://mobbin.com/screens/d2f83471-26e9-4d91-830e-c58327a643b9), [Recime ingredientes](https://mobbin.com/screens/76b7f726-05fc-41a6-bdab-aaa2024eb745), [Kitchen Stories cook mode](https://mobbin.com/screens/85a4ace6-390e-40b5-a231-14f134af1752), [Crouton cook mode](https://mobbin.com/screens/d4f7df3b-0b48-4401-b10a-81fa1514dcff)
 - Compras: [GoodRx precios por tienda](https://mobbin.com/screens/78f7497b-96af-4293-9adf-25dd719527cb), [Wise "Cheapest"](https://mobbin.com/sites/sections/0cb759c3-52e6-4ab6-97f2-e18bb1ea6397), [Instacart total y ahorro](https://mobbin.com/screens/56ef29db-b9ef-4b09-861d-b84673ee4605), [Recime por pasillo](https://mobbin.com/screens/c7692449-3f88-4ae5-9ca6-7d33d7bdf0bc)
 - Tiendas: [Google Maps lista y direcciones](https://mobbin.com/screens/cdf52403-8878-40f2-b7cc-126b574c8379), [Everyday Rewards pines con logo](https://mobbin.com/screens/b1560ac4-978c-4bea-b020-e0f39ecd8dcf)
-- Calorías: [Cal AI scanning flow](https://mobbin.com/flows/787289b6-39d6-4066-a8f9-d1f5e463bebe), [BitePal detalle](https://mobbin.com/screens/3ee597a3-166f-4c92-8cda-6c9d66dd4c6d)
+- Calorías: [BitePal scanning flow](https://mobbin.com/flows/32fc5ea2-6b32-4879-bec3-33fe6f5e46c4), [BitePal detalle](https://mobbin.com/screens/3ee597a3-166f-4c92-8cda-6c9d66dd4c6d)
 - Bandeja: [Instacart aprobación](https://mobbin.com/screens/d4e4f075-e8d2-4292-be15-b0bf2031b0db), [X solicitudes](https://mobbin.com/screens/0682dfc6-11c0-4dce-969d-e15b945d8304)
 - Motivos: [Instacart chips](https://mobbin.com/screens/d0437f6f-2385-486b-bf3b-c4dea58395c5), [Noom reemplazar](https://mobbin.com/screens/06bceadf-50d3-4f96-8175-a90847ce33f8)
 
