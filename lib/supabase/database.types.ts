@@ -274,6 +274,7 @@ export type Database = {
           kind: string
           last_error: string | null
           payload: Json
+          result: Json | null
           run_after: string
           status: Database["public"]["Enums"]["job_status"]
           updated_at: string
@@ -286,6 +287,7 @@ export type Database = {
           kind: string
           last_error?: string | null
           payload?: Json
+          result?: Json | null
           run_after?: string
           status?: Database["public"]["Enums"]["job_status"]
           updated_at?: string
@@ -298,6 +300,7 @@ export type Database = {
           kind?: string
           last_error?: string | null
           payload?: Json
+          result?: Json | null
           run_after?: string
           status?: Database["public"]["Enums"]["job_status"]
           updated_at?: string
@@ -784,6 +787,22 @@ export type Database = {
           p_diets?: Database["public"]["Enums"]["diet"][]
           p_ingredient_ids?: string[]
           p_kind: Database["public"]["Enums"]["restriction_kind"]
+        }
+        Returns: undefined
+      }
+      review_recipe: {
+        Args: {
+          p_approve: boolean
+          p_meal_types?: Database["public"]["Enums"]["meal_type"][]
+          p_recipe_id: string
+        }
+        Returns: undefined
+      }
+      set_recipe_ingredient_role: {
+        Args: {
+          p_position: number
+          p_recipe_id: string
+          p_role: Database["public"]["Enums"]["ingredient_role"]
         }
         Returns: undefined
       }

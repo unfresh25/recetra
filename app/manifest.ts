@@ -12,6 +12,12 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait",
     background_color: "#f4f1ee",
     theme_color: "#f4f1ee",
+    // Android: "Compartir → Recetra" from TikTok, Instagram or YouTube opens the importer.
+    share_target: {
+      action: "/recipes/import",
+      method: "get",
+      params: { title: "title", text: "text", url: "url" },
+    },
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
