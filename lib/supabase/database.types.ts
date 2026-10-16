@@ -790,6 +790,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      replace_plan_meal: {
+        Args: {
+          p_adjustments?: Json
+          p_plan_meal_id: string
+          p_reason: Database["public"]["Enums"]["replace_reason"]
+          p_recipe_id: string
+        }
+        Returns: undefined
+      }
       review_recipe: {
         Args: {
           p_approve: boolean
@@ -797,6 +806,10 @@ export type Database = {
           p_recipe_id: string
         }
         Returns: undefined
+      }
+      save_week_plan: {
+        Args: { p_meals: Json; p_week_start: string }
+        Returns: string
       }
       set_recipe_ingredient_role: {
         Args: {

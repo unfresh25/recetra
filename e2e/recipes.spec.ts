@@ -13,6 +13,7 @@ test("an imported recipe is reviewed in the inbox and then shows in Mis recetas"
   await personalSetup(page, {});
 
   await seedDraftRecipe(email);
+  await page.reload();
 
   await expect(page.getByRole("link", { name: /1 pendientes por confirmar/ })).toBeVisible();
   await page.getByRole("link", { name: /pendientes por confirmar/ }).click();

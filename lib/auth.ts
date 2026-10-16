@@ -58,6 +58,8 @@ export const getMembership = cache(async () => {
   };
 });
 
+export type Membership = NonNullable<Awaited<ReturnType<typeof getMembership>>>;
+
 /** Membership, or redirect to onboarding. Does not require setup to be finished. */
 export const requireMembership = cache(async () => {
   const membership = await getMembership();

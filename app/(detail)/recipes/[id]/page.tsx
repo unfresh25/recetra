@@ -11,25 +11,31 @@ import { DraftReview } from "@/components/recipes/draft-review";
 import { requireReadyMembership } from "@/lib/auth";
 import { recipeImageUrl } from "@/lib/recipes/images";
 import { MEAL_TYPE_LABELS, PLATFORM_LABELS, formatQuantity } from "@/lib/recipes/labels";
-import { getRecipe } from "@/lib/recipes/queries";
+import { getPlanMealAdjustments, getRecipe, getRecipeSocial } from "@/lib/recipes/queries";
+import { ReactionBar } from "@/components/recipes/reaction-bar";
 
 export const metadata: Metadata = { title: "Receta" };
 
-export default function RecipePage({ params }: PageProps<"/recipes/[id]">) {
+export default function RecipePage({ params, searchParams }: PageProps<"/recipes/[id]">) {
   return (
     <main className="flex flex-1 flex-col">
       <Suspense fallback={<div className="aspect-[4/5] w-full animate-pulse bg-sunken" />}>
-        <RecipeContent params={params} />
+        <RecipeContent params={params} searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function RecipeContent({ params }: Pick<PageProps<"/recipes/[id]">, "params">) {
-  const { id } = await params;
+async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/[id]">, "params" | "searchParams">) {
+  const [{ id }, query] = await Promise.all([params, searchParams]);
+  const planMealId = typeof query.meal === "string" && /^[0-9a-f-]{36}$/.test(query.meal) ? query.meal : null;
   if (!/^[0-9a-f-]{36}$/.test(id)) notFound();
-  const { household } = await requireReadyMembership();
-  const detail = await getRecipe(id, household.id);
+  const { household, member } = await requireReadyMembership();
+  const [detail, social, planMeal] = await Promise.all([
+    getRecipe(id, household.id),
+    getRecipeSocial(id, member.id),
+    planMealId ? getPlanMealAdjustments(planMealId) : null,
+  ]);
   if (!detail) notFound();
   const { recipe, ingredients, steps, coverPath, hasCustomCover } = detail;
   const isOwnDraft = recipe.status === "pending_review" && recipe.imported_by_household_id === household.id;
@@ -85,7 +91,22 @@ async function RecipeContent({ params }: Pick<PageProps<"/recipes/[id]">, "param
               <span className="sr-only">en {PLATFORM_LABELS[recipe.source_platform]}</span>
             </a>
           ) : null}
+          {recipe.status === "approved" ? <ReactionBar recipeId={recipe.id} mine={social.mine} partner={social.partner} /> : null}
         </header>
+
+        {planMeal?.removed.length ? (
+          <section className="flex flex-col gap-2 rounded-card bg-teal-soft/60 p-4">
+            <p className="font-display font-bold">Ajustes para su plan</p>
+            <ul className="flex flex-col gap-1 text-sm">
+              {planMeal.removed.map((a) => (
+                <li key={a.ingredientId}>
+                  Sin <strong>{a.ingredientName.toLowerCase()}</strong> ({a.memberNames.join(" y ")})
+                  {a.substituteName ? <> · puedes usar {a.substituteName.toLowerCase()}</> : null}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <dl className="grid grid-cols-3 divide-x divide-line rounded-card border border-line py-4 text-center">
           <Stat emoji="⏱️" value={recipe.total_minutes ? `${recipe.total_minutes}` : "—"} label="minutos" />
@@ -143,6 +164,15 @@ async function RecipeContent({ params }: Pick<PageProps<"/recipes/[id]">, "param
       {isOwnDraft ? (
         <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md rounded-t-[28px] bg-surface px-5 pt-4 pb-safe shadow-float">
           <DraftReview recipeId={recipe.id} initialMeals={recipe.meal_types} />
+        </div>
+      ) : steps.length ? (
+        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md justify-center px-5 pb-safe">
+          <Link
+            href={`/recipes/${recipe.id}/cook${planMealId ? `?meal=${planMealId}` : ""}`}
+            className="flex h-14 items-center gap-2 rounded-full bg-brand px-8 font-display text-[17px] font-bold text-white shadow-[0_6px_20px_rgb(232_32_42/0.35)] active:scale-[0.97]"
+          >
+            <Icon name="play" size={20} strokeWidth={2.4} /> Cocinar ahora
+          </Link>
         </div>
       ) : null}
     </>

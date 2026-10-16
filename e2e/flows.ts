@@ -38,6 +38,7 @@ export async function personalSetup(page: Page, opts: { allergy?: RegExp; dislik
   await next(page);
   await expect(page).toHaveURL(/\/setup\/done$/);
   await page.getByRole("button", { name: "Ir a mi plan" }).click();
+  await expect(page).toHaveURL(/\/plan$/);
 }
 
 export async function signIn(page: Page, email: string) {

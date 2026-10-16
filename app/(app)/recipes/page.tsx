@@ -7,7 +7,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { requireReadyMembership } from "@/lib/auth";
-import { listHouseholdImports } from "@/lib/recipes/queries";
+import { listFavorites, listHouseholdImports } from "@/lib/recipes/queries";
+import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
 
 export const metadata: Metadata = { title: "Recetas" };
@@ -44,7 +45,7 @@ export default function RecipesPage({ searchParams }: PageProps<"/recipes">) {
 async function RecipesContent({ searchParams }: Pick<PageProps<"/recipes">, "searchParams">) {
   const query = await searchParams;
   const tab = query.tab === "favorites" ? "favorites" : "mine";
-  const { household } = await requireReadyMembership();
+  const { household, member } = await requireReadyMembership();
 
   return (
     <>
@@ -63,7 +64,11 @@ async function RecipesContent({ searchParams }: Pick<PageProps<"/recipes">, "sea
           </Link>
         ))}
       </nav>
-      {tab === "mine" ? <MyRecipes householdId={household.id} /> : <Favorites />}
+      {tab === "mine" ? (
+        <MyRecipes householdId={household.id} />
+      ) : (
+        <Favorites memberId={member.id} who={typeof query.who === "string" ? query.who : "both"} />
+      )}
     </>
   );
 }
@@ -95,12 +100,53 @@ async function MyRecipes({ householdId }: { householdId: string }) {
   );
 }
 
-function Favorites() {
+async function Favorites({ memberId, who }: { memberId: string; who: string }) {
+  const [favorites, supabase] = await Promise.all([listFavorites(), createClient()]);
+  const { data: members } = await supabase.from("members").select("id, display_name");
+  const partner = (members ?? []).find((m) => m.id !== memberId);
+  const filters = [
+    { value: "both", label: "De los dos" },
+    { value: "me", label: "Míos" },
+    ...(partner ? [{ value: "partner", label: `De ${partner.display_name}` }] : []),
+  ];
+  const visible = favorites.filter((f) => {
+    if (who === "me") return f.memberIds.includes(memberId);
+    if (who === "partner") return partner ? f.memberIds.includes(partner.id) : false;
+    return partner ? f.memberIds.includes(memberId) && f.memberIds.includes(partner.id) : true;
+  });
+
   return (
-    <EmptyState
-      illustration="empty-recipes"
-      title="Aún no hay favoritos"
-      description="Toca el corazón en una receta para guardarla aquí."
-    />
+    <>
+      <div className="flex gap-2">
+        {filters.map((f) => (
+          <Link
+            key={f.value}
+            href={`/recipes?tab=favorites&who=${f.value}`}
+            aria-current={who === f.value ? "page" : undefined}
+            className={cn(
+              "h-9 rounded-full px-4 text-sm font-semibold leading-9",
+              who === f.value ? "bg-ink text-white" : "bg-surface text-ink-muted shadow-card",
+            )}
+          >
+            {f.label}
+          </Link>
+        ))}
+      </div>
+      {visible.length ? (
+        <ul className="flex flex-col gap-3">
+          {visible.map((recipe) => (
+            <li key={recipe.id}>
+              <RecipeCard recipe={recipe} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <EmptyState
+          illustration="empty-recipes"
+          title={who === "both" ? "Aún no hay favoritos de los dos" : "Aún no hay favoritos"}
+          description="Toca el corazón en una receta para guardarla aquí. Las favoritas de los dos salen más en el plan."
+        />
+      )}
+    </>
   );
 }
