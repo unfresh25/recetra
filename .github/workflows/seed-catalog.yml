@@ -1,0 +1,29 @@
+name: Seed catalog
+
+# Fills the public catalog with Colombian recipes from YouTube (search quota: ~10,000 units/day,
+# 100 per search). Run manually from the Actions tab.
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max videos to process"
+        default: "320"
+      per_query:
+        description: "Results per search query"
+        default: "8"
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun --conditions=react-server jobs/seed-youtube.ts --limit "${{ inputs.limit }}" --per-query "${{ inputs.per_query }}" --concurrency 4

@@ -53,3 +53,6 @@ supabase/.branches
 
 # raw illustration sources (only optimized WebP is committed)
 /public/illustrations/raw/
+
+# seed search cache
+/jobs/.cache/
