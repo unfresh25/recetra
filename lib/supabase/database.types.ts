@@ -348,6 +348,7 @@ export type Database = {
           display_name: string
           household_id: string
           id: string
+          onboarded_at: string | null
           role: Database["public"]["Enums"]["member_role"]
           user_id: string
         }
@@ -357,6 +358,7 @@ export type Database = {
           display_name: string
           household_id: string
           id?: string
+          onboarded_at?: string | null
           role?: Database["public"]["Enums"]["member_role"]
           user_id: string
         }
@@ -366,6 +368,7 @@ export type Database = {
           display_name?: string
           household_id?: string
           id?: string
+          onboarded_at?: string | null
           role?: Database["public"]["Enums"]["member_role"]
           user_id?: string
         }
@@ -769,6 +772,20 @@ export type Database = {
       is_household_member: {
         Args: { p_household_id: string }
         Returns: boolean
+      }
+      replace_household_stores: {
+        Args: { p_store_ids: string[] }
+        Returns: undefined
+      }
+      replace_my_restrictions: {
+        Args: {
+          p_allergens?: Database["public"]["Enums"]["allergen"][]
+          p_categories?: Database["public"]["Enums"]["ingredient_category"][]
+          p_diets?: Database["public"]["Enums"]["diet"][]
+          p_ingredient_ids?: string[]
+          p_kind: Database["public"]["Enums"]["restriction_kind"]
+        }
+        Returns: undefined
       }
     }
     Enums: {
