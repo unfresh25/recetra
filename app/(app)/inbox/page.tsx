@@ -36,6 +36,7 @@ function jobCopy(status: string, result: ImportResult | null): { title: string; 
       unsupported: "Ese link no es de TikTok, Instagram o YouTube.",
       not_found: "No encontramos el video. ¿Es privado o lo borraron?",
       not_a_recipe: "Ese video no parece ser una receta.",
+      low_confidence: "No encontramos la lista de ingredientes.",
       ai: "No pudimos entender la receta.",
       unknown: "Algo falló al importar.",
     }[reason];
