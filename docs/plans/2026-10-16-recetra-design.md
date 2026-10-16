@@ -89,7 +89,7 @@ docs/plans/
 | `households` | `id, name, city, weekly_budget_cop, servings_adults, servings_kids, equipment text[], styles text[]` |
 | `members` | `id, household_id, user_id → auth.users, display_name, accent_color, role (owner\|member)` |
 | `invitations` | `id, household_id, token, created_by, expires_at, used_at` (un solo uso) |
-| `restrictions` | `id, member_id, kind (allergy\|dislike\|diet), ingredient_id?, ingredient_category?, diet?` |
+| `restrictions` | `id, member_id, kind (allergy\|dislike\|diet), allergen?, ingredient_id?, ingredient_category?, diet?`. `allergy` usa un alérgeno (`peanut`, `tree_nut`, `dairy`, `egg`, `gluten`, `soy`, `fish`, `shellfish`, `sesame`) que cubre todos los ingredientes con ese alérgeno; `dislike` usa un ingrediente o una categoría completa (p. ej. `seafood`) |
 
 ### Recetas (catálogo compartido)
 
