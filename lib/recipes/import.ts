@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json, TablesInsert } from "@/lib/supabase/database.types";
 import { MetadataError, fetchVideoMetadata, type VideoMetadata } from "./metadata";
 import { parseRecipeUrl } from "./source";
+import { dispatchImportWorker } from "./dispatch";
 import { thumbPath } from "./images";
 import { normalizeUnit, slugify } from "./units";
 
@@ -15,15 +16,17 @@ export type ImportPayload = {
   visibility: "public" | "household";
   /** Filled by the GitHub Actions worker when it had to read the audio or an Instagram post. */
   worker?: { metadata?: VideoMetadata; transcript?: string };
+  /** Catalog seeding: approve confident recipes directly, discard the rest, never wait for the worker. */
+  seed?: boolean;
 };
 
 /** Stage reported to the inbox while a job is not finished. */
 export type ImportResult =
   | { stage: "done"; recipe_id: string; existing?: boolean }
   | { stage: "needs_worker"; reason: "instagram" | "audio" }
-  | { stage: "failed"; reason: "unsupported" | "not_found" | "not_a_recipe" | "ai" | "unknown" };
+  | { stage: "failed"; reason: "unsupported" | "not_found" | "not_a_recipe" | "low_confidence" | "ai" | "unknown" };
 
-const MAX_ATTEMPTS = 3;
+const SEED_MIN_CONFIDENCE = 0.75;
 
 /**
  * Processes one import job end to end: metadata → dedupe → Haiku → catalog writes → thumbnail.
@@ -42,13 +45,13 @@ export async function processImportJob(jobId: string): Promise<ImportResult | nu
     result = await runImport(db, payload, job.household_id);
   } catch (error) {
     console.error("import failed", jobId, error);
-    const retry = job.attempts + 1 < MAX_ATTEMPTS && !(error instanceof ExtractionError);
+    // No silent auto-retry: the inbox shows the failure and the household decides to retry.
+    // Worker output (metadata, transcript) stays in the payload, so a retry skips that work.
     await db
       .from("jobs")
       .update({
-        status: retry ? "queued" : "failed",
-        run_after: new Date(Date.now() + 2 ** job.attempts * 60_000).toISOString(),
-        last_error: error instanceof Error ? error.message : String(error),
+        status: "failed",
+        last_error: error instanceof Error ? error.message.slice(0, 500) : String(error),
         result: { stage: "failed", reason: error instanceof ExtractionError ? "ai" : "unknown" } satisfies ImportResult,
       })
       .eq("id", jobId);
@@ -56,6 +59,7 @@ export async function processImportJob(jobId: string): Promise<ImportResult | nu
   }
 
   const status = result.stage === "done" ? "done" : result.stage === "needs_worker" ? "queued" : "failed";
+  if (result.stage === "needs_worker" && !payload.worker) await dispatchImportWorker();
   await db
     .from("jobs")
     .update({ status, result: result as unknown as Json, last_error: null })
@@ -73,7 +77,9 @@ async function runImport(db: Admin, payload: ImportPayload, householdId: string 
       metadata = await fetchVideoMetadata(source);
     } catch (error) {
       if (error instanceof MetadataError) {
-        if (error.reason === "needs_worker") return { stage: "needs_worker", reason: "instagram" };
+        if (error.reason === "needs_worker") {
+          return payload.seed ? { stage: "failed", reason: "unsupported" } : { stage: "needs_worker", reason: "instagram" };
+        }
         if (error.reason === "not_found") return { stage: "failed", reason: "not_found" };
       }
       throw error;
@@ -99,12 +105,15 @@ async function runImport(db: Admin, payload: ImportPayload, householdId: string 
   });
 
   if (!extracted.is_recipe) return { stage: "failed", reason: "not_a_recipe" };
+  if (payload.seed && (!extracted.has_ingredient_list || extracted.confidence < SEED_MIN_CONFIDENCE)) {
+    return { stage: "failed", reason: "low_confidence" };
+  }
   if (!extracted.has_ingredient_list && !payload.worker?.transcript) {
     // The caption doesn't list ingredients: the worker will transcribe the audio and retry.
     return { stage: "needs_worker", reason: "audio" };
   }
 
-  const recipeId = await saveRecipe(db, metadata, extracted, payload.visibility, householdId);
+  const recipeId = await saveRecipe(db, metadata, extracted, payload.visibility, householdId, payload.seed ? "approved" : "pending_review");
   return { stage: "done", recipe_id: recipeId };
 }
 
@@ -154,6 +163,7 @@ async function saveRecipe(
   extracted: ExtractedRecipe,
   visibility: ImportPayload["visibility"],
   householdId: string | null,
+  status: "approved" | "pending_review",
 ): Promise<string> {
   const ingredientIds = await resolveIngredientIds(db, extracted);
   const n = extracted.nutrition_per_serving;
@@ -182,7 +192,7 @@ async function saveRecipe(
       equipment: [...new Set(extracted.equipment)],
       visibility,
       imported_by_household_id: householdId,
-      status: "pending_review",
+      status,
       ai_confidence: Math.min(Math.max(extracted.confidence, 0), 1),
     })
     .select("id")
