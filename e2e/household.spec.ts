@@ -19,7 +19,13 @@ test("a couple creates a household and joins it through an invitation", async ({
   await ownerPage.goto("/");
   await expect(ownerPage).toHaveURL(/\/welcome$/);
   await ownerPage.screenshot({ path: "e2e/__screens__/01-welcome.png" });
-  await ownerPage.getByRole("link", { name: "Empezar" }).click();
+  // Desktop-friendly carousel: the main button advances, the last slide starts.
+  await ownerPage.getByRole("button", { name: "Siguiente" }).click();
+  await expect(ownerPage.getByRole("heading", { name: "Compra donde más rinde" })).toBeInViewport();
+  await ownerPage.getByRole("button", { name: "Siguiente" }).click();
+  await expect(ownerPage.getByRole("heading", { name: "Aprende de sus gustos" })).toBeInViewport();
+  await ownerPage.getByRole("button", { name: "Empezar" }).click();
+  await expect(ownerPage).toHaveURL(/\/login$/);
   await ownerPage.screenshot({ path: "e2e/__screens__/02-login.png" });
 
   await signIn(ownerPage, owner.email);

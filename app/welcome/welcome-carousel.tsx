@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useRef, useState, type KeyboardEvent } from "react";
+import { Button } from "@/components/ui/button";
 import { Illustration, type IllustrationName } from "@/components/ui/illustration";
 import { cn } from "@/lib/utils/cn";
 
@@ -24,8 +26,18 @@ const slides: { art: IllustrationName; title: string; body: string }[] = [
 ];
 
 export function WelcomeCarousel() {
+  const router = useRouter();
   const [index, setIndex] = useState(0);
   const track = useRef<HTMLDivElement>(null);
+  const isLast = index === slides.length - 1;
+
+  function goTo(i: number) {
+    const el = track.current;
+    if (!el) return;
+    const target = Math.max(0, Math.min(slides.length - 1, i));
+    el.scrollTo({ left: target * el.clientWidth, behavior: "smooth" });
+    setIndex(target);
+  }
 
   function onScroll() {
     const el = track.current;
@@ -33,16 +45,42 @@ export function WelcomeCarousel() {
     setIndex(Math.round(el.scrollLeft / el.clientWidth));
   }
 
+  function onKeyDown(event: KeyboardEvent) {
+    if (event.key === "ArrowRight") goTo(index + 1);
+    if (event.key === "ArrowLeft") goTo(index - 1);
+  }
+
   return (
     <div className="flex flex-1 flex-col">
+      <div className="flex justify-end px-5">
+        <Link
+          href="/login"
+          className={cn(
+            "h-9 rounded-full px-4 text-sm font-semibold leading-9 text-ink-muted transition-opacity",
+            isLast && "pointer-events-none opacity-0",
+          )}
+          tabIndex={isLast ? -1 : undefined}
+        >
+          Saltar
+        </Link>
+      </div>
+
       <div
         ref={track}
         onScroll={onScroll}
-        className="flex flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        onKeyDown={onKeyDown}
+        tabIndex={0}
+        role="region"
+        aria-roledescription="carrusel"
+        aria-label="Presentación de Recetra"
+        className="flex flex-1 snap-x snap-mandatory overflow-x-auto outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {slides.map((slide, i) => (
           <section
             key={slide.title}
+            aria-roledescription="slide"
+            aria-label={`${i + 1} de ${slides.length}`}
+            aria-hidden={i !== index}
             className="flex w-full shrink-0 snap-center flex-col items-center justify-center gap-6 px-8 text-center"
           >
             <Illustration name={slide.art} size={248} preload={i === 0} />
@@ -56,25 +94,30 @@ export function WelcomeCarousel() {
         ))}
       </div>
 
-      <div className="flex justify-center gap-2 py-6" aria-hidden>
+      <div className="flex justify-center gap-1 py-4">
         {slides.map((slide, i) => (
-          <span
+          <button
             key={slide.title}
-            className={cn(
-              "h-2 rounded-full transition-all duration-300 ease-out-soft",
-              i === index ? "w-6 bg-brand" : "w-2 bg-line",
-            )}
-          />
+            type="button"
+            onClick={() => goTo(i)}
+            aria-label={`Ir al slide ${i + 1}`}
+            aria-current={i === index ? "step" : undefined}
+            className="flex h-8 items-center px-1"
+          >
+            <span
+              className={cn(
+                "h-2 rounded-full transition-all duration-300 ease-out-soft",
+                i === index ? "w-6 bg-brand" : "w-2 bg-line",
+              )}
+            />
+          </button>
         ))}
       </div>
 
       <div className="px-5 pb-safe">
-        <Link
-          href="/login"
-          className="flex h-14 w-full items-center justify-center rounded-full bg-brand font-display text-[17px] font-bold text-white shadow-[0_6px_20px_rgb(232_32_42/0.28)] transition-transform active:scale-[0.97]"
-        >
-          Empezar
-        </Link>
+        <Button block onClick={() => (isLast ? router.push("/login") : goTo(index + 1))}>
+          {isLast ? "Empezar" : "Siguiente"}
+        </Button>
       </div>
     </div>
   );
