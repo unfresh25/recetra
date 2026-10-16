@@ -36,7 +36,7 @@ function jobCopy(status: string, result: ImportResult | null): { title: string; 
       unsupported: "Ese link no es de TikTok, Instagram o YouTube.",
       not_found: "No encontramos el video. ¿Es privado o lo borraron?",
       not_a_recipe: "Ese video no parece ser una receta.",
-      low_confidence: "No encontramos la lista de ingredientes.",
+      low_confidence: "No encontramos la receta completa en el video.",
       ai: "No pudimos entender la receta.",
       unknown: "Algo falló al importar.",
     }[reason];
@@ -45,7 +45,7 @@ function jobCopy(status: string, result: ImportResult | null): { title: string; 
   if (result?.stage === "needs_worker") {
     return result.reason === "instagram"
       ? { title: "Leyendo Instagram…", detail: "Las recetas de Instagram tardan unos minutos más.", failed: false }
-      : { title: "Escuchando el video…", detail: "El texto no traía ingredientes; estamos transcribiendo el audio.", failed: false };
+      : { title: "Escuchando el video…", detail: "El texto no traía la receta completa; estamos escuchando el video.", failed: false };
   }
   return { title: "Leyendo la receta…", detail: "Suele tardar menos de un minuto.", failed: false };
 }

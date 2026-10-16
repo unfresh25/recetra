@@ -105,11 +105,12 @@ async function runImport(db: Admin, payload: ImportPayload, householdId: string 
   });
 
   if (!extracted.is_recipe) return { stage: "failed", reason: "not_a_recipe" };
-  if (payload.seed && (!extracted.has_ingredient_list || extracted.confidence < SEED_MIN_CONFIDENCE)) {
+  const incomplete = !extracted.has_ingredient_list || extracted.steps.length === 0;
+  if (payload.seed && (incomplete || extracted.confidence < SEED_MIN_CONFIDENCE)) {
     return { stage: "failed", reason: "low_confidence" };
   }
-  if (!extracted.has_ingredient_list && !payload.worker?.transcript) {
-    // The caption doesn't list ingredients: the worker will transcribe the audio and retry.
+  if (incomplete && !payload.worker?.transcript) {
+    // The caption lacks the ingredients or the steps: the worker will transcribe the audio and retry.
     return { stage: "needs_worker", reason: "audio" };
   }
 
