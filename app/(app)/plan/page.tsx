@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { requireReadyMembership } from "@/lib/auth";
+import { countInbox } from "@/lib/recipes/queries";
 
 export const metadata: Metadata = { title: "Plan" };
 
@@ -15,12 +16,9 @@ export default function PlanPage() {
       <ScreenHeader
         title="Plan"
         action={
-          <span
-            aria-label="Pendientes por confirmar"
-            className="flex size-11 items-center justify-center rounded-full bg-surface shadow-card"
-          >
-            <Icon name="bell" />
-          </span>
+          <Suspense fallback={<InboxBell count={0} />}>
+            <InboxBellCount />
+          </Suspense>
         }
       />
       <div className="flex flex-col gap-4 px-5 pt-4">
@@ -49,5 +47,27 @@ async function Greeting() {
         Ver hogar
       </Link>
     </Card>
+  );
+}
+
+async function InboxBellCount() {
+  const { household } = await requireReadyMembership();
+  return <InboxBell count={await countInbox(household.id)} />;
+}
+
+function InboxBell({ count }: { count: number }) {
+  return (
+    <Link
+      href="/inbox"
+      aria-label={count ? `${count} pendientes por confirmar` : "Pendientes por confirmar"}
+      className="relative flex size-11 items-center justify-center rounded-full bg-surface shadow-card"
+    >
+      <Icon name="bell" />
+      {count ? (
+        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[11px] font-bold text-white tabular">
+          {count}
+        </span>
+      ) : null}
+    </Link>
   );
 }

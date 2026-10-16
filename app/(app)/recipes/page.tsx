@@ -1,14 +1,106 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
+import { RecipeCard } from "@/components/recipes/recipe-card";
+import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
+import { requireReadyMembership } from "@/lib/auth";
+import { listHouseholdImports } from "@/lib/recipes/queries";
+import { cn } from "@/lib/utils/cn";
 
 export const metadata: Metadata = { title: "Recetas" };
 
-export default function RecipesPage() {
+const TABS = [
+  { value: "mine", label: "Mis recetas" },
+  { value: "favorites", label: "Favoritos" },
+] as const;
+
+export default function RecipesPage({ searchParams }: PageProps<"/recipes">) {
   return (
     <>
-      <ScreenHeader title="Recetas" />
-      <EmptyState illustration="empty-recipes" title="Aún no hay recetas" description="Pronto podrás importar recetas desde TikTok, Instagram o YouTube." />
+      <ScreenHeader
+        title="Recetas"
+        action={
+          <Link
+            href="/recipes/import"
+            className="flex h-11 items-center gap-1.5 rounded-full bg-brand px-4 font-display font-bold text-white shadow-[0_6px_20px_rgb(232_32_42/0.28)]"
+          >
+            <Icon name="add" size={18} strokeWidth={2.4} />
+            Añadir
+          </Link>
+        }
+      />
+      <div className="flex flex-col gap-4 px-5 pt-4">
+        <Suspense fallback={<Card className="h-48 animate-pulse" />}>
+          <RecipesContent searchParams={searchParams} />
+        </Suspense>
+      </div>
     </>
+  );
+}
+
+async function RecipesContent({ searchParams }: Pick<PageProps<"/recipes">, "searchParams">) {
+  const query = await searchParams;
+  const tab = query.tab === "favorites" ? "favorites" : "mine";
+  const { household } = await requireReadyMembership();
+
+  return (
+    <>
+      <nav className="grid grid-cols-2 rounded-full bg-sunken p-1" aria-label="Secciones de recetas">
+        {TABS.map((t) => (
+          <Link
+            key={t.value}
+            href={t.value === "mine" ? "/recipes" : "/recipes?tab=favorites"}
+            aria-current={tab === t.value ? "page" : undefined}
+            className={cn(
+              "flex h-11 items-center justify-center rounded-full text-[15px] font-semibold",
+              tab === t.value ? "bg-surface text-brand shadow-card" : "text-ink-muted",
+            )}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </nav>
+      {tab === "mine" ? <MyRecipes householdId={household.id} /> : <Favorites />}
+    </>
+  );
+}
+
+async function MyRecipes({ householdId }: { householdId: string }) {
+  const recipes = await listHouseholdImports(householdId);
+  if (!recipes.length) {
+    return (
+      <EmptyState
+        illustration="empty-recipes"
+        title="Aún no has importado recetas"
+        description="Pega un link de TikTok, Instagram o YouTube y la convertimos en receta, con crédito al creador."
+        action={
+          <Link href="/recipes/import" className="mt-2 font-semibold text-brand">
+            Importar mi primera receta
+          </Link>
+        }
+      />
+    );
+  }
+  return (
+    <ul className="flex flex-col gap-3">
+      {recipes.map((recipe) => (
+        <li key={recipe.id}>
+          <RecipeCard recipe={recipe} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Favorites() {
+  return (
+    <EmptyState
+      illustration="empty-recipes"
+      title="Aún no hay favoritos"
+      description="Toca el corazón en una receta para guardarla aquí."
+    />
   );
 }

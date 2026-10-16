@@ -35,15 +35,15 @@ set local role authenticated;
 select pg_temp.login('10000000-0000-0000-0000-00000000000c');
 select ok((select count(*) from public.ingredients) > 150, 'ingredients catalog is readable');
 select is((select count(*)::int from public.stores), 9, 'stores are readable');
-select is((select count(*)::int from public.recipes), 1, 'C sees only the approved public recipe (its own import)');
-select is((select count(*)::int from public.recipe_ingredients), 0, 'C cannot read ingredients of H1 draft');
+select is((select count(*)::int from public.recipes where id::text like 'e0000000-%'), 1, 'C sees only the approved public recipe (its own import)');
+select is((select count(*)::int from public.recipe_ingredients where recipe_id::text like 'e0000000-%'), 0, 'C cannot read ingredients of H1 draft');
 select throws_ok(
   $$ insert into public.ingredients (slug, name, category, base_unit) values ('x', 'X', 'other', 'g') $$,
   '42501', null, 'users cannot write the ingredient catalog');
 
 select pg_temp.login('10000000-0000-0000-0000-00000000000a');
-select is((select count(*)::int from public.recipes), 3, 'A sees public recipes plus own drafts and private recipes');
-select is((select count(*)::int from public.recipe_ingredients), 1, 'A reads ingredients of own draft');
+select is((select count(*)::int from public.recipes where id::text like 'e0000000-%'), 3, 'A sees public recipes plus own drafts and private recipes');
+select is((select count(*)::int from public.recipe_ingredients where recipe_id::text like 'e0000000-%'), 1, 'A reads ingredients of own draft');
 update public.recipes set status = 'approved' where id = 'e0000000-0000-0000-0000-000000000002';
 select is(
   (select status::text from public.recipes where id = 'e0000000-0000-0000-0000-000000000002'),

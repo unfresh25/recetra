@@ -60,10 +60,11 @@ jobs:
       - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor
       - name: Write .env.local from local Supabase
         run: |
-          eval "$(supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY)=')"
+          eval "$(supabase status -o env | grep -E '^(API_URL|PUBLISHABLE_KEY|SECRET_KEY)=')"
           {
             echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL"
             echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$PUBLISHABLE_KEY"
+            echo "SUPABASE_SECRET_KEY=$SECRET_KEY"
             echo "NEXT_PUBLIC_SITE_URL=http://localhost:3000"
           } > .env.local
       - run: bunx playwright install --with-deps chromium
