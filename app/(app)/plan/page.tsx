@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { requireMembership } from "@/lib/auth";
+import { requireReadyMembership } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Plan" };
 
@@ -38,7 +38,7 @@ export default function PlanPage() {
 }
 
 async function Greeting() {
-  const { member, household } = await requireMembership();
+  const { member, household } = await requireReadyMembership();
   return (
     <Card className="flex items-center justify-between gap-4">
       <div>

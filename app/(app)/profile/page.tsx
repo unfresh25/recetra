@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
-import { requireMembership } from "@/lib/auth";
+import { requireReadyMembership } from "@/lib/auth";
 import { signOut } from "@/lib/household/actions";
 import { createClient } from "@/lib/supabase/server";
 import { InviteButton } from "./invite-button";
@@ -20,6 +21,14 @@ export default function ProfilePage() {
         <Suspense fallback={<Card className="h-48 animate-pulse" />}>
           <HouseholdCard />
         </Suspense>
+        <Link href="/profile/preferences" className="flex items-center gap-4 rounded-card bg-surface p-5 shadow-card">
+          <span aria-hidden className="flex size-11 items-center justify-center rounded-2xl bg-brand-soft text-xl">⚙️</span>
+          <span className="flex-1">
+            <span className="block font-display font-bold">Mis preferencias</span>
+            <span className="block text-sm text-ink-muted">Tiendas, presupuesto, alergias y lo que no comes</span>
+          </span>
+          <Icon name="arrow-right" size={18} className="text-ink-faint" />
+        </Link>
         <form action={signOut}>
           <Button type="submit" variant="ghost" size="md" block>
             <Icon name="logout" />
@@ -32,7 +41,7 @@ export default function ProfilePage() {
 }
 
 async function HouseholdCard() {
-  const { member, household } = await requireMembership();
+  const { member, household } = await requireReadyMembership();
   const supabase = await createClient();
   const { data: members } = await supabase
     .from("members")
