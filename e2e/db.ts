@@ -43,6 +43,7 @@ export async function seedDraftRecipe(email: string) {
       source_video_id: `e2e${Date.now()}`.slice(0, 11),
       source_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
       author_name: "Tatán Arroyo",
+      visibility: "household",
       servings: 2,
       total_minutes: 20,
       kcal_per_serving: 780,
@@ -69,4 +70,74 @@ export async function seedDraftRecipe(email: string) {
     { recipe_id: (recipe as { id: string }).id, position: 3, text: "Incorpora los huevos revueltos." },
   ]);
   return (recipe as { id: string }).id;
+}
+
+type SeedRecipe = {
+  title: string;
+  meal: "breakfast" | "lunch" | "dinner";
+  minutes: number;
+  ingredients: { slug: string; role?: "core" | "accessory"; quantity?: number; unit?: string }[];
+};
+
+/** Approved public recipes the plan engine can choose from. Returns title -> id. */
+export async function seedCatalog(recipes: SeedRecipe[]) {
+  const { rest: db } = adminDb();
+  const slugs = [...new Set(recipes.flatMap((r) => r.ingredients.map((i) => i.slug)))];
+  const { data: ingredients } = await db.from("ingredients").select("id, slug").in("slug", slugs);
+  const idOf = (slug: string) => (ingredients as { id: string; slug: string }[]).find((i) => i.slug === slug)!.id;
+  const ids: Record<string, string> = {};
+  const run = Date.now().toString(36);
+  for (const [n, r] of recipes.entries()) {
+    const { data, error } = await db
+      .from("recipes")
+      .insert({
+        title: r.title,
+        source_platform: "youtube",
+        source_video_id: `s${run}${n}`.slice(0, 20),
+        author_name: "Recetra E2E",
+        servings: 2,
+        total_minutes: r.minutes,
+        kcal_per_serving: 500,
+        meal_types: [r.meal],
+        status: "approved",
+      })
+      .select("id")
+      .single();
+    if (error) throw error;
+    const id = (data as { id: string }).id;
+    ids[r.title] = id;
+    await db.from("recipe_ingredients").insert(
+      r.ingredients.map((i, p) => ({
+        recipe_id: id,
+        position: p + 1,
+        ingredient_id: idOf(i.slug),
+        quantity: i.quantity ?? 100,
+        unit: i.unit ?? "g",
+        role: i.role ?? "core",
+      })),
+    );
+    await db.from("recipe_steps").insert([
+      { recipe_id: id, position: 1, text: "Pica todo y calienta la olla." },
+      { recipe_id: id, position: 2, text: "Cocina a fuego medio por 10 minutos." },
+    ]);
+  }
+  return ids;
+}
+
+/** Recipe ids planned for a member's household this week. */
+export async function plannedRecipeIds(email: string) {
+  const { rest: db, userIdByEmail } = adminDb();
+  const userId = await userIdByEmail(email);
+  const { data: member } = await db.from("members").select("household_id").eq("user_id", userId).single();
+  const { data: plans } = await db.from("meal_plans").select("id").eq("household_id", (member as { household_id: string }).household_id);
+  const planIds = (plans as { id: string }[]).map((p) => p.id);
+  const { data: meals } = await db.from("plan_meals").select("recipe_id").in("meal_plan_id", planIds);
+  return (meals as { recipe_id: string | null }[]).map((m) => m.recipe_id);
+}
+
+/** Removes catalog rows created by previous E2E runs so the plan engine sees a predictable catalog. */
+export async function cleanE2ECatalog() {
+  const { rest: db } = adminDb();
+  await db.from("recipes").delete().eq("author_name", "Recetra E2E");
+  await db.from("recipes").delete().eq("author_name", "Tatán Arroyo");
 }

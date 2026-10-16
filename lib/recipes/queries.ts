@@ -79,3 +79,51 @@ export async function countInbox(householdId: string) {
   ]);
   return (jobs ?? 0) + (drafts ?? 0);
 }
+
+/** The member's own reactions to a recipe and whether their partner favorited it. */
+export async function getRecipeSocial(recipeId: string, memberId: string) {
+  const supabase = await createClient();
+  const [{ data: reactions }, { data: members }] = await Promise.all([
+    supabase.from("reactions").select("member_id, kind").eq("recipe_id", recipeId).in("kind", ["favorite", "dislike", "veto"]),
+    supabase.from("members").select("id, display_name, accent_color"),
+  ]);
+  const rows = reactions ?? [];
+  const has = (member: string, kind: string) => rows.some((r) => r.member_id === member && r.kind === kind);
+  const partner = (members ?? []).find((m) => m.id !== memberId);
+  return {
+    mine: { favorite: has(memberId, "favorite"), dislike: has(memberId, "dislike"), veto: has(memberId, "veto") },
+    partner: partner ? { name: partner.display_name, accent: partner.accent_color, favorite: has(partner.id, "favorite") } : null,
+  };
+}
+
+export async function getPlanMealAdjustments(planMealId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("plan_meals").select("adjustments").eq("id", planMealId).maybeSingle();
+  const adjustments = (data?.adjustments ?? {}) as { removed?: import("@/lib/plan/types").Adjustment[] };
+  return { removed: adjustments.removed ?? [] };
+}
+
+/** Favorites of the household, tagged with who favorited each one. */
+export async function listFavorites() {
+  const supabase = await createClient();
+  const [{ data: favs }, { data: overrides }] = await Promise.all([
+    supabase
+      .from("reactions")
+      .select("member_id, recipes (id, title, author_name, source_platform, source_image_path, total_minutes, meal_types, status)")
+      .eq("kind", "favorite"),
+    supabase.from("household_recipe_overrides").select("recipe_id, cover_image_path"),
+  ]);
+  const covers = new Map((overrides ?? []).map((o) => [o.recipe_id, o.cover_image_path]));
+  const byRecipe = new Map<string, { recipe: NonNullable<NonNullable<typeof favs>[number]["recipes"]>; memberIds: Set<string> }>();
+  for (const f of favs ?? []) {
+    if (!f.recipes) continue;
+    const entry = byRecipe.get(f.recipes.id) ?? { recipe: f.recipes, memberIds: new Set<string>() };
+    entry.memberIds.add(f.member_id);
+    byRecipe.set(f.recipes.id, entry);
+  }
+  return [...byRecipe.values()].map(({ recipe, memberIds }) => ({
+    ...recipe,
+    coverPath: covers.get(recipe.id) ?? recipe.source_image_path,
+    memberIds: [...memberIds],
+  }));
+}

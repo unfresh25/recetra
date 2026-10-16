@@ -1,0 +1,69 @@
+import { expect, test } from "@playwright/test";
+import { plannedRecipeIds, seedCatalog } from "./db";
+import { householdSetup, personalSetup, signIn } from "./flows";
+
+test("the weekly plan respects allergies and dislikes, and learns from replacements", async ({ page }) => {
+  const ids = await seedCatalog([
+    { title: "Huevos pericos E2E", meal: "breakfast", minutes: 15, ingredients: [{ slug: "huevo" }, { slug: "tomate" }] },
+    { title: "Arepa con queso E2E", meal: "breakfast", minutes: 10, ingredients: [{ slug: "arepa", unit: "unit", quantity: 2 }, { slug: "queso-costeno" }] },
+    { title: "Sancocho E2E", meal: "lunch", minutes: 120, ingredients: [{ slug: "pollo-entero" }, { slug: "yuca" }, { slug: "cilantro", role: "accessory" }] },
+    { title: "Arroz con pollo E2E", meal: "lunch", minutes: 45, ingredients: [{ slug: "arroz-blanco" }, { slug: "pechuga-pollo" }] },
+    { title: "Arroz con camarones E2E", meal: "lunch", minutes: 40, ingredients: [{ slug: "arroz-blanco" }, { slug: "camaron" }] },
+    { title: "Crema de ahuyama E2E", meal: "dinner", minutes: 30, ingredients: [{ slug: "ahuyama" }, { slug: "cebolla-cabezona" }] },
+    { title: "Wrap de pollo E2E", meal: "dinner", minutes: 20, ingredients: [{ slug: "tortilla-trigo", unit: "unit" }, { slug: "pechuga-pollo" }] },
+  ]);
+
+  const email = `plan-${Date.now()}@test.co`;
+  await page.goto("/login");
+  await signIn(page, email);
+  await page.getByLabel("¿Cómo te llamas?").fill("Jorge");
+  await page.getByLabel("Nombre del hogar").fill("Casa Plan");
+  await page.getByRole("button", { name: "Crear hogar", exact: true }).and(page.locator("[type=submit]")).click();
+  await householdSetup(page);
+  await personalSetup(page, { allergy: /Mariscos/, dislike: "Cilantro" });
+
+  // First visit builds the week automatically.
+  await expect(page.getByRole("heading", { name: /Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo/ })).toBeVisible({ timeout: 20_000 });
+  await page.screenshot({ path: "e2e/__screens__/30-plan.png", fullPage: true });
+
+  const planned = await plannedRecipeIds(email);
+  expect(planned).toHaveLength(21);
+  expect(planned).not.toContain(ids["Arroz con camarones E2E"]);
+
+  const firstDay = page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link").first();
+  await firstDay.click();
+  const lunchCard = page.locator("section", { has: page.getByRole("heading", { name: /Almuerzo/ }) });
+  // Weekday lunches prefer under an hour, so the 45-minute arroz con pollo wins over the 2-hour sancocho.
+  await expect(lunchCard.getByRole("link").first()).toContainText("Arroz con pollo E2E");
+
+  // Replace it "just for today" with the sancocho: the cilantro garnish is removed for Jorge.
+  await lunchCard.getByRole("button", { name: /Reemplazar/ }).click();
+  await page.getByRole("button", { name: "Solo hoy no" }).click();
+  const dialog = page.getByRole("dialog", { name: "Reemplazar comida" });
+  const sancocho = dialog.getByRole("button", { name: /Sancocho E2E/ }).first();
+  await expect(sancocho).toContainText("sin cilantro");
+  await expect(dialog.getByRole("button", { name: /camarones/ })).toHaveCount(0);
+  await page.screenshot({ path: "e2e/__screens__/31-replace.png" });
+  await sancocho.click();
+  await expect(dialog).toBeHidden();
+  await expect(lunchCard.getByText("Sin cilantro · Jorge → perejil")).toBeVisible();
+
+  // Favorite the new lunch and cook it.
+  await lunchCard.getByRole("link").first().click();
+  await page.getByRole("button", { name: /Favorito/ }).click();
+  await expect(page.getByRole("button", { name: /Favorito/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("link", { name: "Cocinar ahora" }).click();
+  await expect(page.getByText("Paso 1")).toBeVisible();
+  await expect(page.getByRole("button", { name: /10 minutos/ })).toHaveCount(0);
+  await page.getByRole("button", { name: "Siguiente paso" }).click();
+  await page.getByRole("button", { name: /10 minutos/ }).click();
+  await expect(page.getByRole("timer")).toBeVisible();
+  await page.screenshot({ path: "e2e/__screens__/32-cook.png" });
+  await page.getByRole("button", { name: "¡Terminé!" }).click();
+  await expect(page).toHaveURL(/\/plan$/);
+  await firstDay.click();
+  await expect(lunchCard.getByText("Cocinada")).toBeVisible();
+
+  await page.goto("/recipes?tab=favorites&who=me");
+  await expect(page.getByRole("link", { name: /E2E/ })).toHaveCount(1);
+});
