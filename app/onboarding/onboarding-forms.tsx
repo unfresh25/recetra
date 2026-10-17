@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/icon";
 import { useRouter } from "next/navigation";
 import { useActionState, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ export function OnboardingForms() {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
-      <div role="tablist" className="grid grid-cols-2 rounded-full bg-sunken p-1">
+      <div role="tablist" className="grid grid-cols-2">
         {(
           [
             ["create", "Crear hogar"],
@@ -31,7 +32,7 @@ export function OnboardingForms() {
             onClick={() => setMode(value)}
             className={cn(
               "h-11 rounded-full text-[15px] font-semibold transition-colors",
-              mode === value ? "bg-surface text-brand shadow-card" : "text-ink-muted",
+              mode === value ? "text-brand underline decoration-2 underline-offset-8" : "text-ink-muted",
             )}
           >
             {label}
@@ -82,8 +83,8 @@ function JoinForm() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-1 flex-col gap-5">
-      <Card className="flex gap-3 bg-teal-soft/60 shadow-none">
-        <span aria-hidden className="text-2xl">💌</span>
+      <Card className="flex gap-3">
+        <Icon name="mail" size={24} className="shrink-0 text-teal" />
         <p className="text-[15px] text-ink">
           Si te llegó un link de invitación, ábrelo directamente o pégalo aquí.
         </p>

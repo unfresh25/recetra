@@ -20,7 +20,7 @@ export function RecipeCard({
   };
 }) {
   return (
-    <Link href={`/recipes/${recipe.id}`} className="flex items-center gap-4 rounded-card bg-surface p-3 pr-4 shadow-card">
+    <Link href={`/recipes/${recipe.id}`} className="flex items-center gap-4 py-3">
       <RecipeThumb path={recipe.coverPath} />
       <span className="min-w-0 flex-1">
         <span className="line-clamp-2 font-display text-[16px] font-bold leading-snug">{recipe.title}</span>

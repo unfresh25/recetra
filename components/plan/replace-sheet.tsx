@@ -88,7 +88,7 @@ function ReplaceSheet({ planMealId, title, onClose }: { planMealId: string; titl
                     type="button"
                     disabled={saving}
                     onClick={() => choose(o.recipeId)}
-                    className="flex w-full items-center gap-3 rounded-card bg-surface p-4 text-left shadow-card disabled:opacity-60"
+                    className="flex w-full items-center gap-3 border-b border-line py-4 text-left disabled:opacity-60"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{o.title}</span>

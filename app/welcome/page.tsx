@@ -6,8 +6,8 @@ export const metadata: Metadata = { title: "Bienvenida" };
 export default function WelcomePage() {
   return (
     <main className="flex flex-1 flex-col pt-safe">
-      <p className="py-4 text-center font-display text-2xl font-extrabold tracking-tight">
-        <span aria-hidden>🍲 </span>Recetra
+      <p className="py-4 text-center font-condensed text-3xl font-extrabold tracking-tight">
+        Recetra
       </p>
       <WelcomeCarousel />
     </main>

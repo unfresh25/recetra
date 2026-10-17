@@ -45,13 +45,13 @@ function StepSkeleton() {
   return (
     <main aria-busy className="flex flex-1 flex-col gap-6 px-5 pt-safe">
       <div className="flex h-11 items-center gap-4">
-        <span className="size-11 rounded-full bg-surface shadow-card" />
+        <span className="size-11 rounded-full bg-surface" />
         <span className="h-2 flex-1 rounded-full bg-sunken" />
       </div>
       <span className="h-9 w-3/4 animate-pulse rounded-full bg-sunken" />
       <div className="grid grid-cols-2 gap-3">
         {Array.from({ length: 6 }, (_, i) => (
-          <span key={i} className="h-[104px] animate-pulse rounded-card bg-surface shadow-card" />
+          <span key={i} className="h-[104px] animate-pulse rounded-card bg-surface" />
         ))}
       </div>
     </main>

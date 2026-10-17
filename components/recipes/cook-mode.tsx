@@ -44,7 +44,7 @@ function StepText({ text, onTimer }: { text: string; onTimer: (seconds: number, 
         onClick={() => onTimer(toSeconds(match[1]!, match[2]!.toLowerCase()), label)}
         className="mx-0.5 inline-flex items-center gap-1 rounded-full bg-brand-soft px-2.5 align-baseline font-semibold text-brand"
       >
-        ⏱️ {label}
+        <Icon name="timer" size={18} /> {label}
       </button>,
     );
     last = (match.index ?? 0) + label.length;
@@ -107,7 +107,7 @@ export function CookMode({
         <Link
           href={`/recipes/${recipeId}${planMealId ? `?meal=${planMealId}` : ""}`}
           aria-label="Salir del modo cocinar"
-          className="absolute left-4 top-4 flex size-11 items-center justify-center rounded-full bg-white/85 text-ink shadow-card backdrop-blur"
+          className="absolute left-4 top-4 flex size-11 items-center justify-center rounded-full bg-white/85 text-ink"
         >
           <Icon name="close" />
         </Link>
@@ -133,10 +133,10 @@ export function CookMode({
             remaining <= 0 ? "animate-pulse bg-brand text-white" : "bg-ink text-white",
           )}
         >
-          <span>⏱️ {remaining <= 0 ? "¡Listo!" : formatClock(remaining)}</span>
+          <span className="flex items-center gap-2"><Icon name="timer" size={20} /> {remaining <= 0 ? "¡Listo!" : formatClock(remaining)}</span>
           <span className="flex gap-2 text-sm">
             <button type="button" onClick={() => setTimer({ ...timer, endsAt: timer.endsAt + 60_000 })}>+1 min</button>
-            <button type="button" onClick={() => setTimer(null)} aria-label="Quitar temporizador">✕</button>
+            <button type="button" onClick={() => setTimer(null)} aria-label="Quitar temporizador"><Icon name="close" size={18} /></button>
           </span>
         </div>
       ) : null}

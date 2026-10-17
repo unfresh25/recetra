@@ -1,21 +1,18 @@
-import { cn } from "@/lib/utils/cn";
-import type { ComponentProps } from "react";
+"use client";
 
-const variants = {
-  primary:
-    "bg-brand text-white shadow-[0_6px_20px_rgb(232_32_42/0.28)] hover:bg-brand-press disabled:bg-brand/35 disabled:shadow-none",
-  secondary: "bg-surface text-ink shadow-card hover:bg-sunken disabled:text-ink-faint",
-  ghost: "bg-transparent text-brand hover:bg-brand-soft disabled:text-ink-faint",
-} as const;
+import type { ComponentProps } from "react";
+import { cn } from "@/lib/utils/cn";
+import { DrawablyButton } from "./drawably";
 
 const sizes = {
-  lg: "h-14 px-7 text-[17px]",
-  md: "h-12 px-5 text-[15px]",
+  lg: "h-14 px-8 text-[17px]",
+  md: "h-12 px-6 text-[15px]",
   sm: "h-9 px-4 text-sm",
 } as const;
 
 export type ButtonProps = ComponentProps<"button"> & {
-  variant?: keyof typeof variants;
+  /** primary: hand-drawn solid red · secondary: hand-drawn outline · ghost: plain text */
+  variant?: "primary" | "secondary" | "ghost";
   size?: keyof typeof sizes;
   block?: boolean;
   loading?: boolean;
@@ -31,25 +28,36 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
+  const classes = cn(
+    "inline-flex select-none items-center justify-center gap-2 font-display font-bold",
+    sizes[size],
+    block && "w-full",
+    className,
+  );
+
+  if (variant === "ghost") {
+    return (
+      <button
+        {...props}
+        disabled={disabled || loading}
+        className={cn(classes, "text-brand transition-opacity active:opacity-60 disabled:text-ink-faint")}
+      >
+        {children}
+      </button>
+    );
+  }
+
   return (
-    <button
+    <DrawablyButton
       {...props}
+      variant={variant === "primary" ? "solid" : "outline"}
+      state={loading ? "loading" : "idle"}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cn(
-        "inline-flex select-none items-center justify-center gap-2 rounded-full font-display font-bold",
-        "transition-[transform,background-color,box-shadow] duration-150 ease-out-soft active:scale-[0.97] disabled:active:scale-100",
-        variants[variant],
-        sizes[size],
-        block && "w-full",
-        className,
-      )}
+      className={classes}
     >
-      {loading ? (
-        <span className="size-5 animate-spin rounded-full border-2 border-current border-r-transparent" />
-      ) : (
-        children
-      )}
-    </button>
+      {/* Always wrap: a lone text child makes React rewrite textContent, which wipes drawably's SVG. */}
+      <span className="inline-flex items-center gap-2">{children}</span>
+    </DrawablyButton>
   );
 }

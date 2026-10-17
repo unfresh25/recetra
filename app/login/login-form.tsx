@@ -61,8 +61,8 @@ export function LoginForm() {
           required
           error={error}
         />
-        <div className="mt-auto pb-safe">
-          <Button type="submit" block loading={pending}>
+        <div className="mt-auto flex justify-center pb-safe">
+          <Button type="submit" className="min-w-48" loading={pending}>
             Enviar código
           </Button>
         </div>
@@ -80,7 +80,7 @@ export function LoginForm() {
         pattern="\d{6}"
         maxLength={6}
         placeholder="••••••"
-        className="text-center font-display text-3xl tracking-[0.5em]"
+        className="text-center font-condensed text-[44px] font-extrabold tracking-[0.4em]"
         autoFocus
         required
         error={error}
@@ -92,8 +92,8 @@ export function LoginForm() {
       >
         Usar otro correo
       </button>
-      <div className="mt-auto pb-safe">
-        <Button type="submit" block loading={pending}>
+      <div className="mt-auto flex justify-center pb-safe">
+        <Button type="submit" className="min-w-48" loading={pending}>
           Entrar
         </Button>
       </div>

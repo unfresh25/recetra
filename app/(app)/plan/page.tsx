@@ -74,11 +74,11 @@ async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams
           <RegenerateButton day={selected} />
         </div>
         <div className="flex items-center gap-3 text-sm text-ink-muted">
-          <span>🍽️ {household.servings_adults + household.servings_kids} personas</span>
-          {household.weekly_budget_cop ? <span>💰 Presupuesto {formatCop(household.weekly_budget_cop)}</span> : null}
+          <span className="flex items-center gap-1.5"><Icon name="users" size={16} /> {household.servings_adults + household.servings_kids} personas</span>
+          {household.weekly_budget_cop ? <span className="flex items-center gap-1.5"><Icon name="wallet" size={16} /> {formatCop(household.weekly_budget_cop)}</span> : null}
         </div>
         <Link href="/shopping" className="flex items-center justify-between rounded-field bg-sunken/70 px-4 py-3 text-sm font-semibold">
-          <span>🛒 Lista de compras y precios</span>
+          <span className="flex items-center gap-2"><Icon name="basket" size={18} /> Lista de compras y precios</span>
           <Icon name="arrow-right" size={16} className="text-ink-faint" />
         </Link>
       </Card>
@@ -105,7 +105,7 @@ function InboxBell({ count }: { count: number }) {
     <Link
       href="/inbox"
       aria-label={count ? `${count} pendientes por confirmar` : "Pendientes por confirmar"}
-      className="relative flex size-11 items-center justify-center rounded-full bg-surface shadow-card"
+      className="relative flex size-11 items-center justify-center rounded-full bg-surface"
     >
       <Icon name="bell" />
       {count ? (

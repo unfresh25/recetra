@@ -32,7 +32,7 @@ export function BudgetStep({ initial, nextHref }: { initial: number | null; next
           aria-label="Presupuesto semanal"
           aria-valuetext={formatCop(value)}
           style={{ background: `linear-gradient(to right, var(--color-brand) ${percent}%, var(--color-sunken) ${percent}%)` }}
-          className="h-3 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:size-9 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-brand [&::-webkit-slider-thumb]:shadow-float"
+          className="h-3 w-full cursor-pointer appearance-none rounded-full [&::-webkit-slider-thumb]:size-9 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-4 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:bg-brand [&::-webkit-slider-thumb]:"
         />
         <div className="flex justify-between text-sm text-ink-muted tabular">
           <span>{formatCop(BUDGET.min)}</span>

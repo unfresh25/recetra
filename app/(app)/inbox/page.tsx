@@ -112,7 +112,7 @@ async function Inbox() {
             </span>
           </Link>
           {draft.ai_confidence !== null && draft.ai_confidence < 0.6 ? (
-            <p className="rounded-field bg-brand-soft/60 px-3 py-2 text-sm text-ink">
+            <p className="flex items-center gap-2 text-sm text-brand">
               Revísala con calma: tuvimos que adivinar parte de la receta.
             </p>
           ) : null}

@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/ui/icon";
 import { useOptimistic, useTransition } from "react";
 import { Avatar, type Accent } from "@/components/ui/avatar";
 import { toggleReaction } from "@/lib/plan/actions";
@@ -32,18 +33,18 @@ export function ReactionBar({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button type="button" aria-pressed={state.favorite} onClick={() => toggle("favorite")} className={cn(pill, state.favorite ? "bg-brand text-white" : "bg-sunken")}>
-        {state.favorite ? "❤️" : "🤍"} Favorito
+        <Icon name="heart" size={18} /> Favorito
       </button>
       <button type="button" aria-pressed={state.dislike} onClick={() => toggle("dislike")} className={cn(pill, state.dislike ? "bg-ink text-white" : "bg-sunken")}>
-        👎 No me gusta
+        <Icon name="thumbs-down" size={18} /> No me gusta
       </button>
       <button type="button" aria-pressed={state.veto} onClick={() => toggle("veto")} className={cn(pill, state.veto ? "bg-ink text-white" : "bg-sunken")}>
-        🚫 {state.veto ? "Vetada" : "Vetar"}
+        <Icon name="ban" size={18} /> {state.veto ? "Vetada" : "Vetar"}
       </button>
       {partner ? (
         <span className="ml-auto flex items-center gap-1.5 text-xs text-ink-muted">
           <Avatar name={partner.name} accent={partner.accent} size={22} />
-          {partner.favorite ? "❤️ le encanta" : "aún no reacciona"}
+          {partner.favorite ? <><Icon name="heart" size={14} className="text-brand" /> le encanta</> : "aún no reacciona"}
         </span>
       ) : null}
     </div>

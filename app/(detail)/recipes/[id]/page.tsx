@@ -6,7 +6,7 @@ import { CoverEditor } from "@/components/recipes/cover-editor";
 import { IngredientRoleToggle } from "@/components/recipes/ingredient-role-toggle";
 import { PlatformIcon } from "@/components/recipes/platform-icon";
 import { VideoEmbed } from "@/components/recipes/video-embed";
-import { Icon } from "@/components/ui/icon";
+import { Icon, type IconName } from "@/components/ui/icon";
 import { DraftReview } from "@/components/recipes/draft-review";
 import { requireReadyMembership } from "@/lib/auth";
 import { recipeImageUrl } from "@/lib/recipes/images";
@@ -54,7 +54,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
           <Link
             href="/recipes"
             aria-label="Cerrar"
-            className="flex size-11 items-center justify-center rounded-full bg-white/85 text-ink shadow-card backdrop-blur"
+            className="flex size-11 items-center justify-center rounded-full bg-white/85 text-ink"
           >
             <Icon name="close" />
           </Link>
@@ -109,16 +109,16 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
         ) : null}
 
         <dl className="grid grid-cols-3 divide-x divide-line rounded-card border border-line py-4 text-center">
-          <Stat emoji="⏱️" value={recipe.total_minutes ? `${recipe.total_minutes}` : "—"} label="minutos" />
-          <Stat emoji="🔥" value={recipe.kcal_per_serving ? `${recipe.kcal_per_serving}` : "—"} label="kcal por porción" />
-          <Stat emoji="🍽️" value={`${recipe.servings}`} label="porciones" />
+          <Stat icon="clock" value={recipe.total_minutes ? `${recipe.total_minutes}` : "—"} label="minutos" />
+          <Stat icon="fire" value={recipe.kcal_per_serving ? `${recipe.kcal_per_serving}` : "—"} label="kcal por porción" />
+          <Stat icon="fork-spoon" value={`${recipe.servings}`} label="porciones" />
         </dl>
 
         {recipe.protein_g !== null ? (
           <div className="grid grid-cols-3 gap-2 text-center">
-            <Macro label="Proteína" grams={recipe.protein_g} emoji="💪" />
-            <Macro label="Carbohidratos" grams={recipe.carbs_g} emoji="🍞" />
-            <Macro label="Grasa" grams={recipe.fat_g} emoji="🥑" />
+            <Macro label="Proteína" grams={recipe.protein_g} icon="dumbbell" />
+            <Macro label="Carbohidratos" grams={recipe.carbs_g} icon="wheat" />
+            <Macro label="Grasa" grams={recipe.fat_g} icon="leaf" />
           </div>
         ) : null}
 
@@ -162,14 +162,14 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
       </article>
 
       {isOwnDraft ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md rounded-t-[28px] bg-surface px-5 pt-4 pb-safe shadow-float">
+        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md rounded-t-[28px] bg-surface px-5 pt-4 pb-safe">
           <DraftReview recipeId={recipe.id} initialMeals={recipe.meal_types} />
         </div>
       ) : steps.length ? (
         <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-md justify-center px-5 pb-safe">
           <Link
             href={`/recipes/${recipe.id}/cook${planMealId ? `?meal=${planMealId}` : ""}`}
-            className="flex h-14 items-center gap-2 rounded-full bg-brand px-8 font-display text-[17px] font-bold text-white shadow-[0_6px_20px_rgb(232_32_42/0.35)] active:scale-[0.97]"
+            className="flex h-14 items-center gap-2 rounded-full bg-brand px-8 font-display text-[17px] font-bold text-white active:scale-[0.97]"
           >
             <Icon name="play" size={20} strokeWidth={2.4} /> Cocinar ahora
           </Link>
@@ -179,21 +179,21 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
   );
 }
 
-function Stat({ emoji, value, label }: { emoji: string; value: string; label: string }) {
+function Stat({ icon, value, label }: { icon: IconName; value: string; label: string }) {
   return (
     <div className="flex flex-col items-center gap-0.5 px-2">
       <dt className="sr-only">{label}</dt>
-      <span aria-hidden className="text-lg">{emoji}</span>
+      <Icon name={icon} size={20} className="text-ink-muted" />
       <dd className="font-display text-lg font-bold tabular">{value}</dd>
       <span aria-hidden className="text-[11px] leading-tight text-ink-muted">{label}</span>
     </div>
   );
 }
 
-function Macro({ label, grams, emoji }: { label: string; grams: number | null; emoji: string }) {
+function Macro({ label, grams, icon }: { label: string; grams: number | null; icon: IconName }) {
   return (
     <div className="rounded-card bg-sunken/70 px-2 py-3">
-      <span aria-hidden className="text-lg">{emoji}</span>
+      <Icon name={icon} size={20} className="mx-auto text-ink-muted" />
       <p className="font-display font-bold tabular">{grams ?? "—"}g</p>
       <p className="text-[11px] text-ink-muted">{label}</p>
     </div>

@@ -16,7 +16,7 @@ export function DayStrip({ days, selected, today }: { days: string[]; selected: 
                 aria-current={active ? "date" : undefined}
                 className={cn(
                   "flex h-16 w-14 flex-col items-center justify-center rounded-2xl transition-colors",
-                  active ? "bg-brand text-white shadow-[0_6px_20px_rgb(232_32_42/0.28)]" : "bg-surface shadow-card",
+                  active ? "bg-brand text-white" : "bg-surface",
                 )}
               >
                 <span className={cn("text-xs font-semibold", active ? "text-white/85" : "text-ink-muted")}>{dayLabel(day)}</span>

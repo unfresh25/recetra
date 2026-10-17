@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { Icon } from "@/components/ui/icon";
 import { RecipeThumb } from "@/components/recipes/recipe-thumb";
 import { Avatar, type Accent } from "@/components/ui/avatar";
 import type { PlanMealView } from "@/lib/plan/queries";
 import { MEAL_TYPE_LABELS } from "@/lib/recipes/labels";
 import { ReplaceButton } from "./replace-sheet";
 
-const MEAL_EMOJI = { breakfast: "🍳", lunch: "🍲", dinner: "🌙" } as const;
+const MEAL_ICON = { breakfast: "sunrise", lunch: "sun", dinner: "moon" } as const;
 
 export function MealCard({
   meal,
@@ -17,20 +18,20 @@ export function MealCard({
   return (
     <section className="flex flex-col gap-2">
       <h3 className="flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
-        <span aria-hidden>{MEAL_EMOJI[meal.mealType]}</span>
+        <Icon name={MEAL_ICON[meal.mealType]} size={16} />
         {MEAL_TYPE_LABELS[meal.mealType]}
         {meal.status === "cooked" ? <span className="rounded-full bg-savings-soft px-2 py-0.5 text-[10px] text-savings">Cocinada</span> : null}
       </h3>
       {meal.recipe ? (
-        <div className="relative rounded-card bg-surface p-3 shadow-card">
+        <div className="relative rounded-card bg-surface p-3">
           <Link href={`/recipes/${meal.recipe.id}?meal=${meal.id}`} className="flex items-center gap-3 pr-10">
             <RecipeThumb path={meal.recipe.coverPath} size={84} />
             <span className="min-w-0 flex-1">
               <span className="line-clamp-2 font-display text-[16px] font-bold leading-snug">{meal.recipe.title}</span>
               <span className="mt-1 flex items-center gap-2 text-[13px] text-ink-muted tabular">
-                {meal.recipe.minutes ? <span>⏱️ {meal.recipe.minutes} min</span> : null}
-                {meal.recipe.kcal ? <span>🔥 {meal.recipe.kcal} kcal</span> : null}
-                <span>🍽️ {meal.servings}</span>
+                {meal.recipe.minutes ? <span className="flex items-center gap-1"><Icon name="clock" size={14} /> {meal.recipe.minutes} min</span> : null}
+                {meal.recipe.kcal ? <span className="flex items-center gap-1"><Icon name="fire" size={14} /> {meal.recipe.kcal} kcal</span> : null}
+                <span className="flex items-center gap-1"><Icon name="users" size={14} /> {meal.servings}</span>
               </span>
               <span className="mt-2 flex items-center gap-1">
                 {members.map((m) => (
@@ -38,7 +39,7 @@ export function MealCard({
                     <Avatar name={m.display_name} accent={m.accent_color} size={22} />
                     {meal.favorites[m.id] ? (
                       <span aria-label={`${m.display_name} la tiene en favoritos`} className="absolute -bottom-1 -right-1 text-[10px]">
-                        ❤️
+                        <Icon name="heart" size={12} className="text-brand" />
                       </span>
                     ) : null}
                   </span>
