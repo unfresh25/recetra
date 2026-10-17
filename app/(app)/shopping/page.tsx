@@ -51,7 +51,11 @@ async function ShoppingContent() {
       <EmptyState
         illustration="empty-shopping"
         title="Elige tus supermercados"
-        description="Compararemos precios entre las tiendas donde compras."
+        description={
+          plan.unpricedStores.length
+            ? `${plan.unpricedStores.join(" y ")} no publica precios en línea. Agrega Éxito, Carulla, Olímpica, D1 o MegaTiendas para comparar.`
+            : "Compararemos precios entre las tiendas donde compras."
+        }
         action={<Link href="/profile/preferences" className="font-semibold text-brand">Elegir tiendas</Link>}
       />
     );

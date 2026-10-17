@@ -15,7 +15,7 @@ const Enrichment = z.object({
       purchase_unit: z.string().describe(`How stores sell it. One of: ${BUY_UNITS.join(", ")}`),
       unit_weight_g: z.number().nullable().describe("Grams of one typical piece for anything a recipe may count in pieces, even if stores sell it by weight (huevo 50, tomate 120, papa 150, zanahoria 80, cebolla cabezona 150, cabeza de ajo 40, limón 60, pechuga 300, tajada de queso 20). Null only for things never counted (arroz, sal, leche, harina)"),
       density_g_ml: z.number().nullable().describe("Grams per ml for cup/spoon conversions (arroz crudo 0.85, harina 0.55, azúcar 0.85, aceite 0.92, leche 1.03); null if irrelevant"),
-      pantry_staple: z.boolean().describe("True only for things almost every kitchen has and recipes use in small amounts: sal, pimienta, comino, aceite, azúcar, vinagre, especias secas"),
+      pantry_staple: z.boolean().describe("True only for seasonings almost every kitchen has and recipes use by the pinch or spoon: sal, pimienta, comino, color, orégano y otras especias o hierbas secas, aceite vegetal, vinagre, azúcar, polvo de hornear, bicarbonato. False for anything you buy for a specific dish: granos, legumbres (lenteja, fríjol), harinas, arroz, lácteos, salsas, caldos, aceite de oliva"),
       search_terms: z.array(z.string()).describe("1 to 3 short supermarket search queries, most specific first, in Colombian Spanish (e.g. 'cebolla cabezona', 'cebolla blanca')"),
     }),
   ),

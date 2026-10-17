@@ -136,6 +136,12 @@ export function ShoppingList({ plan, budgetCop }: { plan: Plan; budgetCop: numbe
           </section>
         ))}
 
+      {plan.unpricedStores.length ? (
+        <p className="text-sm text-ink-muted">
+          {plan.unpricedStores.join(" y ")} no {plan.unpricedStores.length > 1 ? "publican" : "publica"} precios en línea, así que no entra en la comparación.
+        </p>
+      ) : null}
+
       {staples.length ? (
         <section className="flex flex-col gap-2 pb-4">
           <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-muted">Revisa en tu despensa</h2>

@@ -2,11 +2,17 @@ import "server-only";
 import { privateData } from "@/lib/cache";
 import type { Adjustment } from "@/lib/plan/types";
 import { mondayOf, todayInBogota } from "@/lib/plan/week";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 import { planShopping, type Need, type Offer } from "./list";
 import { toBuyAmount, type IngredientUnits } from "./units";
 
 export type ShoppingStore = { id: string; slug: string; name: string; logo_url: string | null; brand_color: string };
+
+// Stores we can read prices from. Ara and Isimo have no online shop; Makro and Jumbo are not wired yet.
+const PRICED_SOURCES = new Set(["vtex"]);
+const UNPRICED_SLUGS = new Set(["jumbo"]);
 
 const INGREDIENT_FIELDS = "id, name, category, base_unit, purchase_unit, unit_weight_g, density_g_ml, pantry_staple";
 
@@ -14,19 +20,22 @@ const INGREDIENT_FIELDS = "id, name, category, base_unit, purchase_unit, unit_we
 export async function getShoppingPlan(householdId: string) {
   "use cache: private";
   privateData();
-  const supabase = await createClient({ privateCache: true });
-  const today = todayInBogota();
+  return buildShoppingPlan(await createClient({ privateCache: true }), householdId, todayInBogota());
+}
 
+/** Uncached core, also used by scripts with the service-role client. */
+export async function buildShoppingPlan(supabase: SupabaseClient<Database>, householdId: string, today: string) {
   const [{ data: plan }, { data: storeRows }, { data: pinnedRows }] = await Promise.all([
     supabase.from("meal_plans").select("id").eq("household_id", householdId).eq("week_start", mondayOf(today)).maybeSingle(),
-    supabase.from("household_stores").select("stores (id, slug, name, logo_url, brand_color, sort_order)").eq("household_id", householdId),
+    supabase.from("household_stores").select("stores (id, slug, name, logo_url, brand_color, sort_order, source)").eq("household_id", householdId),
     supabase.from("pinned_brands").select("ingredient_id, brand").eq("household_id", householdId),
   ]);
-  const stores: ShoppingStore[] = (storeRows ?? [])
-    .flatMap((r) => (r.stores ? [r.stores] : []))
-    .sort((a, b) => a.sort_order - b.sort_order)
-    .map((s) => ({ id: s.id, slug: s.slug, name: s.name, logo_url: s.logo_url, brand_color: s.brand_color }));
-  if (!plan) return { hasPlan: false as const, stores };
+  const allStores = (storeRows ?? []).flatMap((r) => (r.stores ? [r.stores] : [])).sort((a, b) => a.sort_order - b.sort_order);
+  const toView = (s: (typeof allStores)[number]): ShoppingStore => ({ id: s.id, slug: s.slug, name: s.name, logo_url: s.logo_url, brand_color: s.brand_color });
+  const isPriced = (s: (typeof allStores)[number]) => PRICED_SOURCES.has(s.source) && !UNPRICED_SLUGS.has(s.slug);
+  const stores = allStores.filter(isPriced).map(toView);
+  const unpricedStores = allStores.filter((s) => !isPriced(s)).map((s) => s.name);
+  if (!plan) return { hasPlan: false as const, stores, unpricedStores };
 
   const { data: meals } = await supabase
     .from("plan_meals")
@@ -113,5 +122,5 @@ export async function getShoppingPlan(householdId: string) {
 
   const pinned = new Map((pinnedRows ?? []).map((p) => [p.ingredient_id, p.brand]));
   const list = [...needs.values()].map(({ measured, ...need }) => ({ ...need, amount: measured ? need.amount : null }));
-  return { hasPlan: true as const, stores, ...planShopping(list, offers, storeIds, pinned) };
+  return { hasPlan: true as const, stores, unpricedStores, ...planShopping(list, offers, storeIds, pinned) };
 }
