@@ -141,3 +141,35 @@ export async function cleanE2ECatalog() {
   await db.from("recipes").delete().eq("author_name", "Recetra E2E");
   await db.from("recipes").delete().eq("author_name", "Tatán Arroyo");
 }
+
+/**
+ * One product per (ingredient, store) for every ingredient in approved recipes, priced so that
+ * D1 wins grains and Olímpica wins proteins: the list then has a reason to split the trip.
+ */
+export async function seedStorePrices(storeSlugs: string[]) {
+  const { rest: db } = adminDb();
+  const { data: stores } = await db.from("stores").select("id, slug").in("slug", storeSlugs);
+  const { data: lines } = await db.from("recipe_ingredients").select("ingredients (id, slug, category, base_unit)");
+  const ingredients = new Map(
+    ((lines ?? []) as unknown as { ingredients: { id: string; slug: string; category: string; base_unit: "g" | "ml" | "unit" } }[]).map((l) => [l.ingredients.id, l.ingredients]),
+  );
+  const protein = new Set(["meat", "poultry", "fish", "seafood", "eggs"]);
+  for (const store of (stores ?? []) as { id: string; slug: string }[]) {
+    for (const ingredient of ingredients.values()) {
+      const qty = ingredient.base_unit === "unit" ? 10 : 1000;
+      const cheaperHere = protein.has(ingredient.category) === (store.slug === "olimpica");
+      const { data: product, error } = await db
+        .from("products")
+        .upsert(
+          { store_id: store.id, sku: `e2e-${ingredient.slug}`, name: `${ingredient.slug} ${store.slug} ${qty}`, brand: `Marca ${store.slug}`, package_qty: qty, package_unit: ingredient.base_unit },
+          { onConflict: "store_id,sku" },
+        )
+        .select("id")
+        .single();
+      if (error) throw error;
+      const productId = (product as { id: string }).id;
+      await db.from("product_matches").upsert({ ingredient_id: ingredient.id, product_id: productId, confidence: 0.9, status: "auto" }, { onConflict: "ingredient_id,product_id" });
+      await db.from("prices").insert({ product_id: productId, price_cop: cheaperHere ? 4000 : 6000 });
+    }
+  }
+}
