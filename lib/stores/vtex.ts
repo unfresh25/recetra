@@ -20,6 +20,7 @@ type RawProduct = {
   categories?: string[];
   items: {
     itemId: string;
+    name?: string;
     images?: { imageUrl: string }[];
     sellers: { commertialOffer: { Price: number; ListPrice?: number; IsAvailable: boolean } }[];
   }[];
@@ -63,7 +64,8 @@ function normalize(raw: RawProduct): StoreProduct[] {
     return [
       {
         sku: item.itemId,
-        name: raw.productName.trim(),
+        // Weighed goods ship several variants with one product name ("X KG" at $3.400, "X UND" at $340).
+        name: raw.items.length > 1 && item.name ? `${raw.productName.trim()} · ${item.name.trim()}` : raw.productName.trim(),
         brand: raw.brand?.trim() || null,
         category: raw.categories?.[0] ?? null,
         priceCop: price,

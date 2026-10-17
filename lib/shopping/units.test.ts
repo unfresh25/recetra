@@ -29,6 +29,12 @@ describe("toBuyAmount", () => {
     expect(toBuyAmount(100, "g", egg)).toEqual({ amount: 2, unit: "unit" });
   });
 
+  it("counts broth by the litre as cubes", () => {
+    const broth: IngredientUnits = { name: "Caldo de gallina", base_unit: "unit", purchase_unit: "unit", unit_weight_g: 10, density_g_ml: null };
+    expect(toBuyAmount(1000, "ml", broth)).toEqual({ amount: 2, unit: "unit" });
+    expect(toBuyAmount(0.5, "taza", broth)).toEqual({ amount: 1, unit: "unit" });
+  });
+
   it("leaves unmeasured amounts out", () => {
     expect(toBuyAmount(null, "al gusto", rice)).toBeNull();
     expect(toBuyAmount(1, "pizca", rice)).toBeNull();

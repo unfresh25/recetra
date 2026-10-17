@@ -4,6 +4,7 @@ import { normalizeUnit } from "@/lib/recipes/units";
 export type BuyUnit = "g" | "ml" | "unit";
 export type Amount = { amount: number; unit: BuyUnit };
 export type IngredientUnits = {
+  name?: string;
   base_unit: BuyUnit;
   purchase_unit: BuyUnit | null;
   unit_weight_g: number | null;
@@ -37,6 +38,11 @@ export function toBuyAmount(quantity: number | null, rawUnit: string | null, ing
   else if (unit in FIXED_PIECE_G) grams = quantity * FIXED_PIECE_G[unit]!;
   else if (PIECES.has(unit)) pieces = quantity;
   else return null;
+
+  // "1 litro de caldo de gallina" means prepared broth: one cube or sachet makes about 500 ml.
+  if (target === "unit" && ml != null && /caldo|cubo|cubito/i.test(ingredient.name ?? "")) {
+    return { amount: Math.max(1, Math.ceil(ml / 500)), unit: "unit" };
+  }
 
   const round = (amount: number): Amount | null => (amount > 0 ? { amount: Math.round(amount * 100) / 100, unit: target } : null);
   if (target === "g") {
