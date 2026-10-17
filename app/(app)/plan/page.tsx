@@ -12,6 +12,7 @@ import { requireReadyMembership } from "@/lib/auth";
 import { formatCop } from "@/lib/onboarding/options";
 import { getPlanView } from "@/lib/plan/queries";
 import { dayLabel } from "@/lib/plan/week";
+import { getShoppingPlan } from "@/lib/shopping/queries";
 
 export const metadata: Metadata = { title: "Plan" };
 
@@ -69,6 +70,9 @@ async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams
           <span className="flex items-center gap-1.5"><Icon name="users" size={16} /> {household.servings_adults + household.servings_kids} personas</span>
           {household.weekly_budget_cop ? <span className="flex items-center gap-1.5"><Icon name="wallet" size={16} /> {formatCop(household.weekly_budget_cop)}</span> : null}
         </div>
+        <Suspense fallback={<span className="h-5 w-48 animate-pulse rounded-full bg-sunken" />}>
+          <WeekCost householdId={household.id} budgetCop={household.weekly_budget_cop} />
+        </Suspense>
         <Link href="/shopping" className="flex items-center justify-between border-t border-line pt-3 text-sm font-semibold">
           <span className="flex items-center gap-2"><Icon name="basket" size={18} /> Lista de compras y precios</span>
           <Icon name="arrow-right" size={16} className="text-ink-faint" />
@@ -80,5 +84,25 @@ async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams
       <h2 className="font-condensed text-[34px] font-extrabold leading-none">{dayLabel(selected, "long")}</h2>
       <DayRoute meals={dayMeals} members={week.members} />
     </>
+  );
+}
+
+/** What is left to buy this week, at the cheapest way to shop, against the budget. */
+async function WeekCost({ householdId, budgetCop }: { householdId: string; budgetCop: number | null }) {
+  const plan = await getShoppingPlan(householdId);
+  if (!plan.hasPlan) return null;
+  const best = plan.bestCombo ?? plan.bestSingle;
+  if (!best || !best.totalCop) return null;
+  const over = budgetCop ? best.totalCop - budgetCop : 0;
+  return (
+    <p className="text-[15px]">
+      <span className="font-display font-bold tabular">Por comprar ~{formatCop(best.totalCop)}</span>
+      {budgetCop ? (
+        <span className={over > 0 ? "text-warning" : "text-savings"}>
+          {" · "}
+          {over > 0 ? `${formatCop(over)} sobre el presupuesto` : `te sobran ${formatCop(-over)}`}
+        </span>
+      ) : null}
+    </p>
   );
 }

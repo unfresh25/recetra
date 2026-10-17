@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 import { planShopping, type Need, type Offer } from "./list";
 import { toBuyAmount, type IngredientUnits } from "./units";
 
+export type PendingMatch = { matchId: string; ingredientId: string; ingredientName: string; offer: Offer };
+
 export type ShoppingStore = { id: string; slug: string; name: string; logo_url: string | null; brand_color: string };
 
 // Stores we can read prices from. Ara and Isimo have no online shop; Makro and Jumbo are not wired yet.
@@ -96,11 +98,13 @@ export async function buildShoppingPlan(supabase: SupabaseClient<Database>, hous
   const ingredientIds = [...needs.keys()];
   const storeIds = stores.map((s) => s.id);
   const offers = new Map<string, Offer[]>();
+  const pending: PendingMatch[] = [];
   if (ingredientIds.length && storeIds.length) {
     const { data: matches } = await supabase
       .from("product_matches")
-      .select("ingredient_id, products!inner (id, store_id, name, brand, package_qty, package_unit, url, available)")
+      .select("id, ingredient_id, status, products!inner (id, store_id, name, brand, package_qty, package_unit, url, available)")
       .in("ingredient_id", ingredientIds)
+      .in("status", ["auto", "confirmed", "pending_review"])
       .in("products.store_id", storeIds)
       .eq("products.available", true);
     const productIds = [...new Set((matches ?? []).map((m) => m.products.id))];
@@ -112,18 +116,29 @@ export async function buildShoppingPlan(supabase: SupabaseClient<Database>, hous
     for (const m of matches ?? []) {
       const price = prices.get(m.products.id);
       if (!price) continue;
-      const list = offers.get(m.ingredient_id) ?? [];
-      list.push({
+      const offer: Offer = {
         storeId: m.products.store_id, productId: m.products.id, name: m.products.name, brand: m.products.brand,
         packageQty: Number(m.products.package_qty), packageUnit: m.products.package_unit, priceCop: price.price_cop,
         capturedAt: price.captured_at, url: m.products.url,
         byWeight: m.products.package_unit === "g" && Number(m.products.package_qty) === 1000 && PER_KILO.test(m.products.name),
-      });
-      offers.set(m.ingredient_id, list);
+      };
+      // Low-confidence matches wait for a person; until then they don't price anything.
+      if (m.status === "pending_review") {
+        pending.push({ matchId: m.id, ingredientId: m.ingredient_id, ingredientName: needs.get(m.ingredient_id)?.name ?? "", offer });
+        continue;
+      }
+      offers.set(m.ingredient_id, [...(offers.get(m.ingredient_id) ?? []), offer]);
     }
   }
 
   const pinned = new Map((pinnedRows ?? []).map((p) => [p.ingredient_id, p.brand]));
   const list = [...needs.values()].map(({ measured, ...need }) => ({ ...need, amount: measured ? need.amount : null }));
-  return { hasPlan: true as const, stores, unpricedStores, ...planShopping(list, offers, storeIds, pinned) };
+  const staples = new Set(list.filter((n) => n.staple).map((n) => n.ingredientId));
+  return {
+    hasPlan: true as const,
+    stores,
+    unpricedStores,
+    pending: pending.filter((p) => !staples.has(p.ingredientId)),
+    ...planShopping(list, offers, storeIds, pinned),
+  };
 }

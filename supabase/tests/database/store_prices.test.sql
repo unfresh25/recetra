@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(17);
 
 insert into auth.users (id, email) values
   ('30000000-0000-0000-0000-00000000000a', 'a@prices.co'),
@@ -68,6 +68,15 @@ select is(
   (select i.slug from public.recipe_ingredients ri join public.ingredients i on i.id = ri.ingredient_id where ri.recipe_id = '3d000000-0000-0000-0000-000000000001'),
   'arroz-blanco', 'merge points recipe lines at the surviving ingredient');
 select is((select count(*)::int from public.ingredients where slug = 'arroz-de-mesa'), 0, 'merge deletes the duplicate');
+
+-- Review of a pending match
+insert into public.product_matches (id, ingredient_id, product_id, confidence, status)
+select '3b000000-0000-0000-0000-000000000001', id, '3f000000-0000-0000-0000-000000000001', 0.5, 'pending_review' from public.ingredients where slug = 'leche';
+set local role authenticated;
+select pg_temp.login('30000000-0000-0000-0000-00000000000a');
+select lives_ok($$ select public.review_product_match('3b000000-0000-0000-0000-000000000001', true) $$, 'a member confirms a pending match');
+select is((select status::text from public.product_matches where id = '3b000000-0000-0000-0000-000000000001'), 'confirmed', 'the match is confirmed');
+select throws_ok($$ select public.review_product_match('3b000000-0000-0000-0000-000000000001', false) $$, 'P0002', null, 'only pending matches can be reviewed');
 
 select * from finish();
 rollback;
