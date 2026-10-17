@@ -1,0 +1,30 @@
+name: Store prices
+
+# Nightly (02:00 Bogotá): refresh prices of matched products, then match ingredients that are
+# new or whose products disappeared. VTEX stores are read at 1 request per second each.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 * * *"
+
+concurrency:
+  group: store-prices
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun --conditions=react-server jobs/refresh-prices.ts
+      - run: bun --conditions=react-server jobs/curate-ingredients.ts
+      - run: bun --conditions=react-server jobs/enrich-ingredients.ts
+      - run: bun --conditions=react-server jobs/match-products.ts

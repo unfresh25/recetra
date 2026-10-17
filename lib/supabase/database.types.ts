@@ -181,10 +181,15 @@ export type Database = {
           base_unit: Database["public"]["Enums"]["base_unit"]
           category: Database["public"]["Enums"]["ingredient_category"]
           created_at: string
+          density_g_ml: number | null
           id: string
           name: string
+          pantry_staple: boolean
+          purchase_unit: Database["public"]["Enums"]["base_unit"] | null
+          search_terms: string[]
           slug: string
           status: Database["public"]["Enums"]["ingredient_status"]
+          unit_weight_g: number | null
         }
         Insert: {
           aliases?: string[]
@@ -192,10 +197,15 @@ export type Database = {
           base_unit: Database["public"]["Enums"]["base_unit"]
           category: Database["public"]["Enums"]["ingredient_category"]
           created_at?: string
+          density_g_ml?: number | null
           id?: string
           name: string
+          pantry_staple?: boolean
+          purchase_unit?: Database["public"]["Enums"]["base_unit"] | null
+          search_terms?: string[]
           slug: string
           status?: Database["public"]["Enums"]["ingredient_status"]
+          unit_weight_g?: number | null
         }
         Update: {
           aliases?: string[]
@@ -203,10 +213,15 @@ export type Database = {
           base_unit?: Database["public"]["Enums"]["base_unit"]
           category?: Database["public"]["Enums"]["ingredient_category"]
           created_at?: string
+          density_g_ml?: number | null
           id?: string
           name?: string
+          pantry_staple?: boolean
+          purchase_unit?: Database["public"]["Enums"]["base_unit"] | null
+          search_terms?: string[]
           slug?: string
           status?: Database["public"]["Enums"]["ingredient_status"]
+          unit_weight_g?: number | null
         }
         Relationships: []
       }
@@ -315,6 +330,42 @@ export type Database = {
           },
         ]
       }
+      match_runs: {
+        Row: {
+          found: number
+          ingredient_id: string
+          searched_at: string
+          store_id: string
+        }
+        Insert: {
+          found?: number
+          ingredient_id: string
+          searched_at?: string
+          store_id: string
+        }
+        Update: {
+          found?: number
+          ingredient_id?: string
+          searched_at?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_runs_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_runs_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_plans: {
         Row: {
           generated_at: string
@@ -385,6 +436,42 @@ export type Database = {
           },
         ]
       }
+      pinned_brands: {
+        Row: {
+          brand: string
+          created_at: string
+          household_id: string
+          ingredient_id: string
+        }
+        Insert: {
+          brand: string
+          created_at?: string
+          household_id: string
+          ingredient_id: string
+        }
+        Update: {
+          brand?: string
+          created_at?: string
+          household_id?: string
+          ingredient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pinned_brands_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pinned_brands_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_meals: {
         Row: {
           adjustments: Json
@@ -432,6 +519,133 @@ export type Database = {
             columns: ["recipe_id"]
             isOneToOne: false
             referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prices: {
+        Row: {
+          captured_at: string
+          id: string
+          list_price_cop: number | null
+          price_cop: number
+          product_id: string
+          source: Database["public"]["Enums"]["price_source"]
+        }
+        Insert: {
+          captured_at?: string
+          id?: string
+          list_price_cop?: number | null
+          price_cop: number
+          product_id: string
+          source?: Database["public"]["Enums"]["price_source"]
+        }
+        Update: {
+          captured_at?: string
+          id?: string
+          list_price_cop?: number | null
+          price_cop?: number
+          product_id?: string
+          source?: Database["public"]["Enums"]["price_source"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_matches: {
+        Row: {
+          confidence: number
+          created_at: string
+          id: string
+          ingredient_id: string
+          product_id: string
+          status: Database["public"]["Enums"]["match_status"]
+        }
+        Insert: {
+          confidence: number
+          created_at?: string
+          id?: string
+          ingredient_id: string
+          product_id: string
+          status?: Database["public"]["Enums"]["match_status"]
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          id?: string
+          ingredient_id?: string
+          product_id?: string
+          status?: Database["public"]["Enums"]["match_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_matches_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_matches_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          available: boolean
+          brand: string | null
+          id: string
+          image_url: string | null
+          last_seen_at: string
+          name: string
+          package_qty: number
+          package_unit: Database["public"]["Enums"]["base_unit"]
+          sku: string
+          store_id: string
+          url: string | null
+        }
+        Insert: {
+          available?: boolean
+          brand?: string | null
+          id?: string
+          image_url?: string | null
+          last_seen_at?: string
+          name: string
+          package_qty: number
+          package_unit: Database["public"]["Enums"]["base_unit"]
+          sku: string
+          store_id: string
+          url?: string | null
+        }
+        Update: {
+          available?: boolean
+          brand?: string | null
+          id?: string
+          image_url?: string | null
+          last_seen_at?: string
+          name?: string
+          package_qty?: number
+          package_unit?: Database["public"]["Enums"]["base_unit"]
+          sku?: string
+          store_id?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
             referencedColumns: ["id"]
           },
         ]
@@ -749,7 +963,23 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      current_prices: {
+        Row: {
+          captured_at: string | null
+          list_price_cop: number | null
+          price_cop: number | null
+          product_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prices_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation: {
@@ -775,6 +1005,14 @@ export type Database = {
       is_household_member: {
         Args: { p_household_id: string }
         Returns: boolean
+      }
+      merge_ingredient: {
+        Args: { p_from: string; p_into: string }
+        Returns: undefined
+      }
+      pin_brand: {
+        Args: { p_brand: string; p_ingredient_id: string }
+        Returns: undefined
       }
       replace_household_stores: {
         Args: { p_store_ids: string[] }
@@ -870,10 +1108,12 @@ export type Database = {
         | "slow_cooker"
         | "blender"
         | "rice_cooker"
+      match_status: "auto" | "pending_review" | "confirmed" | "rejected"
       meal_type: "breakfast" | "lunch" | "dinner"
       member_accent: "coral" | "teal"
       member_role: "owner" | "member"
       plan_meal_status: "planned" | "cooked" | "replaced"
+      price_source: "api" | "receipt"
       reaction_kind: "favorite" | "dislike" | "veto" | "cooked" | "replaced"
       recipe_status: "pending_review" | "approved" | "rejected"
       recipe_style:
@@ -1072,10 +1312,12 @@ export const Constants = {
         "blender",
         "rice_cooker",
       ],
+      match_status: ["auto", "pending_review", "confirmed", "rejected"],
       meal_type: ["breakfast", "lunch", "dinner"],
       member_accent: ["coral", "teal"],
       member_role: ["owner", "member"],
       plan_meal_status: ["planned", "cooked", "replaced"],
+      price_source: ["api", "receipt"],
       reaction_kind: ["favorite", "dislike", "veto", "cooked", "replaced"],
       recipe_status: ["pending_review", "approved", "rejected"],
       recipe_style: [

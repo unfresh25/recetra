@@ -15,7 +15,9 @@ test("an imported recipe is reviewed in the inbox and then shows in Mis recetas"
 
   await expect(page.getByRole("link", { name: /1 pendientes por confirmar/ })).toBeVisible();
   await page.getByRole("link", { name: /pendientes por confirmar/ }).click();
-  await expect(page.getByText("Arroz con todo de chorizo y huevo")).toBeVisible();
+  await expect(page).toHaveURL(/\/inbox$/);
+  // Next keeps Mis recetas mounted but hidden (<Activity>), and it lists the draft too.
+  await expect(page.getByText("Arroz con todo de chorizo y huevo").filter({ visible: true })).toBeVisible();
   await page.screenshot({ path: "e2e/__screens__/20-inbox.png" });
 
   // Recipy put this as breakfast; it's a lunch.

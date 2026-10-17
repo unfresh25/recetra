@@ -162,6 +162,12 @@ Se dispara con cada ingrediente o tienda nueva:
 
 Una vez confirmado, el emparejamiento no se recalcula.
 
+Antes de emparejar:
+- **Curaduría:** los ingredientes nuevos que crean las importaciones (`pending_review`) se fusionan con uno del catálogo si es el mismo producto (`merge_ingredient`) o se aprueban.
+- **Enriquecimiento:** Haiku define por ingrediente `purchase_unit`, `unit_weight_g`, `density_g_ml`, `pantry_staple` y `search_terms`, para convertir "2 cdas" o "1 diente" en cantidades de compra.
+
+Lista de compras (`lib/shopping`): suma lo que falta cocinar de la semana (desde hoy), escala por porciones, quita lo ajustado por gustos y agrega su sustituto. Por tienda elige el producto con **menor costo total** para la cantidad necesaria (paquetes enteros). Muestra la mejor tienda única y la mejor combinación de dos tiendas si ahorra al menos 3 % o cubre más productos. Los básicos de despensa se listan sin precio. Lo marcado como comprado vive en el dispositivo.
+
 Regla de elección: **el más barato por unidad base**, salvo que exista una marca fijada en `pinned_brands`. En ese caso se compara solo esa marca entre tiendas.
 
 ### C. Precios (nightly)

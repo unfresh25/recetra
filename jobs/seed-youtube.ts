@@ -93,6 +93,8 @@ const QUERIES: Record<"breakfast" | "lunch" | "dinner", string[]> = {
 
 // search.list costs 100 of the 10,000 daily quota units: cache results so reruns don't search again.
 const CACHE = new URL("./.cache/seed-candidates.json", import.meta.url);
+// Videos already rejected (not a recipe, low confidence): reruns skip them instead of paying again.
+const REJECTED = new URL("./.cache/seed-rejected.json", import.meta.url);
 
 async function readCache(): Promise<Record<string, string[]>> {
   try {
@@ -215,6 +217,8 @@ async function processCandidates(
   const ids = new Set(candidates);
   const { data: existing } = await db.from("recipes").select("source_video_id").eq("source_platform", "youtube");
   const known = new Set((existing ?? []).map((r) => r.source_video_id));
+  const rejected = new Set<string>(await readFile(REJECTED, "utf8").then(JSON.parse, () => []));
+  for (const id of rejected) known.add(id);
   const todo = [...ids].filter((id) => !known.has(id)).slice(0, limit);
   console.log(`${todo.length} new videos to process${dryRun ? " (dry run)" : ""}`);
   if (dryRun) return;
@@ -261,6 +265,11 @@ async function processCandidates(
       let result = await processImportJob(job.id);
       if (result?.stage === "needs_worker") result = (await withAudio(job.id, payload)) ?? { stage: "failed", reason: "low_confidence" };
       const key = result ? (result.stage === "failed" ? `failed:${result.reason}` : result.stage) : "error";
+      if (result?.stage === "failed" && (result.reason === "not_a_recipe" || result.reason === "low_confidence")) {
+        rejected.add(id);
+        await mkdir(new URL("./.cache/", import.meta.url), { recursive: true });
+        await writeFile(REJECTED, JSON.stringify([...rejected]));
+      }
       tally[key] = (tally[key] ?? 0) + 1;
       // Seed jobs are bookkeeping only; drop them once processed.
       await db.from("jobs").delete().eq("id", job.id);
