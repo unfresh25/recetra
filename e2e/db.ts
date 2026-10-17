@@ -173,3 +173,13 @@ export async function seedStorePrices(storeSlugs: string[]) {
     }
   }
 }
+
+/** An OSM-style branch near Barranquilla's Paseo Bolívar, so the stores tab has something to show. */
+export async function seedBranch(storeSlug: string, name: string, lat: number, lng: number) {
+  const { rest: db } = adminDb();
+  const { data: store } = await db.from("stores").select("id").eq("slug", storeSlug).single();
+  await db.from("branches").upsert(
+    { store_id: (store as { id: string }).id, name, lat, lng, source: "osm", osm_id: `e2e/${storeSlug}-${lat}` },
+    { onConflict: "osm_id" },
+  );
+}

@@ -34,6 +34,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      branches: {
+        Row: {
+          address: string | null
+          created_at: string
+          household_id: string | null
+          id: string
+          last_seen_at: string
+          lat: number
+          lng: number
+          name: string
+          osm_id: string | null
+          source: Database["public"]["Enums"]["branch_source"]
+          store_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          household_id?: string | null
+          id?: string
+          last_seen_at?: string
+          lat: number
+          lng: number
+          name: string
+          osm_id?: string | null
+          source: Database["public"]["Enums"]["branch_source"]
+          store_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          household_id?: string | null
+          id?: string
+          last_seen_at?: string
+          lat?: number
+          lng?: number
+          name?: string
+          osm_id?: string | null
+          source?: Database["public"]["Enums"]["branch_source"]
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branches_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branches_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_learned_prefs: {
         Row: {
           household_id: string
@@ -986,6 +1043,16 @@ export type Database = {
         Args: { p_display_name: string; p_token: string }
         Returns: string
       }
+      add_branch: {
+        Args: {
+          p_address?: string
+          p_lat: number
+          p_lng: number
+          p_name: string
+          p_store_id: string
+        }
+        Returns: string
+      }
       can_read_recipe: { Args: { p_recipe_id: string }; Returns: boolean }
       create_household: {
         Args: { p_display_name: string; p_name: string }
@@ -1014,6 +1081,7 @@ export type Database = {
         Args: { p_brand: string; p_ingredient_id: string }
         Returns: undefined
       }
+      remove_branch: { Args: { p_branch_id: string }; Returns: undefined }
       replace_household_stores: {
         Args: { p_store_ids: string[] }
         Returns: undefined
@@ -1074,6 +1142,7 @@ export type Database = {
         | "shellfish"
         | "sesame"
       base_unit: "g" | "ml" | "unit"
+      branch_source: "osm" | "manual"
       diet:
         | "vegetarian"
         | "vegan"
@@ -1281,6 +1350,7 @@ export const Constants = {
         "sesame",
       ],
       base_unit: ["g", "ml", "unit"],
+      branch_source: ["osm", "manual"],
       diet: ["vegetarian", "vegan", "pescatarian", "gluten_free", "dairy_free"],
       ingredient_category: [
         "produce",

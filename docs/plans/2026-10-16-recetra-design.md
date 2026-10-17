@@ -190,6 +190,8 @@ Foto del recibo → Haiku (visión) extrae las líneas → se emparejan con prod
 
 ### E. Sucursales (weekly)
 
+Implementado en `jobs/sync-branches.ts` (workflow `store-branches.yml`, lunes): consulta Overpass (con espejos de respaldo) en la caja Barranquilla–Soledad–Puerto Colombia–Malambo–Galapa, reconoce la cadena por `brand`/`name`/`operator` y borra las que salieron de OSM. Las sucursales manuales (`add_branch`) son del hogar. UI: pestaña **Tiendas** en Compras con mapa Leaflet + teselas OSM, lista por distancia, Ruta (Apple Maps en iOS, Google Maps en el resto) y "Agregar mi sucursal" con la ubicación actual.
+
 Consulta a Overpass por marca en el área de Barranquilla, Soledad y Puerto Colombia, con espera creciente (la instancia pública se satura). Hace upsert por `osm_id` y nunca toca las sucursales `manual`.
 
 Cobertura en OSM el 2026-10-16: Olímpica 58, Ara 48, D1 23, Carulla 6, Isimo 4, Éxito 3, Jumbo 3, MegaTiendas 3, Makro 2. Los vacíos se cubren con "Mis sucursales" y con el respaldo de Google Maps.

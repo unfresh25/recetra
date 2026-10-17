@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ShoppingList } from "@/components/shopping/shopping-list";
+import { ShoppingTabs } from "@/components/shopping/shopping-tabs";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { requireReadyMembership } from "@/lib/auth";
@@ -13,6 +14,7 @@ export default function ShoppingPage() {
   return (
     <>
       <ScreenHeader title="Compras" />
+      <ShoppingTabs current="list" />
       <div className="flex flex-col gap-6 px-5 pt-4">
         <Suspense fallback={<ShoppingSkeleton />}>
           <ShoppingContent />
