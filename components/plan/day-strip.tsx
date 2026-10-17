@@ -3,7 +3,7 @@ import { DrawablyCircle } from "@/components/ui/drawably";
 import { dayLabel, dayOfMonth } from "@/lib/plan/week";
 import { cn } from "@/lib/utils/cn";
 
-export function DayStrip({ days, selected, today }: { days: string[]; selected: string; today: string }) {
+export function DayStrip({ days, selected, today, basePath = "/plan" }: { days: string[]; selected: string; today: string; basePath?: string }) {
   return (
     <nav aria-label="Días de la semana" className="-mx-5 overflow-x-auto px-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <ul className="flex gap-2">
@@ -12,7 +12,7 @@ export function DayStrip({ days, selected, today }: { days: string[]; selected: 
           return (
             <li key={day}>
               <Link
-                href={`/plan?day=${day}`}
+                href={`${basePath}?day=${day}`}
                 scroll={false}
                 aria-current={active ? "date" : undefined}
                 className="flex h-20 w-12 flex-col items-center justify-center gap-1.5"

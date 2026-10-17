@@ -5,6 +5,7 @@ import { Icon, type IconName } from "@/components/ui/icon";
 import type { PlanMealView } from "@/lib/plan/queries";
 import { MEAL_TYPE_LABELS } from "@/lib/recipes/labels";
 import { cn } from "@/lib/utils/cn";
+import { EatenToggle } from "./eaten-toggle";
 import { ReplaceButton } from "./replace-sheet";
 
 const STOP_ICON: Record<PlanMealView["mealType"], IconName> = { breakfast: "sunrise", lunch: "sun", dinner: "moon" };
@@ -17,9 +18,11 @@ const STOP_ICON: Record<PlanMealView["mealType"], IconName> = { breakfast: "sunr
 export function DayRoute({
   meals,
   members,
+  today,
 }: {
   meals: PlanMealView[];
   members: { id: string; display_name: string; accent_color: Accent }[];
+  today: string;
 }) {
   return (
     <ol className="flex flex-col" aria-label="Comidas del día">
@@ -57,7 +60,7 @@ export function DayRoute({
 
             <p className="pt-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
               {MEAL_TYPE_LABELS[meal.mealType]}
-              {cooked ? <span className="ml-2 text-savings">· Cocinada</span> : null}
+              {cooked ? <span className="ml-2 text-savings">· Comida</span> : null}
             </p>
 
             <div className={cn("min-w-0", last ? "pb-2" : "pb-8")}>
@@ -100,6 +103,7 @@ export function DayRoute({
                   </Link>
                 </div>
               )}
+              {meal.recipe && meal.day <= today ? <EatenToggle planMealId={meal.id} eaten={cooked} /> : null}
               {meal.adjustments.length ? (
                 <p className="mt-2 text-[13px] text-teal">
                   {meal.adjustments

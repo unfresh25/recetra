@@ -141,3 +141,20 @@ export async function markCooked(recipeId: string, planMealId?: string) {
   if (planMealId) await supabase.from("plan_meals").update({ status: "cooked" }).eq("id", planMealId);
   updateTag(DATA_TAG);
 }
+
+/** Logs a planned meal as eaten (or undoes it) without going through cook mode. */
+export async function setEaten(planMealId: string, eaten: boolean) {
+  const { member } = await requireReadyMembership();
+  const supabase = await createClient();
+  const { data: meal } = await supabase.from("plan_meals").select("id, recipe_id").eq("id", planMealId).maybeSingle();
+  if (!meal?.recipe_id) return { error: "No encontramos esa comida." };
+  if (eaten) {
+    await supabase.from("reactions").insert({ member_id: member.id, recipe_id: meal.recipe_id, kind: "cooked", plan_meal_id: planMealId });
+    await supabase.from("plan_meals").update({ status: "cooked" }).eq("id", planMealId);
+  } else {
+    await supabase.from("reactions").delete().eq("plan_meal_id", planMealId).eq("kind", "cooked").eq("member_id", member.id);
+    await supabase.from("plan_meals").update({ status: "planned" }).eq("id", planMealId);
+  }
+  updateTag(DATA_TAG);
+  return {};
+}
