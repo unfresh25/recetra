@@ -60,7 +60,7 @@ export function CoverEditor({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Cambiar portada"
-        className="flex size-11 items-center justify-center rounded-full bg-white/85 text-ink shadow-card backdrop-blur"
+        className="flex size-11 items-center justify-center text-white"
       >
         {pending ? <span className="size-5 animate-spin rounded-full border-2 border-brand border-r-transparent" /> : <Icon name="pencil" />}
       </button>
@@ -86,7 +86,7 @@ export function CoverEditor({
             <span className="mx-auto mb-4 block h-1.5 w-10 rounded-full bg-line" />
             <p className="mb-3 font-display text-xl font-bold">Portada de la receta</p>
             <div className="flex flex-col gap-2">
-              <button type="button" disabled={pending} onClick={() => input.current?.click()} className="flex items-center gap-3 rounded-card bg-surface p-4 text-left font-semibold shadow-card">
+              <button type="button" disabled={pending} onClick={() => input.current?.click()} className="flex items-center gap-3 border-b border-line py-4 text-left font-semibold">
                 <Icon name="image" className="text-brand" /> Elegir foto o tomar una
               </button>
               {hasCustomCover ? (
@@ -99,7 +99,7 @@ export function CoverEditor({
                       setOpen(false);
                     })
                   }
-                  className="flex items-center gap-3 rounded-card bg-surface p-4 text-left font-semibold shadow-card"
+                  className="flex items-center gap-3 border-b border-line py-4 text-left font-semibold"
                 >
                   <Icon name="refresh" className="text-brand" /> Volver a la imagen del video
                 </button>

@@ -66,8 +66,7 @@ export function ImportForm({ initialUrl }: { initialUrl?: string }) {
           <label
             key={value}
             className={cn(
-              "flex cursor-pointer items-start gap-3 rounded-card border-2 bg-surface p-4",
-              visibility === value ? "border-brand" : "border-transparent shadow-card",
+              "flex cursor-pointer items-start gap-3 py-3",
             )}
           >
             <input
@@ -86,8 +85,8 @@ export function ImportForm({ initialUrl }: { initialUrl?: string }) {
         ))}
       </fieldset>
 
-      <Card className="flex gap-3 bg-teal-soft/50 shadow-none">
-        <span aria-hidden className="text-xl">✨</span>
+      <Card className="flex gap-3">
+        <Icon name="sparkles" size={22} className="shrink-0 text-teal" />
         <p className="text-sm text-ink">
           Leemos el texto del video y armamos ingredientes, pasos y el momento del día. Si el video no los escribe, lo
           escuchamos. Te avisamos en la bandeja para que la revises.

@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import type { ActionResult } from "@/lib/onboarding/actions";
-import { OptionCard } from "../option-card";
+import { Fragment } from "react";
+import { DrawablyDivider } from "@/components/ui/drawably";
+import type { IconName } from "@/components/ui/icon";
+import { OptionRow } from "../option-card";
 import { StepFooter } from "../step-footer";
 import { useStepSave } from "../use-step-save";
 
-type Option = { value: string; emoji: string; label: string; description?: string };
+type Option = { value: string; icon: IconName; label: string; description?: string };
 
 /**
  * Grid of option cards. `noneLabel` adds an exclusive "Ninguna" card (allergies, diets);
@@ -56,28 +59,33 @@ export function MultiSelectStep({
           {selected.size}/{max}
         </p>
       ) : null}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex flex-col">
         {noneLabel ? (
-          <OptionCard
-            selected={noneChosen}
-            onToggle={() => {
-              setNoneChosen((v) => !v);
-              setSelected(new Set());
-            }}
-            emoji="🚫"
-            label={noneLabel}
-          />
+          <>
+            <OptionRow
+              selected={noneChosen}
+              onToggle={() => {
+                setNoneChosen((v) => !v);
+                setSelected(new Set());
+              }}
+              icon="ban"
+              label={noneLabel}
+            />
+            <DrawablyDivider className="my-0 w-full" stroke="var(--color-line)" width={1} boil={0} />
+          </>
         ) : null}
-        {options.map((option) => (
-          <OptionCard
-            key={option.value}
-            selected={selected.has(option.value)}
-            onToggle={() => toggle(option.value)}
-            emoji={option.emoji}
-            label={option.label}
-            description={option.description}
-            disabled={atMax}
-          />
+        {options.map((option, i) => (
+          <Fragment key={option.value}>
+            {i > 0 ? <DrawablyDivider className="my-0 w-full" stroke="var(--color-line)" width={1} boil={0} /> : null}
+            <OptionRow
+              selected={selected.has(option.value)}
+              onToggle={() => toggle(option.value)}
+              icon={option.icon}
+              label={option.label}
+              description={option.description}
+              disabled={atMax}
+            />
+          </Fragment>
         ))}
       </div>
       <StepFooter

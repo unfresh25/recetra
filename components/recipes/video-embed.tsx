@@ -50,7 +50,7 @@ export function VideoEmbed({
       {coverUrl ? (
         <Image src={coverUrl} alt={title} fill preload sizes="448px" className="object-cover" unoptimized />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-sunken text-7xl">🍲</div>
+        <div className="absolute inset-0 flex items-center justify-center bg-sunken text-ink-faint"><Icon name="pot" size={72} strokeWidth={1.2} /></div>
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/40" />
       {src ? (
@@ -58,7 +58,7 @@ export function VideoEmbed({
           type="button"
           onClick={() => setPlaying(true)}
           aria-label="Ver video"
-          className="absolute left-1/2 top-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand shadow-float backdrop-blur transition-transform active:scale-95"
+          className="absolute left-1/2 top-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-brand transition-transform active:scale-95"
         >
           <Icon name="play" size={28} strokeWidth={2.2} />
         </button>

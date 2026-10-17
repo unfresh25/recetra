@@ -13,8 +13,8 @@ export function IngredientRoleToggle({ recipeId, position, role }: { recipeId: s
       disabled={pending}
       onClick={() => startTransition(() => setIngredientRole(recipeId, position, role === "core" ? "accessory" : "core"))}
       className={cn(
-        "rounded-full px-2.5 py-1 text-[11px] font-semibold transition-opacity",
-        role === "core" ? "bg-sunken text-ink-muted" : "bg-teal-soft text-teal",
+        "text-xs font-semibold underline decoration-dotted underline-offset-4 transition-opacity",
+        role === "core" ? "text-ink-muted" : "text-teal",
         pending && "opacity-50",
       )}
     >

@@ -1,13 +1,18 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { DrawablyCheckbox } from "@/components/ui/drawably";
+import { Icon, type IconName } from "@/components/ui/icon";
 import { cn } from "@/lib/utils/cn";
 
-/** Selectable tile for the setup grids (stores, styles, allergies...). */
-export function OptionCard({
+/**
+ * BitePal-style option row, flat: icon at the left, label and description, hand-drawn checkbox
+ * at the right. The whole row is a label, so tapping anywhere toggles the checkbox.
+ */
+export function OptionRow({
   selected,
   onToggle,
-  emoji,
+  icon,
   media,
   label,
   description,
@@ -16,7 +21,7 @@ export function OptionCard({
 }: {
   selected: boolean;
   onToggle: () => void;
-  emoji?: string;
+  icon?: IconName;
   media?: ReactNode;
   label: string;
   description?: string;
@@ -24,28 +29,31 @@ export function OptionCard({
   className?: string;
 }) {
   return (
-    <button
-      type="button"
-      aria-pressed={selected}
-      disabled={disabled && !selected}
-      onClick={onToggle}
+    <label
       className={cn(
-        "relative flex min-h-[104px] flex-col items-center justify-center gap-1.5 rounded-card border-2 bg-surface px-3 py-4 text-center",
-        "transition-[transform,border-color,opacity] duration-200 ease-spring active:scale-[0.97] disabled:opacity-45",
-        selected ? "border-brand" : "border-transparent shadow-card",
+        "flex min-h-16 cursor-pointer items-center gap-4 py-3 transition-opacity",
+        disabled && !selected && "cursor-not-allowed opacity-40",
         className,
       )}
     >
-      <span
-        aria-hidden
-        className={cn(
-          "absolute right-3 top-3 size-2.5 rounded-full bg-brand transition-transform duration-200 ease-spring",
-          selected ? "scale-100" : "scale-0",
-        )}
+      {media ??
+        (icon ? (
+          <span className={cn("flex size-10 shrink-0 items-center justify-center", selected ? "text-brand" : "text-ink")}>
+            <Icon name={icon} size={26} strokeWidth={1.6} />
+          </span>
+        ) : null)}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[17px] font-semibold leading-tight">{label}</span>
+        {description ? <span className="block text-sm text-ink-muted">{description}</span> : null}
+      </span>
+      <DrawablyCheckbox
+        checked={selected}
+        disabled={disabled && !selected}
+        onChange={onToggle}
+        aria-label={label}
+        stroke={selected ? "var(--color-brand)" : "var(--color-ink-faint)"}
+        fill="var(--color-brand)"
       />
-      {media ?? (emoji ? <span aria-hidden className="text-[28px] leading-none">{emoji}</span> : null)}
-      <span className="font-display text-[15px] font-bold leading-tight">{label}</span>
-      {description ? <span className="text-[13px] leading-snug text-ink-muted">{description}</span> : null}
-    </button>
+    </label>
   );
 }

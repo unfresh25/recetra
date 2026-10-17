@@ -54,6 +54,9 @@ export function StepVideo({
 }) {
   const mount = useRef<HTMLDivElement>(null);
   const player = useRef<YTPlayer | null>(null);
+  // The player object exists before its methods do; only call them once onReady fired.
+  const ready = useRef(false);
+  const pendingSeek = useRef<number | null>(null);
   const [muted, setMuted] = useState(false);
   const firstStart = useRef(startSeconds ?? 0);
 
@@ -67,6 +70,8 @@ export function StepVideo({
         playerVars: { autoplay: 1, playsinline: 1, rel: 0, modestbranding: 1, start: firstStart.current },
         events: {
           onReady: ({ target }) => {
+            ready.current = true;
+            if (pendingSeek.current !== null) target.seekTo(pendingSeek.current, true);
             target.unMute();
             target.playVideo();
             // Browsers may still force mute when autoplay lacks a recent tap.
@@ -77,13 +82,16 @@ export function StepVideo({
     });
     return () => {
       cancelled = true;
-      player.current?.destroy();
+      if (ready.current) player.current?.destroy();
       player.current = null;
+      ready.current = false;
     };
   }, [platform, videoId]);
 
   useEffect(() => {
-    if (platform === "youtube" && startSeconds !== null) player.current?.seekTo(startSeconds, true);
+    if (platform !== "youtube" || startSeconds === null) return;
+    if (ready.current && player.current) player.current.seekTo(startSeconds, true);
+    else pendingSeek.current = startSeconds;
   }, [platform, startSeconds]);
 
   if (platform === "youtube") {
@@ -94,6 +102,7 @@ export function StepVideo({
           <button
             type="button"
             onClick={() => {
+              if (!ready.current) return;
               player.current?.unMute();
               player.current?.playVideo();
               setMuted(false);

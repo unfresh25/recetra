@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { DayStrip } from "@/components/plan/day-strip";
 import { GenerateWeek } from "@/components/plan/generate-week";
-import { MealCard } from "@/components/plan/meal-card";
+import { DayRoute } from "@/components/plan/day-route";
 import { RegenerateButton } from "@/components/plan/regenerate-button";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
@@ -74,23 +74,19 @@ async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams
           <RegenerateButton day={selected} />
         </div>
         <div className="flex items-center gap-3 text-sm text-ink-muted">
-          <span>🍽️ {household.servings_adults + household.servings_kids} personas</span>
-          {household.weekly_budget_cop ? <span>💰 Presupuesto {formatCop(household.weekly_budget_cop)}</span> : null}
+          <span className="flex items-center gap-1.5"><Icon name="users" size={16} /> {household.servings_adults + household.servings_kids} personas</span>
+          {household.weekly_budget_cop ? <span className="flex items-center gap-1.5"><Icon name="wallet" size={16} /> {formatCop(household.weekly_budget_cop)}</span> : null}
         </div>
-        <Link href="/shopping" className="flex items-center justify-between rounded-field bg-sunken/70 px-4 py-3 text-sm font-semibold">
-          <span>🛒 Lista de compras y precios</span>
+        <Link href="/shopping" className="flex items-center justify-between border-t border-line pt-3 text-sm font-semibold">
+          <span className="flex items-center gap-2"><Icon name="basket" size={18} /> Lista de compras y precios</span>
           <Icon name="arrow-right" size={16} className="text-ink-faint" />
         </Link>
       </Card>
 
       <DayStrip days={days} selected={selected} today={today} />
 
-      <h2 className="font-display text-2xl font-extrabold">{dayLabel(selected, "long")}</h2>
-      <div className="flex flex-col gap-5">
-        {dayMeals.map((meal) => (
-          <MealCard key={meal.id} meal={meal} members={week.members} />
-        ))}
-      </div>
+      <h2 className="font-condensed text-[34px] font-extrabold leading-none">{dayLabel(selected, "long")}</h2>
+      <DayRoute meals={dayMeals} members={week.members} />
     </>
   );
 }
@@ -105,7 +101,7 @@ function InboxBell({ count }: { count: number }) {
     <Link
       href="/inbox"
       aria-label={count ? `${count} pendientes por confirmar` : "Pendientes por confirmar"}
-      className="relative flex size-11 items-center justify-center rounded-full bg-surface shadow-card"
+      className="relative flex size-11 items-center justify-center text-ink"
     >
       <Icon name="bell" />
       {count ? (

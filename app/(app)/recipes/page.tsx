@@ -26,7 +26,7 @@ export default function RecipesPage({ searchParams }: PageProps<"/recipes">) {
         action={
           <Link
             href="/recipes/import"
-            className="flex h-11 items-center gap-1.5 rounded-full bg-brand px-4 font-display font-bold text-white shadow-[0_6px_20px_rgb(232_32_42/0.28)]"
+            className="flex h-11 items-center gap-1.5 rounded-full bg-brand px-4 font-display font-bold text-white"
           >
             <Icon name="add" size={18} strokeWidth={2.4} />
             Añadir
@@ -49,7 +49,7 @@ async function RecipesContent({ searchParams }: Pick<PageProps<"/recipes">, "sea
 
   return (
     <>
-      <nav className="grid grid-cols-2 rounded-full bg-sunken p-1" aria-label="Secciones de recetas">
+      <nav className="grid grid-cols-2" aria-label="Secciones de recetas">
         {TABS.map((t) => (
           <Link
             key={t.value}
@@ -57,7 +57,7 @@ async function RecipesContent({ searchParams }: Pick<PageProps<"/recipes">, "sea
             aria-current={tab === t.value ? "page" : undefined}
             className={cn(
               "flex h-11 items-center justify-center rounded-full text-[15px] font-semibold",
-              tab === t.value ? "bg-surface text-brand shadow-card" : "text-ink-muted",
+              tab === t.value ? "text-brand underline decoration-2 underline-offset-8" : "text-ink-muted",
             )}
           >
             {t.label}
@@ -124,7 +124,7 @@ async function Favorites({ memberId, who }: { memberId: string; who: string }) {
             aria-current={who === f.value ? "page" : undefined}
             className={cn(
               "h-9 rounded-full px-4 text-sm font-semibold leading-9",
-              who === f.value ? "bg-ink text-white" : "bg-surface text-ink-muted shadow-card",
+              who === f.value ? "bg-ink text-white" : "text-ink-muted",
             )}
           >
             {f.label}

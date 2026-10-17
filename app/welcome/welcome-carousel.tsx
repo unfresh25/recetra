@@ -4,23 +4,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { DrawablyUnderline } from "@/components/ui/drawably";
 import { Illustration, type IllustrationName } from "@/components/ui/illustration";
 import { cn } from "@/lib/utils/cn";
 
-const slides: { art: IllustrationName; title: string; body: string }[] = [
+const slides: { art: IllustrationName; title: string; mark: string; body: string }[] = [
   {
     art: "welcome-plan",
     title: "Tu semana, resuelta",
+    mark: "resuelta",
     body: "Desayuno, almuerzo y cena con recetas reales de creadores que admiras, pensadas para los dos.",
   },
   {
     art: "welcome-shopping",
     title: "Compra donde más rinde",
+    mark: "rinde",
     body: "Comparamos el precio de cada ingrediente en tus supermercados y te decimos dónde ahorrar.",
   },
   {
     art: "welcome-taste",
     title: "Aprende de sus gustos",
+    mark: "gustos",
     body: "Sin cilantro, sin mariscos, sin sorpresas. Cada favorito y cada cambio afinan el próximo plan.",
   },
 ];
@@ -83,10 +87,13 @@ export function WelcomeCarousel() {
             aria-hidden={i !== index}
             className="flex w-full shrink-0 snap-center flex-col items-center justify-center gap-6 px-8 text-center"
           >
-            <Illustration name={slide.art} size={248} preload={i === 0} />
+            <Illustration name={slide.art} size={220} preload={i === 0} />
             <div className="flex flex-col gap-3">
-              <h2 className="font-display text-[28px] font-extrabold leading-tight tracking-tight">
-                {slide.title}
+              <h2 className="font-condensed text-[52px] font-extrabold leading-[0.95] tracking-tight">
+                {slide.title.replace(slide.mark, "")}
+                <DrawablyUnderline stroke="var(--color-brand)" width={3}>
+                  {slide.mark}
+                </DrawablyUnderline>
               </h2>
               <p className="text-[16px] leading-relaxed text-ink-muted">{slide.body}</p>
             </div>
@@ -114,8 +121,8 @@ export function WelcomeCarousel() {
         ))}
       </div>
 
-      <div className="px-5 pb-safe">
-        <Button block onClick={() => (isLast ? router.push("/login") : goTo(index + 1))}>
+      <div className="flex justify-center px-5 pb-safe">
+        <Button className="min-w-48" onClick={() => (isLast ? router.push("/login") : goTo(index + 1))}>
           {isLast ? "Empezar" : "Siguiente"}
         </Button>
       </div>

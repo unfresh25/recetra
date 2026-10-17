@@ -19,9 +19,9 @@ export function TabBar() {
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-md px-4 pb-safe"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-md border-t border-line bg-canvas px-2 pb-safe"
     >
-      <ul className="flex items-center justify-between rounded-full bg-surface/90 p-1.5 shadow-float backdrop-blur-xl">
+      <ul className="flex items-center justify-between pt-1">
         {tabs.map((tab) => {
           const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           return (
@@ -31,8 +31,8 @@ export function TabBar() {
                 prefetch
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-14 flex-col items-center justify-center gap-0.5 rounded-full text-[11px] font-semibold transition-colors duration-200",
-                  active ? "bg-brand-soft text-brand" : "text-ink-muted",
+                  "flex h-14 flex-col items-center justify-center gap-0.5 text-[11px] font-semibold transition-colors duration-200",
+                  active ? "text-brand" : "text-ink-muted",
                 )}
               >
                 <Icon name={tab.icon} size={22} strokeWidth={active ? 2.2 : 1.8} />

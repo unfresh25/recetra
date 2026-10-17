@@ -21,8 +21,8 @@ export default function ProfilePage() {
         <Suspense fallback={<Card className="h-48 animate-pulse" />}>
           <HouseholdCard />
         </Suspense>
-        <Link href="/profile/preferences" className="flex items-center gap-4 rounded-card bg-surface p-5 shadow-card">
-          <span aria-hidden className="flex size-11 items-center justify-center rounded-2xl bg-brand-soft text-xl">⚙️</span>
+        <Link href="/profile/preferences" className="flex items-center gap-4 py-4">
+          <span aria-hidden className="flex size-11 items-center justify-center text-brand"><Icon name="settings" size={24} /></span>
           <span className="flex-1">
             <span className="block font-display font-bold">Mis preferencias</span>
             <span className="block text-sm text-ink-muted">Tiendas, presupuesto, alergias y lo que no comes</span>

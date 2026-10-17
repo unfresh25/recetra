@@ -32,7 +32,8 @@ test("the weekly plan respects allergies and dislikes, and learns from replaceme
 
   const firstDay = page.getByRole("navigation", { name: "Días de la semana" }).getByRole("link").first();
   await firstDay.click();
-  const lunchCard = page.locator("section", { has: page.getByRole("heading", { name: /Almuerzo/ }) });
+  // Stops of the day route: breakfast, lunch, dinner.
+  const lunchCard = page.getByRole("list", { name: "Comidas del día" }).locator(":scope > li").nth(1);
   // Weekday lunches prefer under an hour, so the 45-minute arroz con pollo wins over the 2-hour sancocho.
   await expect(lunchCard.getByRole("link").first()).toContainText("Arroz con pollo E2E");
 
@@ -46,13 +47,13 @@ test("the weekly plan respects allergies and dislikes, and learns from replaceme
   await page.screenshot({ path: "e2e/__screens__/31-replace.png" });
   await sancocho.click();
   await expect(dialog).toBeHidden();
-  await expect(lunchCard.getByText("Sin cilantro · Jorge → perejil")).toBeVisible();
+  await expect(lunchCard.getByText("Sin cilantro (Jorge) → perejil")).toBeVisible();
 
   // Favorite the new lunch and cook it.
   await lunchCard.getByRole("link").first().click();
-  await page.getByRole("button", { name: /Favorito/ }).click();
-  await expect(page.getByRole("button", { name: /Favorito/ })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("link", { name: "Cocinar ahora" }).click();
+  await page.getByRole("button", { name: "Agregar a favoritos" }).click();
+  await expect(page.getByRole("button", { name: "Quitar de favoritos" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Cocinar", exact: true }).click();
   await expect(page.getByText("Paso 1")).toBeVisible();
   await expect(page.getByRole("button", { name: /10 minutos/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Siguiente paso" }).click();

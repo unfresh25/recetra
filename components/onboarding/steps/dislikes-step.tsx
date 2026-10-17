@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { Chip } from "@/components/ui/chip";
+import { DrawablyInput } from "@/components/ui/drawably";
+import { Icon } from "@/components/ui/icon";
 import { saveDislikes } from "@/lib/onboarding/actions";
 import { COMMON_DISLIKES, type IngredientCategory } from "@/lib/onboarding/options";
 import { StepFooter } from "../step-footer";
@@ -69,16 +71,16 @@ export function DislikesStep({
   return (
     <>
       <div className="relative mb-5">
-        <input
+        <DrawablyInput
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Busca un ingrediente…"
           aria-label="Buscar ingrediente"
-          className="h-12 w-full rounded-full bg-surface px-5 text-[15px] shadow-card outline-none placeholder:text-ink-faint focus:ring-2 focus:ring-brand"
+          className="h-12 w-full bg-transparent px-4 text-[16px] outline-none placeholder:text-ink-faint"
         />
         {results.length > 0 ? (
-          <ul className="absolute inset-x-0 top-14 z-10 overflow-hidden rounded-card bg-surface shadow-float">
+          <ul className="absolute inset-x-0 top-14 z-10 overflow-hidden rounded-card bg-surface">
             {results.map((ingredient) => (
               <li key={ingredient.id}>
                 <button
@@ -106,7 +108,7 @@ export function DislikesStep({
                 key={item.value}
                 selected={categories.has(item.value)}
                 onClick={() => toggleCategory(item.value)}
-                leading={<span aria-hidden>{item.emoji}</span>}
+                leading={<Icon name={item.icon} size={16} />}
               >
                 {item.label} (todo)
               </Chip>

@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useMemo, useState } from "react";
 import { saveStores } from "@/lib/onboarding/actions";
-import { OptionCard } from "../option-card";
+import { DrawablyCheckbox, DrawablyInput } from "@/components/ui/drawably";
 import { StepFooter } from "../step-footer";
 import { useStepSave } from "../use-step-save";
 
@@ -34,23 +34,31 @@ export function StoresStep({ stores, initial, nextHref }: { stores: StoreOption[
 
   return (
     <>
-      <input
+      <DrawablyInput
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Buscar tiendas…"
         aria-label="Buscar tiendas"
-        className="mb-4 h-12 rounded-full bg-surface px-5 text-[15px] shadow-card outline-none placeholder:text-ink-faint focus:ring-2 focus:ring-brand"
+        className="mb-4 h-12 w-full bg-transparent px-4 text-[16px] outline-none placeholder:text-ink-faint"
       />
       <div className="grid grid-cols-2 gap-3">
         {visible.map((store) => (
-          <OptionCard
+          <label
             key={store.id}
-            selected={selected.has(store.id)}
-            onToggle={() => toggle(store.id)}
-            label={store.name}
-            media={<StoreLogo store={store} />}
-          />
+            className="relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-card bg-surface px-3 py-5"
+          >
+            <span className="absolute right-3 top-3">
+              <DrawablyCheckbox
+                checked={selected.has(store.id)}
+                onChange={() => toggle(store.id)}
+                aria-label={store.name}
+                stroke={selected.has(store.id) ? "var(--color-brand)" : "var(--color-ink-faint)"}
+              />
+            </span>
+            <StoreLogo store={store} size={56} />
+            <span className="font-semibold">{store.name}</span>
+          </label>
         ))}
       </div>
       <StepFooter

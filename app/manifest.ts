@@ -10,8 +10,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f4f1ee",
-    theme_color: "#f4f1ee",
+    background_color: "#eeedf4",
+    theme_color: "#eeedf4",
     // Android: "Compartir → Recetra" from TikTok, Instagram or YouTube opens the importer.
     share_target: {
       action: "/recipes/import",
