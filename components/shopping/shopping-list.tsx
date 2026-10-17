@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { DrawablyCheckbox } from "@/components/ui/drawably";
 import { Icon } from "@/components/ui/icon";
@@ -29,11 +30,21 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
+const onlineListeners = (listener: () => void) => {
+  window.addEventListener("online", listener);
+  window.addEventListener("offline", listener);
+  return () => {
+    window.removeEventListener("online", listener);
+    window.removeEventListener("offline", listener);
+  };
+};
+
 export function ShoppingList({ plan, budgetCop }: { plan: Plan; budgetCop: number | null }) {
   const stores = useMemo(() => new Map(plan.stores.map((s) => [s.id, s])), [plan.stores]);
   const [mode, setMode] = useState<Mode>(plan.bestCombo ? "combo" : (plan.bestSingle?.storeIds[0] ?? plan.stores[0]!.id));
   const [view, setView] = useState<"aisle" | "store">("aisle");
   const checkedRaw = useSyncExternalStore(subscribe, readChecked, () => "[]");
+  const online = useSyncExternalStore(onlineListeners, () => navigator.onLine, () => true);
   const checked = useMemo(() => new Set<string>(JSON.parse(checkedRaw)), [checkedRaw]);
 
   const priced = plan.items.filter((i) => !i.staple);
@@ -60,6 +71,12 @@ export function ShoppingList({ plan, budgetCop }: { plan: Plan; budgetCop: numbe
 
   return (
     <>
+      {!online ? (
+        <p role="status" className="flex items-center gap-2 text-sm font-semibold text-warning">
+          <Icon name="alert" size={16} /> Sin conexión: ves la última lista guardada. Lo que marques se guarda en el teléfono.
+        </p>
+      ) : null}
+
       <section aria-label="Resumen" className="flex flex-col gap-1">
         <p className="text-sm text-ink-muted">
           Lo que falta esta semana · {priced.length} productos
@@ -79,6 +96,13 @@ export function ShoppingList({ plan, budgetCop }: { plan: Plan; budgetCop: numbe
           {total.missing ? <span className="text-ink-muted">{total.missing} sin precio</span> : null}
         </div>
       </section>
+
+      {plan.pending.length ? (
+        <Link href="/shopping/review" className="flex items-center justify-between border-y border-line py-3 text-[15px] font-semibold">
+          <span>Revisar {plan.pending.length} {plan.pending.length === 1 ? "producto dudoso" : "productos dudosos"}</span>
+          <Icon name="arrow-right" size={16} className="text-ink-faint" />
+        </Link>
+      ) : null}
 
       <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1" role="radiogroup" aria-label="Dónde comprar">
         {plan.bestCombo ? (

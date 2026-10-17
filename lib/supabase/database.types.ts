@@ -1037,6 +1037,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      review_product_match: {
+        Args: { p_approve: boolean; p_match_id: string }
+        Returns: undefined
+      }
       review_recipe: {
         Args: {
           p_approve: boolean

@@ -12,3 +12,12 @@ export async function pinBrand(ingredientId: string, brand: string | null) {
   updateTag(DATA_TAG);
   return {};
 }
+
+/** Confirms or rejects a low-confidence product match for everyone. */
+export async function reviewMatch(matchId: string, approve: boolean) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("review_product_match", { p_match_id: matchId, p_approve: approve });
+  if (error) return { error: "No pudimos guardar tu respuesta." };
+  updateTag(DATA_TAG);
+  return {};
+}
