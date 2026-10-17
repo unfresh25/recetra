@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Por confirmar" };
 export default function InboxPage() {
   return (
     <>
-      <ScreenHeader backHref="/plan" title="Por confirmar" subtitle="Revisa lo que importamos antes de que entre a tu plan." />
+      <ScreenHeader backHref="/recipes" title="Por confirmar" subtitle="Revisa lo que importamos antes de que entre a tu plan." />
       <div className="flex flex-col gap-4 px-5 pt-4">
         <Suspense fallback={<Card className="h-40 animate-pulse" />}>
           <Inbox />

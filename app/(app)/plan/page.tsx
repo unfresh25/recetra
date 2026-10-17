@@ -12,21 +12,13 @@ import { requireReadyMembership } from "@/lib/auth";
 import { formatCop } from "@/lib/onboarding/options";
 import { getPlanView } from "@/lib/plan/queries";
 import { dayLabel } from "@/lib/plan/week";
-import { countInbox } from "@/lib/recipes/queries";
 
 export const metadata: Metadata = { title: "Plan" };
 
 export default function PlanPage({ searchParams }: PageProps<"/plan">) {
   return (
     <>
-      <ScreenHeader
-        title="Plan"
-        action={
-          <Suspense fallback={<InboxBell count={0} />}>
-            <InboxBellCount />
-          </Suspense>
-        }
-      />
+      <ScreenHeader title="Plan" />
       <div className="flex flex-col gap-5 px-5 pt-4">
         <Suspense fallback={<PlanSkeleton />}>
           <WeekPlan searchParams={searchParams} />
@@ -88,27 +80,5 @@ async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams
       <h2 className="font-condensed text-[34px] font-extrabold leading-none">{dayLabel(selected, "long")}</h2>
       <DayRoute meals={dayMeals} members={week.members} />
     </>
-  );
-}
-
-async function InboxBellCount() {
-  const { household } = await requireReadyMembership();
-  return <InboxBell count={await countInbox(household.id)} />;
-}
-
-function InboxBell({ count }: { count: number }) {
-  return (
-    <Link
-      href="/inbox"
-      aria-label={count ? `${count} pendientes por confirmar` : "Pendientes por confirmar"}
-      className="relative flex size-11 items-center justify-center text-ink"
-    >
-      <Icon name="bell" />
-      {count ? (
-        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[11px] font-bold text-white tabular">
-          {count}
-        </span>
-      ) : null}
-    </Link>
   );
 }

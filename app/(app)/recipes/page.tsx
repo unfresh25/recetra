@@ -7,7 +7,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { requireReadyMembership } from "@/lib/auth";
-import { listFavorites, listHouseholdImports } from "@/lib/recipes/queries";
+import {
+  countInbox,
+  listFavorites,
+  listHouseholdImports,
+} from "@/lib/recipes/queries";
 import { listMembers } from "@/lib/household/queries";
 import { cn } from "@/lib/utils/cn";
 
@@ -24,13 +28,18 @@ export default function RecipesPage({ searchParams }: PageProps<"/recipes">) {
       <ScreenHeader
         title="Recetas"
         action={
-          <Link
-            href="/recipes/import"
-            className="flex h-11 items-center gap-1.5 rounded-full bg-brand px-4 font-display font-bold text-white"
-          >
-            <Icon name="add" size={18} strokeWidth={2.4} />
-            Añadir
-          </Link>
+          <>
+            <Suspense fallback={<InboxBell count={0} />}>
+              <InboxBellCount />
+            </Suspense>
+            <Link
+              href="/recipes/import"
+              className="flex h-11 items-center gap-1.5 rounded-full bg-brand px-4 font-display font-bold text-white"
+            >
+              <Icon name="add" size={18} strokeWidth={2.4} />
+              Añadir
+            </Link>
+          </>
         }
       />
       <div className="flex flex-col gap-4 px-5 pt-4">
@@ -42,7 +51,9 @@ export default function RecipesPage({ searchParams }: PageProps<"/recipes">) {
   );
 }
 
-async function RecipesContent({ searchParams }: Pick<PageProps<"/recipes">, "searchParams">) {
+async function RecipesContent({
+  searchParams,
+}: Pick<PageProps<"/recipes">, "searchParams">) {
   const query = await searchParams;
   const tab = query.tab === "favorites" ? "favorites" : "mine";
   const { household, member } = await requireReadyMembership();
@@ -57,7 +68,9 @@ async function RecipesContent({ searchParams }: Pick<PageProps<"/recipes">, "sea
             aria-current={tab === t.value ? "page" : undefined}
             className={cn(
               "flex h-11 items-center justify-center rounded-full text-[15px] font-semibold",
-              tab === t.value ? "text-brand underline decoration-2 underline-offset-8" : "text-ink-muted",
+              tab === t.value
+                ? "text-brand underline decoration-2 underline-offset-8"
+                : "text-ink-muted",
             )}
           >
             {t.label}
@@ -67,7 +80,10 @@ async function RecipesContent({ searchParams }: Pick<PageProps<"/recipes">, "sea
       {tab === "mine" ? (
         <MyRecipes householdId={household.id} />
       ) : (
-        <Favorites memberId={member.id} who={typeof query.who === "string" ? query.who : "both"} />
+        <Favorites
+          memberId={member.id}
+          who={typeof query.who === "string" ? query.who : "both"}
+        />
       )}
     </>
   );
@@ -82,7 +98,10 @@ async function MyRecipes({ householdId }: { householdId: string }) {
         title="Aún no has importado recetas"
         description="Pega un link de TikTok, Instagram o YouTube y la convertimos en receta, con crédito al creador."
         action={
-          <Link href="/recipes/import" className="mt-2 font-semibold text-brand">
+          <Link
+            href="/recipes/import"
+            className="mt-2 font-semibold text-brand"
+          >
             Importar mi primera receta
           </Link>
         }
@@ -101,17 +120,25 @@ async function MyRecipes({ householdId }: { householdId: string }) {
 }
 
 async function Favorites({ memberId, who }: { memberId: string; who: string }) {
-  const [favorites, members] = await Promise.all([listFavorites(), listMembers()]);
+  const [favorites, members] = await Promise.all([
+    listFavorites(),
+    listMembers(),
+  ]);
   const partner = (members ?? []).find((m) => m.id !== memberId);
   const filters = [
     { value: "both", label: "De los dos" },
     { value: "me", label: "Míos" },
-    ...(partner ? [{ value: "partner", label: `De ${partner.display_name}` }] : []),
+    ...(partner
+      ? [{ value: "partner", label: `De ${partner.display_name}` }]
+      : []),
   ];
   const visible = favorites.filter((f) => {
     if (who === "me") return f.memberIds.includes(memberId);
-    if (who === "partner") return partner ? f.memberIds.includes(partner.id) : false;
-    return partner ? f.memberIds.includes(memberId) && f.memberIds.includes(partner.id) : true;
+    if (who === "partner")
+      return partner ? f.memberIds.includes(partner.id) : false;
+    return partner
+      ? f.memberIds.includes(memberId) && f.memberIds.includes(partner.id)
+      : true;
   });
 
   return (
@@ -142,10 +169,39 @@ async function Favorites({ memberId, who }: { memberId: string; who: string }) {
       ) : (
         <EmptyState
           illustration="empty-recipes"
-          title={who === "both" ? "Aún no hay favoritos de los dos" : "Aún no hay favoritos"}
+          title={
+            who === "both"
+              ? "Aún no hay favoritos de los dos"
+              : "Aún no hay favoritos"
+          }
           description="Toca el corazón en una receta para guardarla aquí. Las favoritas de los dos salen más en el plan."
         />
       )}
     </>
+  );
+}
+
+async function InboxBellCount() {
+  const { household } = await requireReadyMembership();
+  return <InboxBell count={await countInbox(household.id)} />;
+}
+
+/** Imports waiting for review ("Por confirmar"). */
+function InboxBell({ count }: { count: number }) {
+  return (
+    <Link
+      href="/inbox"
+      aria-label={
+        count ? `${count} pendientes por confirmar` : "Pendientes por confirmar"
+      }
+      className="relative flex size-11 items-center justify-center text-ink"
+    >
+      <Icon name="inbox" />
+      {count ? (
+        <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[11px] font-bold text-white tabular">
+          {count}
+        </span>
+      ) : null}
+    </Link>
   );
 }
