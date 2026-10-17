@@ -22,7 +22,7 @@ export function ReplaceButton({ planMealId, title }: { planMealId: string; title
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Reemplazar ${title}`}
-        className="flex size-9 items-center justify-center rounded-full bg-sunken text-ink-muted transition-colors hover:text-brand"
+        className="flex size-9 shrink-0 items-center justify-center text-ink-muted transition-colors hover:text-brand"
       >
         <Icon name="refresh" size={18} />
       </button>

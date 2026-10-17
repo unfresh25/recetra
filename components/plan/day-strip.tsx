@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DrawablyCircle } from "@/components/ui/drawably";
 import { dayLabel, dayOfMonth } from "@/lib/plan/week";
 import { cn } from "@/lib/utils/cn";
 
@@ -14,13 +15,16 @@ export function DayStrip({ days, selected, today }: { days: string[]; selected: 
                 href={`/plan?day=${day}`}
                 scroll={false}
                 aria-current={active ? "date" : undefined}
-                className={cn(
-                  "flex h-16 w-14 flex-col items-center justify-center rounded-2xl transition-colors",
-                  active ? "bg-brand text-white" : "bg-surface",
-                )}
+                className="flex h-20 w-12 flex-col items-center justify-center gap-1.5"
               >
-                <span className={cn("text-xs font-semibold", active ? "text-white/85" : "text-ink-muted")}>{dayLabel(day)}</span>
-                <span className="font-display text-lg font-bold tabular">{dayOfMonth(day)}</span>
+                <span className={cn("text-xs font-semibold", active ? "text-brand" : "text-ink-muted")}>{dayLabel(day)}</span>
+                {active ? (
+                  <DrawablyCircle stroke="var(--color-brand)" width={2.5} className="px-1.5 py-1 font-condensed text-2xl font-extrabold leading-none text-brand tabular">
+                    {dayOfMonth(day)}
+                  </DrawablyCircle>
+                ) : (
+                  <span className="font-condensed text-2xl font-extrabold tabular">{dayOfMonth(day)}</span>
+                )}
                 {day === today && !active ? <span className="size-1 rounded-full bg-brand" /> : null}
               </Link>
             </li>
