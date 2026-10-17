@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { updateTag } from "next/cache";
+import { DATA_TAG } from "@/lib/cache";
 import { z } from "zod";
 import { requireReadyMembership } from "@/lib/auth";
 import { Constants, type Json } from "@/lib/supabase/database.types";
@@ -31,7 +32,7 @@ export async function generateWeek(day?: string): Promise<{ error?: string }> {
     })) as unknown as Json,
   });
   if (error) return { error: "No pudimos armar el plan. Intenta de nuevo." };
-  revalidatePath("/plan");
+  updateTag(DATA_TAG);
   return {};
 }
 
@@ -106,7 +107,7 @@ export async function replaceMeal(planMealId: string, recipeId: string, reason: 
     p_adjustments: toJson(choice.adjustments),
   });
   if (error) return { error: "No pudimos reemplazarla." };
-  revalidatePath("/plan");
+  updateTag(DATA_TAG);
   return {};
 }
 
@@ -125,13 +126,11 @@ export async function toggleReaction(recipeId: string, kind: ToggleKind): Promis
     .limit(1);
   if (existing?.length) {
     await supabase.from("reactions").delete().eq("member_id", member.id).eq("recipe_id", recipeId).eq("kind", kind);
-    revalidatePath("/plan");
-    revalidatePath(`/recipes/${recipeId}`);
+    updateTag(DATA_TAG);
     return { active: false };
   }
   await supabase.from("reactions").insert({ member_id: member.id, recipe_id: recipeId, kind });
-  revalidatePath("/plan");
-  revalidatePath(`/recipes/${recipeId}`);
+  updateTag(DATA_TAG);
   return { active: true };
 }
 
@@ -140,5 +139,5 @@ export async function markCooked(recipeId: string, planMealId?: string) {
   const supabase = await createClient();
   await supabase.from("reactions").insert({ member_id: member.id, recipe_id: recipeId, kind: "cooked", plan_meal_id: planMealId ?? null });
   if (planMealId) await supabase.from("plan_meals").update({ status: "cooked" }).eq("id", planMealId);
-  revalidatePath("/plan");
+  updateTag(DATA_TAG);
 }

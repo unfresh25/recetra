@@ -74,12 +74,7 @@ function isLight(hex: string) {
 export function StoreLogo({ store, size = 48 }: { store: StoreOption; size?: number }) {
   if (store.logo_url) {
     return (
-      <span
-        className="flex items-center justify-center overflow-hidden rounded-2xl bg-white ring-1 ring-line"
-        style={{ width: size, height: size }}
-      >
-        <Image src={store.logo_url} alt="" width={size * 0.86} height={size * 0.86} className="object-contain" />
-      </span>
+      <Image src={store.logo_url} alt="" width={size} height={size} className="object-contain" style={{ width: size, height: size }} />
     );
   }
   return (

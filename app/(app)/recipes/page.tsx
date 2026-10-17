@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { requireReadyMembership } from "@/lib/auth";
 import { listFavorites, listHouseholdImports } from "@/lib/recipes/queries";
-import { createClient } from "@/lib/supabase/server";
+import { listMembers } from "@/lib/household/queries";
 import { cn } from "@/lib/utils/cn";
 
 export const metadata: Metadata = { title: "Recetas" };
@@ -101,8 +101,7 @@ async function MyRecipes({ householdId }: { householdId: string }) {
 }
 
 async function Favorites({ memberId, who }: { memberId: string; who: string }) {
-  const [favorites, supabase] = await Promise.all([listFavorites(), createClient()]);
-  const { data: members } = await supabase.from("members").select("id, display_name");
+  const [favorites, members] = await Promise.all([listFavorites(), listMembers()]);
   const partner = (members ?? []).find((m) => m.id !== memberId);
   const filters = [
     { value: "both", label: "De los dos" },

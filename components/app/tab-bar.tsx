@@ -28,6 +28,7 @@ export function TabBar() {
             <li key={tab.href} className="flex-1">
               <Link
                 href={tab.href}
+                prefetch
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex h-14 flex-col items-center justify-center gap-0.5 rounded-full text-[11px] font-semibold transition-colors duration-200",

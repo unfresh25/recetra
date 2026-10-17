@@ -1,6 +1,8 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { DATA_TAG } from "@/lib/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
@@ -39,6 +41,7 @@ export async function createHousehold(_: FormState, formData: FormData): Promise
   });
   if (error) return { error: rpcErrorMessage(error.message) };
 
+  updateTag(DATA_TAG);
   redirect("/plan");
 }
 
@@ -53,6 +56,7 @@ export async function acceptInvitation(token: string, _: FormState, formData: Fo
   });
   if (error) return { error: rpcErrorMessage(error.message) };
 
+  updateTag(DATA_TAG);
   redirect("/plan");
 }
 
@@ -66,5 +70,6 @@ export async function createInvitation(): Promise<{ token?: string; error?: stri
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  updateTag(DATA_TAG);
   redirect("/welcome");
 }

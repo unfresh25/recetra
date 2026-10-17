@@ -15,7 +15,7 @@ import {
   formatCop,
 } from "@/lib/onboarding/options";
 import type { SetupStep } from "@/lib/onboarding/steps";
-import { createClient } from "@/lib/supabase/server";
+import { getPreferenceRows } from "@/lib/household/queries";
 
 export const metadata: Metadata = { title: "Mis preferencias" };
 
@@ -43,14 +43,7 @@ function summary(items: string[], empty: string) {
 
 async function Preferences() {
   const { member, household } = await requireReadyMembership();
-  const supabase = await createClient();
-  const [{ data: stores }, { data: restrictions }] = await Promise.all([
-    supabase.from("household_stores").select("stores (name, sort_order)"),
-    supabase
-      .from("restrictions")
-      .select("kind, allergen, diet, ingredient_category, ingredients (name)")
-      .eq("member_id", member.id),
-  ]);
+  const { stores, restrictions } = await getPreferenceRows(member.id);
 
   const rows = restrictions ?? [];
   const storeNames = (stores ?? [])
