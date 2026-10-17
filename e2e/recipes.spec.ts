@@ -1,14 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { seedDraftRecipe } from "./db";
-import { householdSetup, personalSetup, signIn } from "./flows";
+import { createHousehold, householdSetup, personalSetup, signIn } from "./flows";
 
 test("an imported recipe is reviewed in the inbox and then shows in Mis recetas", async ({ page }) => {
   const email = `recipes-${Date.now()}@test.co`;
   await page.goto("/login");
   await signIn(page, email);
-  await page.getByLabel("¿Cómo te llamas?").fill("Jorge");
-  await page.getByLabel("Nombre del hogar").fill("Casa Recetas");
-  await page.getByRole("button", { name: "Crear hogar", exact: true }).and(page.locator("[type=submit]")).click();
+  await createHousehold(page, "Jorge", "Casa Recetas");
   await householdSetup(page);
   await personalSetup(page, {});
 

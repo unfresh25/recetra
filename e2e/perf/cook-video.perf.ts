@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { adminDb } from "../db";
-import { householdSetup, personalSetup, signIn } from "../flows";
+import { createHousehold, householdSetup, personalSetup, signIn } from "../flows";
 
 test("cook mode keeps one YouTube player and seeks per step", async ({ page }) => {
   const { rest: db } = adminDb();
@@ -20,9 +20,7 @@ test("cook mode keeps one YouTube player and seeks per step", async ({ page }) =
 
   await page.goto("/login");
   await signIn(page, `video-${Date.now()}@test.co`);
-  await page.getByLabel("¿Cómo te llamas?").fill("Jorge");
-  await page.getByLabel("Nombre del hogar").fill("Casa Video");
-  await page.getByRole("button", { name: "Crear hogar", exact: true }).and(page.locator("[type=submit]")).click();
+  await createHousehold(page, "Jorge", "Casa Video");
   await householdSetup(page);
   await personalSetup(page, {});
 

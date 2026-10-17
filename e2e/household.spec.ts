@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { householdSetup, personalSetup, signIn } from "./flows";
+import { createHousehold, householdSetup, personalSetup, signIn } from "./flows";
 
 const run = Date.now();
 const owner = { email: `owner-${run}@test.co`, name: "Jorge" };
@@ -24,9 +24,7 @@ test("a couple creates a household and joins it through an invitation", async ({
   await expect(ownerPage).toHaveURL(/\/onboarding$/);
   await ownerPage.screenshot({ path: "e2e/__screens__/03-onboarding.png" });
 
-  await ownerPage.getByLabel("¿Cómo te llamas?").fill(owner.name);
-  await ownerPage.getByLabel("Nombre del hogar").fill("Casa Borja");
-  await ownerPage.getByRole("button", { name: "Crear hogar", exact: true }).and(ownerPage.locator("[type=submit]")).click();
+  await createHousehold(ownerPage, owner.name, "Casa Borja");
   await householdSetup(ownerPage);
   await personalSetup(ownerPage, { dislike: "Cilantro" });
   await expect(ownerPage).toHaveURL(/\/plan$/);

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { seedCatalog } from "../db";
-import { householdSetup, personalSetup, signIn } from "../flows";
+import { createHousehold, householdSetup, personalSetup, signIn } from "../flows";
 
 // Measures client navigations between tabs (click -> destination content visible).
 test("tab navigation timings", async ({ page }) => {
@@ -12,9 +12,7 @@ test("tab navigation timings", async ({ page }) => {
   const email = `perf-${Date.now()}@test.co`;
   await page.goto("/login");
   await signIn(page, email);
-  await page.getByLabel("¿Cómo te llamas?").fill("Jorge");
-  await page.getByLabel("Nombre del hogar").fill("Casa Perf");
-  await page.getByRole("button", { name: "Crear hogar", exact: true }).and(page.locator("[type=submit]")).click();
+  await createHousehold(page, "Jorge", "Casa Perf");
   await householdSetup(page);
   await personalSetup(page, {});
   await expect(page.getByText("Pericos perf").first()).toBeVisible({ timeout: 30_000 });

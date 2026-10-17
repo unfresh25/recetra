@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { plannedRecipeIds, seedCatalog } from "./db";
-import { householdSetup, personalSetup, signIn } from "./flows";
+import { createHousehold, householdSetup, personalSetup, signIn } from "./flows";
 
 test("the weekly plan respects allergies and dislikes, and learns from replacements", async ({ page }) => {
   const ids = await seedCatalog([
@@ -16,9 +16,7 @@ test("the weekly plan respects allergies and dislikes, and learns from replaceme
   const email = `plan-${Date.now()}@test.co`;
   await page.goto("/login");
   await signIn(page, email);
-  await page.getByLabel("¿Cómo te llamas?").fill("Jorge");
-  await page.getByLabel("Nombre del hogar").fill("Casa Plan");
-  await page.getByRole("button", { name: "Crear hogar", exact: true }).and(page.locator("[type=submit]")).click();
+  await createHousehold(page, "Jorge", "Casa Plan");
   await householdSetup(page);
   await personalSetup(page, { allergy: /Mariscos/, dislike: "Cilantro" });
 

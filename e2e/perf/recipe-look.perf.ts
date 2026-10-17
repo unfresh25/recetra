@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { adminDb } from "../db";
-import { householdSetup, personalSetup, signIn } from "../flows";
+import { createHousehold, householdSetup, personalSetup, signIn } from "../flows";
 
 // Visual check of the recipe detail with a real cover (not a CI test).
 test("recipe detail look", async ({ page }) => {
@@ -41,9 +41,7 @@ test("recipe detail look", async ({ page }) => {
   ]);
   await page.goto("/login");
   await signIn(page, `look-${Date.now()}@test.co`);
-  await page.getByLabel("¿Cómo te llamas?").fill("Jorge");
-  await page.getByLabel("Nombre del hogar").fill("Casa Look");
-  await page.getByRole("button", { name: "Crear hogar", exact: true }).and(page.locator("[type=submit]")).click();
+  await createHousehold(page, "Jorge", "Casa Look");
   await householdSetup(page);
   await personalSetup(page, { dislike: "Cilantro" });
   await page.goto(`/recipes/${id}`);

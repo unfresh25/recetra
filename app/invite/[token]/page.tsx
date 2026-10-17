@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { Card } from "@/components/ui/card";
 import { Illustration } from "@/components/ui/illustration";
-import { ScreenHeader } from "@/components/ui/screen-header";
+import { QuestionScreen } from "@/components/ui/question-screen";
 import { getMembership } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { JoinForm } from "./join-form";
@@ -13,14 +12,11 @@ export const metadata: Metadata = { title: "Invitación" };
 
 export default function InvitePage({ params }: PageProps<"/invite/[token]">) {
   return (
-    <main className="flex flex-1 flex-col gap-8">
-      <ScreenHeader title="Te invitaron" />
-      <div className="flex flex-1 flex-col px-5">
-        <Suspense fallback={<Card className="h-24 animate-pulse" />}>
-          <Invitation params={params} />
-        </Suspense>
-      </div>
-    </main>
+    <QuestionScreen compact>
+      <Suspense fallback={<span className="size-44 animate-pulse rounded-full bg-surface" />}>
+        <Invitation params={params} />
+      </Suspense>
+    </QuestionScreen>
   );
 }
 
@@ -41,10 +37,9 @@ async function Invitation({ params }: { params: PageProps<"/invite/[token]">["pa
 
   if (status !== "valid" || !invitation) {
     return (
-      <div className="flex flex-col gap-5">
-        <Card>
-          <p className="text-[15px]">{STATUS_COPY[status as keyof typeof STATUS_COPY]}</p>
-        </Card>
+      <div className="flex flex-col items-center gap-6 text-center">
+        <Illustration name="invite" size={160} preload />
+        <p className="max-w-72 text-[17px] text-ink">{STATUS_COPY[status as keyof typeof STATUS_COPY]}</p>
         <Link href="/onboarding" className="text-center font-semibold text-brand">
           Crear mi propio hogar
         </Link>
@@ -53,12 +48,12 @@ async function Invitation({ params }: { params: PageProps<"/invite/[token]">["pa
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      <Illustration name="invite" size={176} preload className="self-center" />
-      <Card className="flex flex-col gap-1">
-        <p className="text-[15px] text-ink-muted">{invitation.inviter_name} te invitó a</p>
-        <p className="font-display text-2xl font-extrabold">{invitation.household_name}</p>
-      </Card>
+    <div className="flex w-full flex-col items-center gap-10">
+      <div className="flex flex-col items-center gap-2 text-center">
+        <Illustration name="invite" size={144} preload />
+        <p className="text-[15px] font-semibold text-ink-muted">{invitation.inviter_name} te invitó a</p>
+        <p className="font-condensed text-[40px] font-extrabold leading-none tracking-tight">{invitation.household_name}</p>
+      </div>
       <JoinForm token={token} />
     </div>
   );
