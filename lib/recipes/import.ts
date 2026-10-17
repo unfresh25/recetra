@@ -59,7 +59,8 @@ export async function processImportJob(jobId: string): Promise<ImportResult | nu
   }
 
   const status = result.stage === "done" ? "done" : result.stage === "needs_worker" ? "queued" : "failed";
-  if (result.stage === "needs_worker" && !payload.worker) await dispatchImportWorker();
+  // Seeds transcribe in the seed script itself; household imports wake the worker.
+  if (result.stage === "needs_worker" && !payload.worker && !payload.seed) await dispatchImportWorker();
   await db
     .from("jobs")
     .update({ status, result: result as unknown as Json, last_error: null })
@@ -106,12 +107,14 @@ async function runImport(db: Admin, payload: ImportPayload, householdId: string 
 
   if (!extracted.is_recipe) return { stage: "failed", reason: "not_a_recipe" };
   const incomplete = !extracted.has_ingredient_list || extracted.steps.length === 0;
-  if (payload.seed && (incomplete || extracted.confidence < SEED_MIN_CONFIDENCE)) {
-    return { stage: "failed", reason: "low_confidence" };
-  }
-  if (incomplete && !payload.worker?.transcript) {
+  const transcribed = Boolean(payload.worker?.transcript);
+  if (incomplete && !transcribed) {
     // The caption lacks the ingredients or the steps: the worker will transcribe the audio and retry.
     return { stage: "needs_worker", reason: "audio" };
+  }
+  // Seeds only keep recipes we are confident about, even after listening to the audio.
+  if (payload.seed && (incomplete || extracted.confidence < SEED_MIN_CONFIDENCE)) {
+    return { stage: "failed", reason: "low_confidence" };
   }
 
   const recipeId = await saveRecipe(db, metadata, extracted, payload.visibility, householdId, payload.seed ? "approved" : "pending_review");

@@ -22,8 +22,11 @@ jobs:
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
+      - name: Install yt-dlp
+        run: pipx install yt-dlp
       - run: bun --conditions=react-server jobs/seed-youtube.ts --limit "${{ inputs.limit }}" --per-query "${{ inputs.per_query }}" --concurrency 4
