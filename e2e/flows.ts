@@ -48,3 +48,11 @@ export async function signIn(page: Page, email: string) {
   await page.getByLabel(/Código enviado a/).fill(code);
   await page.getByRole("button", { name: "Entrar" }).click();
 }
+
+/** Onboarding asks one question per screen: your name, then the household's. */
+export async function createHousehold(page: Page, name: string, household: string) {
+  await page.getByLabel("¿Cómo te llamas?").fill(name);
+  await page.getByRole("button", { name: "Siguiente" }).click();
+  await page.getByLabel("Ponle nombre a tu hogar").fill(household);
+  await page.getByRole("button", { name: "Crear hogar" }).click();
+}

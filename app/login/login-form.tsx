@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
-import { TextField } from "@/components/ui/text-field";
+import { Icon } from "@/components/ui/icon";
+import { QuestionField } from "@/components/ui/question-field";
+import { QuestionScreen } from "@/components/ui/question-screen";
 import { createClient } from "@/lib/supabase/client";
 
 type Step = { kind: "email" } | { kind: "code"; email: string };
@@ -50,53 +52,54 @@ export function LoginForm() {
 
   if (step.kind === "email") {
     return (
-      <form key="email" onSubmit={sendCode} className="flex flex-1 flex-col gap-6">
-        <TextField
-          label="Correo"
-          name="email"
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          placeholder="tu@correo.com"
-          required
-          error={error}
-        />
-        <div className="mt-auto flex justify-center pb-safe">
+      <QuestionScreen back="/welcome">
+        <form key="email" onSubmit={sendCode} className="flex w-full flex-col items-center gap-10">
+          <QuestionField
+            label="¿Cuál es tu correo?"
+            name="email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            placeholder="tu@correo.com"
+            hint="Te enviamos un código de 6 dígitos. Sin contraseñas."
+            className="text-[26px]"
+            autoFocus
+            required
+            error={error}
+          />
           <Button type="submit" className="min-w-48" loading={pending}>
-            Enviar código
+            Enviar código <Icon name="arrow-right" size={18} />
           </Button>
-        </div>
-      </form>
+        </form>
+      </QuestionScreen>
     );
   }
 
   return (
-    <form key="code" onSubmit={verifyCode} className="flex flex-1 flex-col gap-6">
-      <TextField
-        label={`Código enviado a ${step.email}`}
-        name="code"
-        inputMode="numeric"
-        autoComplete="one-time-code"
-        pattern="\d{6}"
-        maxLength={6}
-        placeholder="••••••"
-        className="text-center font-condensed text-[44px] font-extrabold tracking-[0.4em]"
-        autoFocus
-        required
-        error={error}
-      />
-      <button
-        type="button"
-        onClick={() => setStep({ kind: "email" })}
-        className="self-start text-sm font-semibold text-brand"
-      >
-        Usar otro correo
-      </button>
-      <div className="mt-auto flex justify-center pb-safe">
+    <QuestionScreen back={() => setStep({ kind: "email" })}>
+      <form key="code" onSubmit={verifyCode} className="flex w-full flex-col items-center gap-10">
+        <QuestionField
+          label={`Código enviado a ${step.email}`}
+          name="code"
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="\d{6}"
+          maxLength={6}
+          placeholder="000000"
+          hint="Revisa también la carpeta de spam."
+          className="font-condensed text-[52px] tracking-[0.3em] tabular"
+          autoFocus
+          required
+          error={error}
+        />
         <Button type="submit" className="min-w-48" loading={pending}>
-          Entrar
+          Entrar <Icon name="arrow-right" size={18} />
         </Button>
-      </div>
-    </form>
+        <button type="button" onClick={() => setStep({ kind: "email" })} className="text-sm font-semibold text-brand">
+          Usar otro correo
+        </button>
+      </form>
+    </QuestionScreen>
   );
 }
