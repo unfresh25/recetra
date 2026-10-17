@@ -1,6 +1,9 @@
 import "server-only";
-import { readFile } from "node:fs/promises";
-import { basename } from "node:path";
+import { execFile } from "node:child_process";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { basename, join } from "node:path";
+import { promisify } from "node:util";
 
 type Segment = { start: number; text: string };
 
@@ -19,8 +22,47 @@ function stamp(seconds: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-/** Transcribes an audio file with Groq Whisper; each line is prefixed with its [m:ss] start time. */
+function formatSegments(text: string, segments: Segment[] | undefined) {
+  if (!segments?.length) return text;
+  return segments.map((s) => `[${stamp(s.start)}] ${s.text.trim()}`).join("\n");
+}
+
+/**
+ * Transcribes an audio file; each line is prefixed with its [m:ss] start time.
+ * Groq Whisper by default. TRANSCRIBE_BACKEND=local uses mlx-whisper on an Apple Silicon Mac,
+ * which has no hourly limit and is meant for bulk catalog seeding.
+ */
 export async function transcribeAudio(filePath: string): Promise<string> {
+  return process.env.TRANSCRIBE_BACKEND === "local" ? transcribeLocally(filePath) : transcribeWithGroq(filePath);
+}
+
+const run = promisify(execFile);
+let localQueue: Promise<unknown> = Promise.resolve();
+
+/** One local transcription at a time: they all compete for the same GPU. */
+function transcribeLocally(filePath: string): Promise<string> {
+  const job = localQueue.then(async () => {
+    const outDir = await mkdtemp(join(tmpdir(), "recetra-whisper-"));
+    try {
+      await run(
+        process.env.MLX_WHISPER_BIN ?? "mlx_whisper",
+        [filePath, "--model", "mlx-community/whisper-large-v3-turbo", "--language", "es", "--output-format", "json", "--output-dir", outDir, "--verbose", "False"],
+        { timeout: 15 * 60_000, maxBuffer: 16 * 1024 * 1024 },
+      );
+      const name = basename(filePath).replace(/\.[^.]+$/, "");
+      // mlx-whisper writes NaN/Infinity for some per-segment stats, which isn't valid JSON.
+      const raw = (await readFile(join(outDir, `${name}.json`), "utf8")).replace(/-?\bInfinity\b|\bNaN\b/g, "null");
+      const body = JSON.parse(raw) as { text: string; segments?: Segment[] };
+      return formatSegments(body.text, body.segments);
+    } finally {
+      await rm(outDir, { recursive: true, force: true });
+    }
+  });
+  localQueue = job.catch(() => undefined);
+  return job;
+}
+
+async function transcribeWithGroq(filePath: string): Promise<string> {
   const key = process.env.GROQ_API_KEY;
   if (!key) throw new Error("Missing environment variable GROQ_API_KEY");
 
@@ -44,6 +86,5 @@ export async function transcribeAudio(filePath: string): Promise<string> {
   }
   if (!res.ok) throw new Error(`Groq transcription failed: ${res.status} ${await res.text()}`);
   const body = (await res.json()) as { text: string; segments?: Segment[] };
-  if (!body.segments?.length) return body.text;
-  return body.segments.map((s) => `[${stamp(s.start)}] ${s.text.trim()}`).join("\n");
+  return formatSegments(body.text, body.segments);
 }

@@ -3,7 +3,8 @@
  * Only confident recipes whose description lists the ingredients are kept (auto-approved).
  *
  * Run with: bun --conditions=react-server jobs/seed-youtube.ts [--limit 300] [--per-query 8] [--dry-run]
- *   --audio-minutes 420   max audio to transcribe per run (Groq free plan: 480 min/day)
+ *   --audio-minutes 420   max audio to transcribe per run (Groq free plan: 480 min/day).
+ *                         With TRANSCRIBE_BACKEND=local (mlx-whisper on a Mac) there is no daily cap.
  *   --channels UCxxx,UCyyy [--per-channel 150]  walk channel uploads instead of searching
  *                                              (1 quota unit per 50 videos instead of 100 per search)
  */
