@@ -7,6 +7,7 @@
  *                         With TRANSCRIBE_BACKEND=local (mlx-whisper on a Mac) there is no daily cap.
  *   --channels UCxxx,UCyyy [--per-channel 150]  walk channel uploads instead of searching
  *                                              (1 quota unit per 50 videos instead of 100 per search)
+ *   --meal breakfast   only run that meal's searches; combines with --channels
  */
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -33,6 +34,26 @@ const QUERIES: Record<"breakfast" | "lunch" | "dinner", string[]> = {
     "desayuno saludable alto en proteína receta",
     "carimañolas receta",
     "bollo limpio con queso costeño",
+    "butifarra soledeña receta",
+    "cayeye costeño receta",
+    "deditos de queso receta",
+    "empanada de huevo costeña receta",
+    "arepa de queso costeña receta",
+    "patacón con huevo desayuno",
+    "huevos con tomate y cebolla receta",
+    "arepa de maíz pelao receta",
+    "almojábanas receta casera",
+    "buñuelos colombianos receta",
+    "migas colombianas desayuno receta",
+    "caldo de pescado desayuno costeño",
+    "arepa de yuca receta",
+    "pastel de pollo hojaldre receta",
+    "huevos revueltos con salchicha receta",
+    "chocolate santafereño con queso",
+    "tostadas francesas receta fácil",
+    "pancakes de avena receta",
+    "omelette de verduras receta",
+    "bowl de yogur y frutas desayuno",
   ],
   lunch: [
     "arroz con pollo colombiano receta",
@@ -146,21 +167,26 @@ async function main() {
   const dryRun = process.argv.includes("--dry-run");
 
   const channels = argList("channels");
+  const meal = process.argv.includes("--meal") ? argList("meal")[0] : undefined;
+  if (meal && !(meal in QUERIES)) throw new Error(`Unknown --meal ${meal}`);
+  const ids = new Set<string>();
   if (channels.length) {
-    const ids = new Set<string>();
     for (const channel of channels) {
       const found = await channelUploads(channel, arg("per-channel", 150));
       for (const id of found) ids.add(id);
       console.log(`[channel] ${channel} -> ${found.length} recipe-looking videos`);
     }
-    return processCandidates([...ids], { limit, concurrency, dryRun });
+    if (!meal) return processCandidates([...ids], { limit, concurrency, dryRun });
   }
 
   const cache = await readCache();
-  const ids = new Set<string>(Object.values(cache).flat());
-  searching: for (const [meal, queries] of Object.entries(QUERIES)) {
+  const searches = meal ? { [meal]: QUERIES[meal as keyof typeof QUERIES] } : QUERIES;
+  searching: for (const [meal, queries] of Object.entries(searches)) {
     for (const q of queries) {
-      if (cache[q]) continue;
+      if (cache[q]) {
+        for (const id of cache[q]) ids.add(id);
+        continue;
+      }
       try {
         cache[q] = await search(q, perQuery);
       } catch (error) {
