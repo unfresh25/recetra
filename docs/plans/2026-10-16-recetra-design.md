@@ -224,10 +224,10 @@ Abre una hoja con el top 5 de alternativas para el espacio y chips de motivo opc
 
 ## 6. Pantallas
 
-Navegación: barra de pestañas flotante en forma de píldora: `Plan · Recetas · Compras · Calorías · Perfil`. La bandeja "por confirmar" es una 🔔 con contador en el Plan.
+Navegación: barra de pestañas flotante en forma de píldora: `Plan · Recetas · Compras · Calorías · Perfil`. La bandeja "por confirmar" es un ícono con contador junto a "Añadir" en Recetas.
 
 1. **Onboarding:**
-   1. Slides de bienvenida → login → crear hogar o unirse con invitación.
+   1. Slides de bienvenida → login → crear hogar o unirse con invitación (una pregunta por pantalla, estilo BitePal).
    2. Tiendas (sin límite) → personas y niños.
    3. Por persona: alergias (respuesta obligatoria, con "Ninguna") → no me gusta (buscador y chips) → dieta.
    4. Presupuesto → estilos → equipos de cocina → "armando tu plan".
