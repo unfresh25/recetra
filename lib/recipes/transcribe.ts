@@ -50,7 +50,9 @@ function transcribeLocally(filePath: string): Promise<string> {
         { timeout: 15 * 60_000, maxBuffer: 16 * 1024 * 1024 },
       );
       const name = basename(filePath).replace(/\.[^.]+$/, "");
-      const body = JSON.parse(await readFile(join(outDir, `${name}.json`), "utf8")) as { text: string; segments?: Segment[] };
+      // mlx-whisper writes NaN/Infinity for some per-segment stats, which isn't valid JSON.
+      const raw = (await readFile(join(outDir, `${name}.json`), "utf8")).replace(/-?\bInfinity\b|\bNaN\b/g, "null");
+      const body = JSON.parse(raw) as { text: string; segments?: Segment[] };
       return formatSegments(body.text, body.segments);
     } finally {
       await rm(outDir, { recursive: true, force: true });
