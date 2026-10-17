@@ -25,19 +25,33 @@ export type YtDlpInfo = {
   webpage_url?: string;
 };
 
+/** YouTube throttles yt-dlp now and then; a short wait usually clears it. */
+async function withRetry<T>(task: () => Promise<T>, attempts = 3): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await task();
+    } catch (error) {
+      if (attempt >= attempts) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 2_000 * 2 ** attempt));
+    }
+  }
+}
+
 export async function readInfo(url: string): Promise<YtDlpInfo> {
-  const { stdout } = await run(YT_DLP, ["--dump-json", "--no-warnings", "--no-playlist", url], {
+  const { stdout } = await withRetry(() => run(YT_DLP, ["--dump-json", "--no-warnings", "--no-playlist", url], {
     maxBuffer: 32 * 1024 * 1024,
     timeout: 120_000,
-  });
+  }));
   return JSON.parse(stdout) as YtDlpInfo;
 }
 
 export async function downloadAudio(url: string, dir: string): Promise<string> {
-  await run(
-    YT_DLP,
-    ["-q", "--no-warnings", "--no-playlist", "-f", "bestaudio[filesize<24M]/bestaudio/best[filesize<24M]", "-o", join(dir, "audio.%(ext)s"), url],
-    { timeout: 300_000 },
+  await withRetry(() =>
+    run(
+      YT_DLP,
+      ["-q", "--no-warnings", "--no-playlist", "-f", "bestaudio[filesize<24M]/bestaudio/best[filesize<24M]", "-o", join(dir, "audio.%(ext)s"), url],
+      { timeout: 300_000 },
+    ),
   );
   const file = (await readdir(dir)).find((f) => f.startsWith("audio."));
   if (!file) throw new Error("yt-dlp produced no audio file");
