@@ -26,7 +26,7 @@ test("cook mode keeps one YouTube player and seeks per step", async ({ page }) =
   await personalSetup(page, {});
 
   await page.goto(`/recipes/${id}`);
-  await page.getByRole("link", { name: "Cocinar ahora" }).click();
+  await page.getByRole("button", { name: "Cocinar", exact: true }).click();
   const iframe = page.locator("iframe");
   await expect(iframe).toHaveCount(1, { timeout: 20_000 });
   const firstHandle = await iframe.elementHandle();

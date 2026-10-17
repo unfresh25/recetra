@@ -60,7 +60,7 @@ export function CoverEditor({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Cambiar portada"
-        className="flex size-11 items-center justify-center rounded-full bg-white/85 text-ink"
+        className="flex size-11 items-center justify-center text-white"
       >
         {pending ? <span className="size-5 animate-spin rounded-full border-2 border-brand border-r-transparent" /> : <Icon name="pencil" />}
       </button>

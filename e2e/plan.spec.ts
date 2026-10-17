@@ -50,9 +50,9 @@ test("the weekly plan respects allergies and dislikes, and learns from replaceme
 
   // Favorite the new lunch and cook it.
   await lunchCard.getByRole("link").first().click();
-  await page.getByRole("button", { name: /Favorito/ }).click();
-  await expect(page.getByRole("button", { name: /Favorito/ })).toHaveAttribute("aria-pressed", "true");
-  await page.getByRole("link", { name: "Cocinar ahora" }).click();
+  await page.getByRole("button", { name: "Agregar a favoritos" }).click();
+  await expect(page.getByRole("button", { name: "Quitar de favoritos" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Cocinar", exact: true }).click();
   await expect(page.getByText("Paso 1")).toBeVisible();
   await expect(page.getByRole("button", { name: /10 minutos/ })).toHaveCount(0);
   await page.getByRole("button", { name: "Siguiente paso" }).click();
