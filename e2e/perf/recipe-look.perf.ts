@@ -5,6 +5,9 @@ import { householdSetup, personalSetup, signIn } from "../flows";
 
 // Visual check of the recipe detail with a real cover (not a CI test).
 test("recipe detail look", async ({ page }) => {
+  test.setTimeout(120_000);
+  page.on("pageerror", (e) => console.log("PAGEERROR", e.message.slice(0, 300)));
+  page.on("console", (m) => { if (m.type() === "error") console.log("CONSOLE", m.text().slice(0, 300)); });
   const env = Object.fromEntries(readFileSync(".env.local", "utf8").split("\n").filter((l) => l.includes("=")).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]));
   const { rest: db } = adminDb();
   const path = `recipes/look-${Date.now()}.webp`;
@@ -17,8 +20,9 @@ test("recipe detail look", async ({ page }) => {
   }
   const { data: ings } = await db.from("ingredients").select("id, slug").in("slug", ["arroz-blanco", "pechuga-pollo", "cebolla-larga", "zanahoria", "cilantro"]);
   const id_ = (s: string) => (ings as { id: string; slug: string }[]).find((i) => i.slug === s)!.id;
+  await db.from("recipes").delete().eq("source_video_id", "6s5qpxYVht0");
   const { data: r } = await db.from("recipes").insert({
-    title: "Arroz con pollo de la abuela", source_platform: "youtube", source_video_id: "6s5qpxYVht0", author_name: "TULIO Recomienda",
+    title: "Arroz con pollo de la abuela", source_platform: "youtube", source_video_id: "6s5qpxYVht0", author_name: "Recetra E2E",
     source_url: "https://youtu.be/6s5qpxYVht0", source_image_path: path, servings: 4, total_minutes: 45, kcal_per_serving: 520,
     protein_g: 32, carbs_g: 61, fat_g: 14, meal_types: ["lunch"], status: "approved",
   }).select("id").single();
@@ -48,7 +52,10 @@ test("recipe detail look", async ({ page }) => {
   await page.screenshot({ path: "e2e/__screens__/40-recipe-look.png", fullPage: true });
   await page.getByRole("button", { name: "Cocinar", exact: true }).click();
   await expect(page.getByText("Paso 1")).toBeVisible();
-  await page.waitForTimeout(1500);
+  await page.getByRole("button", { name: "Siguiente paso" }).click();
+  await page.getByRole("button", { name: "Siguiente paso" }).click();
+  await page.getByRole("button", { name: /Crear temporizador de 20 minutos/ }).click();
+  await page.waitForTimeout(1200);
   await page.screenshot({ path: "e2e/__screens__/41-cook-look.png" });
   await page.goto(`/plan`);
   await page.waitForTimeout(1200);

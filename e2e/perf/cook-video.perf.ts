@@ -5,6 +5,7 @@ import { householdSetup, personalSetup, signIn } from "../flows";
 test("cook mode keeps one YouTube player and seeks per step", async ({ page }) => {
   const { rest: db } = adminDb();
   const { data: egg } = await db.from("ingredients").select("id").eq("slug", "huevo").single();
+  await db.from("recipes").delete().eq("source_video_id", "y_TyEhcejbE");
   const { data: recipe } = await db
     .from("recipes")
     .insert({ title: "Pericos video", source_platform: "youtube", source_video_id: "y_TyEhcejbE", author_name: "Recetra E2E", meal_types: ["breakfast"], status: "approved", total_minutes: 10 })

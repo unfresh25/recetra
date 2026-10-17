@@ -10,7 +10,7 @@ export async function getRecipe(recipeId: string, householdId: string) {
     supabase.from("recipes").select("*").eq("id", recipeId).maybeSingle(),
     supabase
       .from("recipe_ingredients")
-      .select("position, quantity, unit, role, note, substitute_ids, ingredients (id, slug, name, category, allergens)")
+      .select("position, quantity, unit, role, note, substitute_ids, ingredients (id, slug, name, category, allergens, aliases)")
       .eq("recipe_id", recipeId)
       .order("position"),
     supabase.from("recipe_steps").select("position, text, video_start_seconds").eq("recipe_id", recipeId).order("position"),

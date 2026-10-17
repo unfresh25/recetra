@@ -35,6 +35,7 @@ async function Cook({ params, searchParams }: Pick<PageProps<"/recipes/[id]/cook
       planMealId={planMealId}
       ingredients={detail.ingredients.map((i) => ({
         name: i.ingredients?.name ?? "Ingrediente",
+        aliases: i.ingredients?.aliases ?? [],
         amount: formatQuantity(i.quantity, i.unit),
         removed: Boolean(i.ingredients && removed.has(i.ingredients.id)),
       }))}
