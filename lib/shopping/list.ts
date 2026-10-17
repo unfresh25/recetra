@@ -23,9 +23,13 @@ export type Offer = {
   priceCop: number;
   capturedAt: string;
   url: string | null;
+  /** Loose goods priced per kilo ("Tomate x Kg"): you pay for the weight you take. */
+  byWeight?: boolean;
 };
 
-export type StorePick = { offer: Offer; packages: number; costCop: number };
+export type StorePick = { offer: Offer; packages: number; costCop: number; /** Grams to ask for, when sold by weight. */ weightG?: number };
+
+const MIN_WEIGHED_G = 100;
 
 export type ShoppingItem = Need & {
   picks: Record<string, StorePick | null>;
@@ -58,6 +62,14 @@ export function convert(amount: number, from: BuyUnit, to: BuyUnit, units: Ingre
 export function pick(need: Need, offers: Offer[]): StorePick | null {
   let best: StorePick | null = null;
   for (const offer of offers) {
+    if (offer.byWeight) {
+      const grams = need.amount != null ? convert(need.amount, need.unit, "g", need.units) : MIN_WEIGHED_G;
+      if (grams == null) continue;
+      const weightG = Math.max(MIN_WEIGHED_G, Math.ceil(grams / 50) * 50);
+      const costCop = Math.round((weightG / offer.packageQty) * offer.priceCop);
+      if (!best || costCop < best.costCop) best = { offer, packages: 1, costCop, weightG };
+      continue;
+    }
     let packages = 1;
     if (need.amount != null) {
       const wanted = convert(need.amount, need.unit, offer.packageUnit, need.units);

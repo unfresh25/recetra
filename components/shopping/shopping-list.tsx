@@ -210,7 +210,7 @@ function Row({
           <span className="min-w-0 flex-1">
             <span className={cn("block truncate font-semibold", checked && "text-ink-faint line-through")}>{item.name}</span>
             <span className="block truncate text-sm text-ink-muted">
-              {[amount, pick ? `${pick.packages > 1 ? `${pick.packages} × ` : ""}${pick.offer.name}` : null].filter(Boolean).join(" · ")}
+              {[amount, pick ? `${pick.weightG ? `pide ${formatAmount(pick.weightG, "g")} de ` : pick.packages > 1 ? `${pick.packages} × ` : ""}${pick.offer.name}` : null].filter(Boolean).join(" · ")}
             </span>
           </span>
           <span className={cn("shrink-0 text-right font-display font-bold tabular", !pick && "text-sm font-medium text-ink-faint")}>

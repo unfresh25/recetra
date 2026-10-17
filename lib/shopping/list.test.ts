@@ -55,6 +55,14 @@ describe("planShopping", () => {
     expect(plan.items[0]!.picks.d1?.offer.productId).toBe("diana");
   });
 
+  it("charges loose goods by the weight taken", () => {
+    const loose = { ...offer("d1", "ajo-kg", 1000, 12000), byWeight: true };
+    const plan = planShopping([need("ajo", 112), need("pizca", 20)], new Map([["ajo", [loose]], ["pizca", [{ ...loose, productId: "p" }]]]), ["d1"]);
+    // 112 g rounds up to 150 g; tiny amounts are at least 100 g.
+    expect(plan.items[0]!.picks.d1).toMatchObject({ weightG: 150, costCop: 1800 });
+    expect(plan.items[1]!.picks.d1).toMatchObject({ weightG: 100, costCop: 1200 });
+  });
+
   it("converts pieces to grams when the store sells by weight", () => {
     const tomato = { base_unit: "unit" as const, purchase_unit: "unit" as const, unit_weight_g: 120, density_g_ml: null };
     const plan = planShopping(

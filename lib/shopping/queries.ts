@@ -13,6 +13,8 @@ export type ShoppingStore = { id: string; slug: string; name: string; logo_url: 
 // Stores we can read prices from. Ara and Isimo have no online shop; Makro and Jumbo are not wired yet.
 const PRICED_SOURCES = new Set(["vtex"]);
 const UNPRICED_SLUGS = new Set(["jumbo"]);
+// "Ajo X KG", "Tomate Chonto Kilo", "Pechuga x Kg": loose goods weighed at the counter.
+const PER_KILO = /\b(x\s*kg|x\s*kilo|kilo|por kilo)\b|\bkg\s*$/i;
 
 const INGREDIENT_FIELDS = "id, name, category, base_unit, purchase_unit, unit_weight_g, density_g_ml, pantry_staple";
 
@@ -115,6 +117,7 @@ export async function buildShoppingPlan(supabase: SupabaseClient<Database>, hous
         storeId: m.products.store_id, productId: m.products.id, name: m.products.name, brand: m.products.brand,
         packageQty: Number(m.products.package_qty), packageUnit: m.products.package_unit, priceCop: price.price_cop,
         capturedAt: price.captured_at, url: m.products.url,
+        byWeight: m.products.package_unit === "g" && Number(m.products.package_qty) === 1000 && PER_KILO.test(m.products.name),
       });
       offers.set(m.ingredient_id, list);
     }
