@@ -204,7 +204,13 @@ async function processCandidates(
       const seconds = info.duration ?? MAX_AUDIO_SECONDS;
       if (seconds > Math.min(MAX_AUDIO_SECONDS, 15 * 60) || seconds > audioBudget) return null;
       audioBudget -= seconds;
-      const transcript = await transcribeAudio(await downloadAudio(payload.url, dir));
+      let transcript: string;
+      try {
+        transcript = await transcribeAudio(await downloadAudio(payload.url, dir));
+      } catch (error) {
+        audioBudget += seconds;
+        throw error;
+      }
       const worker = { metadata: toMetadata(payload.url, info), transcript };
       await db
         .from("jobs")
