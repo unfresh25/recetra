@@ -51,8 +51,8 @@ async function get(store: VtexStore, query: string): Promise<RawProduct[]> {
     }).catch((error: unknown) => error as Error);
     if (!(res instanceof Error) && (res.ok || res.status === 206)) return (await res.json()) as RawProduct[];
     if (!(res instanceof Error) && res.status === 404) return [];
-    if (attempt >= 3) throw new Error(`${store.slug} ${res instanceof Error ? res.message : res.status}`);
-    await new Promise((resolve) => setTimeout(resolve, 2_000 * attempt));
+    if (attempt >= 4) throw new Error(`${store.slug} ${res instanceof Error ? res.message : res.status}`);
+    await new Promise((resolve) => setTimeout(resolve, 3_000 * 2 ** attempt));
   }
 }
 
@@ -84,14 +84,23 @@ export async function searchProducts(store: VtexStore, text: string, limit = 20)
   return (await get(store, query)).flatMap(normalize);
 }
 
-/** Current offers for known SKUs, 50 per request. */
-export async function productsBySku(store: VtexStore, skus: string[]): Promise<StoreProduct[]> {
+/**
+ * Current offers for known SKUs, 50 per request. SKUs in a request that kept failing come back
+ * in `unknown`: callers must not read their absence as "gone".
+ */
+export async function productsBySku(store: VtexStore, skus: string[]): Promise<{ found: StoreProduct[]; unknown: string[] }> {
   const found: StoreProduct[] = [];
+  const unknown: string[] = [];
   for (let i = 0; i < skus.length; i += 50) {
     const chunk = skus.slice(i, i + 50);
     const query = [...chunk.map((sku) => `fq=skuId:${encodeURIComponent(sku)}`), "_from=0", "_to=49"].join("&");
     const wanted = new Set(chunk);
-    found.push(...(await get(store, query)).flatMap(normalize).filter((p) => wanted.has(p.sku)));
+    try {
+      found.push(...(await get(store, query)).flatMap(normalize).filter((p) => wanted.has(p.sku)));
+    } catch (error) {
+      console.error(`${store.slug}: ${chunk.length} SKUs skipped:`, error instanceof Error ? error.message : error);
+      unknown.push(...chunk);
+    }
   }
-  return found;
+  return { found, unknown };
 }

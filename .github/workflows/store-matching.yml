@@ -1,0 +1,27 @@
+name: Store matching
+
+# Uses Haiku (Anthropic credits): curates and enriches new ingredients, then matches them to
+# store products. Manual only.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: store-prices
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun --conditions=react-server jobs/curate-ingredients.ts
+      - run: bun --conditions=react-server jobs/enrich-ingredients.ts
+      - run: bun --conditions=react-server jobs/match-products.ts

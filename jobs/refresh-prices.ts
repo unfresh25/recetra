@@ -11,7 +11,7 @@ const db = createAdminClient();
 const { data: stores, error } = await db.from("stores").select("id, slug, base_url, api_path_prefix").eq("source", "vtex").neq("slug", "jumbo");
 if (error) throw error;
 
-const tally = { checked: 0, changed: 0, gone: 0 };
+const tally = { checked: 0, changed: 0, gone: 0, skipped: 0, failedStores: 0 };
 
 async function pageAll<T>(fetchPage: (from: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
   const rows: T[] = [];
@@ -36,10 +36,16 @@ async function refreshStore(store: NonNullable<typeof stores>[number]) {
     if (error) throw error;
     for (const row of data ?? []) if (row.product_id) current.set(row.product_id, row.price_cop);
   }
-  const offers = new Map((await productsBySku(store, products.map((p) => p.sku))).map((o) => [o.sku, o]));
+  const { found, unknown } = await productsBySku(store, products.map((p) => p.sku));
+  const offers = new Map(found.map((o) => [o.sku, o]));
+  const unread = new Set(unknown);
   const now = new Date().toISOString();
 
   for (const product of products) {
+    if (unread.has(product.sku)) {
+      tally.skipped++;
+      continue;
+    }
     tally.checked++;
     const offer = offers.get(product.sku);
     if (!offer || !offer.available) {
@@ -60,5 +66,14 @@ async function refreshStore(store: NonNullable<typeof stores>[number]) {
   console.log(`[${store.slug}] ${products.length} products checked`);
 }
 
-await Promise.all((stores ?? []).map(refreshStore));
+// One store being down must not stop the others.
+await Promise.all(
+  (stores ?? []).map((store) =>
+    refreshStore(store).catch((error: unknown) => {
+      tally.failedStores++;
+      console.error(`[${store.slug}] refresh failed:`, error instanceof Error ? error.message : error);
+    }),
+  ),
+);
 console.log("summary", tally);
+if (tally.failedStores === (stores ?? []).length) process.exit(1);
