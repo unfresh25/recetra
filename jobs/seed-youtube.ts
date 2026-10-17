@@ -4,6 +4,7 @@
  *
  * Run with: bun --conditions=react-server jobs/seed-youtube.ts [--limit 300] [--per-query 8] [--dry-run]
  */
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createAdminClient } from "../lib/supabase/admin";
 import { processImportJob, type ImportPayload } from "../lib/recipes/import";
 
@@ -60,6 +61,19 @@ const QUERIES: Record<"breakfast" | "lunch" | "dinner", string[]> = {
   ],
 };
 
+// search.list costs 100 of the 10,000 daily quota units: cache results so reruns don't search again.
+const CACHE = new URL("./.cache/seed-candidates.json", import.meta.url);
+
+async function readCache(): Promise<Record<string, string[]>> {
+  try {
+    return JSON.parse(await readFile(CACHE, "utf8"));
+  } catch {
+    return {};
+  }
+}
+
+class QuotaError extends Error {}
+
 function arg(name: string, fallback: number) {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? Number(process.argv[i + 1]) : fallback;
@@ -78,6 +92,7 @@ async function search(query: string, max: number): Promise<string[]> {
     key: process.env.YOUTUBE_API_KEY!,
   }).toString();
   const res = await fetch(url);
+  if (res.status === 403 && (await res.clone().text()).includes("quota")) throw new QuotaError("YouTube search quota exhausted");
   if (!res.ok) throw new Error(`YouTube search ${res.status}: ${await res.text()}`);
   const body = (await res.json()) as { items: { id: { videoId: string } }[] };
   return body.items.map((i) => i.id.videoId);
@@ -90,13 +105,27 @@ async function main() {
   const dryRun = process.argv.includes("--dry-run");
   const db = createAdminClient();
 
-  const ids = new Set<string>();
-  for (const [meal, queries] of Object.entries(QUERIES)) {
+  const cache = await readCache();
+  const ids = new Set<string>(Object.values(cache).flat());
+  searching: for (const [meal, queries] of Object.entries(QUERIES)) {
     for (const q of queries) {
-      for (const id of await search(q, perQuery)) ids.add(id);
+      if (cache[q]) continue;
+      try {
+        cache[q] = await search(q, perQuery);
+      } catch (error) {
+        if (error instanceof QuotaError) {
+          console.log("YouTube search quota exhausted: processing the candidates found so far");
+          break searching;
+        }
+        throw error;
+      }
+      for (const id of cache[q]) ids.add(id);
+      await mkdir(new URL("./.cache/", import.meta.url), { recursive: true });
+      await writeFile(CACHE, JSON.stringify(cache, null, 2));
       console.log(`[${meal}] "${q}" -> ${ids.size} candidates`);
     }
   }
+  console.log(`${Object.keys(cache).length} queries cached, ${ids.size} candidates`);
 
   const { data: existing } = await db.from("recipes").select("source_video_id").eq("source_platform", "youtube");
   const known = new Set((existing ?? []).map((r) => r.source_video_id));
@@ -110,12 +139,13 @@ async function main() {
     while (next < todo.length) {
       const id = todo[next++]!;
       const payload: ImportPayload = { url: `https://www.youtube.com/watch?v=${id}`, visibility: "public", seed: true };
-      const { data: job } = await db.from("jobs").insert({ kind: "import_recipe", payload }).select("id").single();
-      const result = await processImportJob(job!.id);
+      const { data: job, error } = await db.from("jobs").insert({ kind: "import_recipe", payload }).select("id").single();
+      if (error || !job) throw new Error(`Could not create job: ${error?.message}`);
+      const result = await processImportJob(job.id);
       const key = result ? (result.stage === "failed" ? `failed:${result.reason}` : result.stage) : "error";
       tally[key] = (tally[key] ?? 0) + 1;
       // Seed jobs are bookkeeping only; drop them once processed.
-      await db.from("jobs").delete().eq("id", job!.id);
+      await db.from("jobs").delete().eq("id", job.id);
       console.log(`${next}/${todo.length} ${id} -> ${key}`);
     }
   }
