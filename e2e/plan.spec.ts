@@ -61,7 +61,23 @@ test("the weekly plan respects allergies and dislikes, and learns from replaceme
   await page.getByRole("button", { name: "¡Terminé!" }).click();
   await expect(page).toHaveURL(/\/plan$/);
   await firstDay.click();
-  await expect(lunchCard.getByText("Cocinada")).toBeVisible();
+  await expect(lunchCard.getByText("· Comida")).toBeVisible();
+
+  // The cooked lunch counts in calories for that day.
+  const monday = (await firstDay.getAttribute("href"))!.split("day=")[1]!;
+  await page.goto(`/calories?day=${monday}`);
+  await expect(page.getByRole("region", { name: "Total del día" })).toContainText("500");
+  await page.screenshot({ path: "e2e/__screens__/60-calories.png", fullPage: true });
+
+  // Other weeks: past ones are a record, future ones are built on demand.
+  await page.goto("/plan");
+  await page.getByRole("link", { name: "Semana anterior" }).click();
+  await expect(page.getByText("Sin plan esa semana")).toBeVisible();
+  await page.getByRole("link", { name: "Volver a esta semana" }).click();
+  await expect(page.getByRole("navigation", { name: "Semanas" })).toContainText("Esta semana");
+  await page.getByRole("link", { name: "Semana siguiente" }).click();
+  await expect(page.getByRole("navigation", { name: "Semanas" })).toContainText("Próxima semana");
+  await expect(page.getByRole("button", { name: "Armar esta semana" })).toBeVisible();
 
   await page.goto("/recipes?tab=favorites&who=me");
   await expect(page.getByRole("link", { name: /E2E/ })).toHaveCount(1);

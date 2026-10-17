@@ -5,13 +5,15 @@ import { DayStrip } from "@/components/plan/day-strip";
 import { GenerateWeek } from "@/components/plan/generate-week";
 import { DayRoute } from "@/components/plan/day-route";
 import { RegenerateButton } from "@/components/plan/regenerate-button";
+import { WeekNav } from "@/components/plan/week-nav";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { requireReadyMembership } from "@/lib/auth";
 import { formatCop } from "@/lib/onboarding/options";
 import { getPlanView } from "@/lib/plan/queries";
-import { dayLabel } from "@/lib/plan/week";
+import { dayLabel, mondayOf } from "@/lib/plan/week";
 import { getShoppingPlan } from "@/lib/shopping/queries";
 
 export const metadata: Metadata = { title: "Plan" };
@@ -49,7 +51,35 @@ async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams
   const { household } = await requireReadyMembership();
   const requested = typeof query.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(query.day) ? query.day : null;
   const { today, days, selected, week } = await getPlanView(household.id, requested);
-  if (!week) return <GenerateWeek day={selected} />;
+  const weekStart = days[0]!;
+  const thisWeek = mondayOf(today);
+  const nav = (
+    <>
+      <WeekNav weekStart={weekStart} today={today} />
+      {weekStart !== thisWeek ? (
+        <Link href="/plan" scroll={false} className="-mt-3 self-center text-sm font-semibold text-brand">
+          Volver a esta semana
+        </Link>
+      ) : null}
+    </>
+  );
+  if (!week) {
+    if (weekStart < thisWeek) {
+      return (
+        <>
+          {nav}
+          <EmptyState illustration="empty-plan" title="Sin plan esa semana" description="Recetra empezó a planear después. Las semanas con plan quedan aquí como registro." />
+        </>
+      );
+    }
+    // The current week builds itself on the first visit; future weeks wait for a tap.
+    return (
+      <>
+        {nav}
+        <GenerateWeek day={selected} auto={weekStart === thisWeek} />
+      </>
+    );
+  }
 
   const dayMeals = week.meals.filter((m) => m.day === selected);
   const planned = week.meals.filter((m) => m.recipe).length;
@@ -64,25 +94,28 @@ async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams
               {planned} de {week.meals.length} comidas
             </p>
           </div>
-          <RegenerateButton day={selected} />
+          {weekStart >= thisWeek ? <RegenerateButton day={selected} /> : null}
         </div>
         <div className="flex items-center gap-3 text-sm text-ink-muted">
           <span className="flex items-center gap-1.5"><Icon name="users" size={16} /> {household.servings_adults + household.servings_kids} personas</span>
           {household.weekly_budget_cop ? <span className="flex items-center gap-1.5"><Icon name="wallet" size={16} /> {formatCop(household.weekly_budget_cop)}</span> : null}
         </div>
-        <Suspense fallback={<span className="h-5 w-48 animate-pulse rounded-full bg-sunken" />}>
-          <WeekCost householdId={household.id} budgetCop={household.weekly_budget_cop} />
-        </Suspense>
+        {weekStart === thisWeek ? (
+          <Suspense fallback={<span className="h-5 w-48 animate-pulse rounded-full bg-sunken" />}>
+            <WeekCost householdId={household.id} budgetCop={household.weekly_budget_cop} />
+          </Suspense>
+        ) : null}
         <Link href="/shopping" className="flex items-center justify-between border-t border-line pt-3 text-sm font-semibold">
           <span className="flex items-center gap-2"><Icon name="basket" size={18} /> Lista de compras y precios</span>
           <Icon name="arrow-right" size={16} className="text-ink-faint" />
         </Link>
       </Card>
 
+      {nav}
       <DayStrip days={days} selected={selected} today={today} />
 
       <h2 className="font-condensed text-[34px] font-extrabold leading-none">{dayLabel(selected, "long")}</h2>
-      <DayRoute meals={dayMeals} members={week.members} />
+      <DayRoute meals={dayMeals} members={week.members} today={today} />
     </>
   );
 }
