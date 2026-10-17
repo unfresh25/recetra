@@ -3,10 +3,18 @@
  * Only confident recipes whose description lists the ingredients are kept (auto-approved).
  *
  * Run with: bun --conditions=react-server jobs/seed-youtube.ts [--limit 300] [--per-query 8] [--dry-run]
+ *   --audio-minutes 420   max audio to transcribe per run (Groq free plan: 480 min/day)
+ *   --channels UCxxx,UCyyy [--per-channel 150]  walk channel uploads instead of searching
+ *                                              (1 quota unit per 50 videos instead of 100 per search)
  */
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createAdminClient } from "../lib/supabase/admin";
 import { processImportJob, type ImportPayload } from "../lib/recipes/import";
+import { MAX_AUDIO_SECONDS, downloadAudio, readInfo, toMetadata } from "../lib/recipes/media";
+import { transcribeAudio } from "../lib/recipes/transcribe";
+import type { Json } from "../lib/supabase/database.types";
 
 const QUERIES: Record<"breakfast" | "lunch" | "dinner", string[]> = {
   breakfast: [
@@ -98,12 +106,54 @@ async function search(query: string, max: number): Promise<string[]> {
   return body.items.map((i) => i.id.videoId);
 }
 
+function argList(name: string) {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 ? (process.argv[i + 1] ?? "").split(",").filter(Boolean) : [];
+}
+
+const RECIPE_HINT = /receta|ingrediente|cómo hacer|como hacer|preparar|paso a paso/i;
+
+/** Recipe-looking videos from a channel's uploads playlist, newest first. */
+async function channelUploads(channelId: string, max: number): Promise<string[]> {
+  const key = process.env.YOUTUBE_API_KEY!;
+  const channel = (await (
+    await fetch(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${channelId}&key=${key}`)
+  ).json()) as { items?: { contentDetails: { relatedPlaylists: { uploads: string } } }[] };
+  const uploads = channel.items?.[0]?.contentDetails.relatedPlaylists.uploads;
+  if (!uploads) return [];
+  const ids: string[] = [];
+  let pageToken = "";
+  while (ids.length < max) {
+    const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${uploads}&key=${key}${pageToken ? `&pageToken=${pageToken}` : ""}`;
+    const page = (await (await fetch(url)).json()) as {
+      items?: { snippet: { title: string; description: string; resourceId: { videoId: string } } }[];
+      nextPageToken?: string;
+    };
+    for (const item of page.items ?? []) {
+      if (RECIPE_HINT.test(`${item.snippet.title}\n${item.snippet.description}`)) ids.push(item.snippet.resourceId.videoId);
+    }
+    if (!page.nextPageToken) break;
+    pageToken = page.nextPageToken;
+  }
+  return ids.slice(0, max);
+}
+
 async function main() {
   const limit = arg("limit", 300);
   const perQuery = arg("per-query", 8);
   const concurrency = arg("concurrency", 4);
   const dryRun = process.argv.includes("--dry-run");
-  const db = createAdminClient();
+
+  const channels = argList("channels");
+  if (channels.length) {
+    const ids = new Set<string>();
+    for (const channel of channels) {
+      const found = await channelUploads(channel, arg("per-channel", 150));
+      for (const id of found) ids.add(id);
+      console.log(`[channel] ${channel} -> ${found.length} recipe-looking videos`);
+    }
+    return processCandidates([...ids], { limit, concurrency, dryRun });
+  }
 
   const cache = await readCache();
   const ids = new Set<string>(Object.values(cache).flat());
@@ -127,6 +177,15 @@ async function main() {
   }
   console.log(`${Object.keys(cache).length} queries cached, ${ids.size} candidates`);
 
+  return processCandidates([...ids], { limit, concurrency, dryRun });
+}
+
+async function processCandidates(
+  candidates: string[],
+  { limit, concurrency, dryRun }: { limit: number; concurrency: number; dryRun: boolean },
+) {
+  const db = createAdminClient();
+  const ids = new Set(candidates);
   const { data: existing } = await db.from("recipes").select("source_video_id").eq("source_platform", "youtube");
   const known = new Set((existing ?? []).map((r) => r.source_video_id));
   const todo = [...ids].filter((id) => !known.has(id)).slice(0, limit);
@@ -134,14 +193,46 @@ async function main() {
   if (dryRun) return;
 
   const tally: Record<string, number> = {};
+  let audioBudget = arg("audio-minutes", 420) * 60;
   let next = 0;
+
+  /** Videos whose description lacks the recipe: transcribe the audio and run the import again. */
+  async function withAudio(jobId: string, payload: ImportPayload) {
+    const dir = await mkdtemp(join(tmpdir(), "recetra-seed-"));
+    try {
+      const info = await readInfo(payload.url);
+      const seconds = info.duration ?? MAX_AUDIO_SECONDS;
+      if (seconds > Math.min(MAX_AUDIO_SECONDS, 15 * 60) || seconds > audioBudget) return null;
+      audioBudget -= seconds;
+      let transcript: string;
+      try {
+        transcript = await transcribeAudio(await downloadAudio(payload.url, dir));
+      } catch (error) {
+        audioBudget += seconds;
+        throw error;
+      }
+      const worker = { metadata: toMetadata(payload.url, info), transcript };
+      await db
+        .from("jobs")
+        .update({ payload: { ...payload, worker } as unknown as Json, result: null })
+        .eq("id", jobId);
+      return processImportJob(jobId);
+    } catch (error) {
+      console.error(`audio failed for ${payload.url}:`, error instanceof Error ? error.message : error);
+      return null;
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+
   async function workerLoop() {
     while (next < todo.length) {
       const id = todo[next++]!;
       const payload: ImportPayload = { url: `https://www.youtube.com/watch?v=${id}`, visibility: "public", seed: true };
       const { data: job, error } = await db.from("jobs").insert({ kind: "import_recipe", payload }).select("id").single();
       if (error || !job) throw new Error(`Could not create job: ${error?.message}`);
-      const result = await processImportJob(job.id);
+      let result = await processImportJob(job.id);
+      if (result?.stage === "needs_worker") result = (await withAudio(job.id, payload)) ?? { stage: "failed", reason: "low_confidence" };
       const key = result ? (result.stage === "failed" ? `failed:${result.reason}` : result.stage) : "error";
       tally[key] = (tally[key] ?? 0) + 1;
       // Seed jobs are bookkeeping only; drop them once processed.
@@ -150,7 +241,7 @@ async function main() {
     }
   }
   await Promise.all(Array.from({ length: concurrency }, workerLoop));
-  console.log("summary", tally);
+  console.log("summary", tally, `audio left: ${Math.round(audioBudget / 60)} min`);
 }
 
 await main();
