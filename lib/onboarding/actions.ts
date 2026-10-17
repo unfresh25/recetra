@@ -1,6 +1,8 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { DATA_TAG } from "@/lib/cache";
 import { z } from "zod";
 import { requireMembership } from "@/lib/auth";
 import { Constants, type TablesUpdate } from "@/lib/supabase/database.types";
@@ -16,6 +18,7 @@ async function updateHousehold(values: TablesUpdate<"households">): Promise<Acti
   const { household } = await requireMembership();
   const supabase = await createClient();
   const { error } = await supabase.from("households").update(values).eq("id", household.id);
+  updateTag(DATA_TAG);
   return error ? { error: "No pudimos guardar. Intenta de nuevo." } : {};
 }
 
@@ -25,6 +28,7 @@ export async function saveStores(storeIds: string[]): Promise<ActionResult> {
   await requireMembership();
   const supabase = await createClient();
   const { error } = await supabase.rpc("replace_household_stores", { p_store_ids: parsed.data });
+  updateTag(DATA_TAG);
   return error ? { error: "No pudimos guardar tus tiendas." } : {};
 }
 
@@ -71,6 +75,7 @@ async function replaceRestrictions(args: {
   await requireMembership();
   const supabase = await createClient();
   const { error } = await supabase.rpc("replace_my_restrictions", args);
+  updateTag(DATA_TAG);
   return error ? { error: "No pudimos guardar. Intenta de nuevo." } : {};
 }
 
@@ -109,5 +114,6 @@ export async function finishSetup() {
   if (!member.onboarded_at) {
     await supabase.from("members").update({ onboarded_at: now }).eq("id", member.id);
   }
+  updateTag(DATA_TAG);
   redirect("/plan");
 }

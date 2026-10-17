@@ -1,6 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
-import { cache } from "react";
+import { privateData } from "@/lib/cache";
 import { pendingSteps } from "@/lib/onboarding/steps";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/database.types";
@@ -23,18 +23,22 @@ export type Household = Pick<
 >;
 
 /** Signed-in user id, or redirect to /login. Request-scoped (reads cookies). */
-export const requireUserId = cache(async (): Promise<string> => {
-  const supabase = await createClient();
+export async function requireUserId(): Promise<string> {
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
   const { data } = await supabase.auth.getClaims();
   const userId = data?.claims?.sub;
   if (!userId) redirect("/login");
   return userId;
-});
+}
 
 /** Current member and household, or null when the user has not joined one yet. */
-export const getMembership = cache(async () => {
+export async function getMembership() {
+  "use cache: private";
+  privateData();
   const userId = await requireUserId();
-  const supabase = await createClient();
+  const supabase = await createClient({ privateCache: true });
   const { data, error } = await supabase
     .from("members")
     .select(
@@ -56,21 +60,21 @@ export const getMembership = cache(async () => {
       memberDone: member.onboarded_at !== null,
     }),
   };
-});
+}
 
 export type Membership = NonNullable<Awaited<ReturnType<typeof getMembership>>>;
 
 /** Membership, or redirect to onboarding. Does not require setup to be finished. */
-export const requireMembership = cache(async () => {
+export async function requireMembership() {
   const membership = await getMembership();
   if (!membership) redirect("/onboarding");
   return membership;
-});
+}
 
 /** Membership with setup finished, or redirect to the next pending setup step. */
-export const requireReadyMembership = cache(async () => {
+export async function requireReadyMembership() {
   const membership = await requireMembership();
   const [next] = membership.setupFlow;
   if (next) redirect(`/setup/${next}`);
   return membership;
-});
+}

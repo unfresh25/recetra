@@ -1,8 +1,11 @@
 import "server-only";
+import { privateData } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getRecipe(recipeId: string, householdId: string) {
-  const supabase = await createClient();
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
   const [{ data: recipe }, { data: ingredients }, { data: steps }, { data: override }] = await Promise.all([
     supabase.from("recipes").select("*").eq("id", recipeId).maybeSingle(),
     supabase
@@ -32,7 +35,9 @@ export type RecipeDetail = NonNullable<Awaited<ReturnType<typeof getRecipe>>>;
 
 /** Recipes this household imported (any status except rejected), newest first. */
 export async function listHouseholdImports(householdId: string) {
-  const supabase = await createClient();
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
   const [{ data: recipes }, { data: overrides }] = await Promise.all([
     supabase
       .from("recipes")
@@ -82,7 +87,9 @@ export async function countInbox(householdId: string) {
 
 /** The member's own reactions to a recipe and whether their partner favorited it. */
 export async function getRecipeSocial(recipeId: string, memberId: string) {
-  const supabase = await createClient();
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
   const [{ data: reactions }, { data: members }] = await Promise.all([
     supabase.from("reactions").select("member_id, kind").eq("recipe_id", recipeId).in("kind", ["favorite", "dislike", "veto"]),
     supabase.from("members").select("id, display_name, accent_color"),
@@ -97,7 +104,9 @@ export async function getRecipeSocial(recipeId: string, memberId: string) {
 }
 
 export async function getPlanMealAdjustments(planMealId: string) {
-  const supabase = await createClient();
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
   const { data } = await supabase.from("plan_meals").select("adjustments").eq("id", planMealId).maybeSingle();
   const adjustments = (data?.adjustments ?? {}) as { removed?: import("@/lib/plan/types").Adjustment[] };
   return { removed: adjustments.removed ?? [] };
@@ -105,7 +114,9 @@ export async function getPlanMealAdjustments(planMealId: string) {
 
 /** Favorites of the household, tagged with who favorited each one. */
 export async function listFavorites() {
-  const supabase = await createClient();
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
   const [{ data: favs }, { data: overrides }] = await Promise.all([
     supabase
       .from("reactions")

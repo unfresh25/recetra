@@ -1,6 +1,8 @@
 import "server-only";
+import { privateData } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Adjustment } from "./types";
+import { mondayOf, todayInBogota, weekDays } from "./week";
 
 export type PlanMealView = {
   id: string;
@@ -23,7 +25,9 @@ export type PlanMealView = {
 };
 
 export async function getWeekPlan(householdId: string, weekStart: string) {
-  const supabase = await createClient();
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
   const { data: plan } = await supabase
     .from("meal_plans")
     .select("id, generated_at")
@@ -81,4 +85,17 @@ export async function getWeekPlan(householdId: string, weekStart: string) {
     .sort((a, b) => a.day.localeCompare(b.day) || order[a.mealType] - order[b.mealType]);
 
   return { planId: plan.id, meals: views, members: members ?? [] };
+}
+
+/** Everything the Plan screen needs for the week containing `requestedDay` (today by default). */
+export async function getPlanView(householdId: string, requestedDay: string | null) {
+  "use cache: private";
+  privateData();
+  const today = todayInBogota();
+  const day = requestedDay ?? today;
+  const weekStart = mondayOf(day);
+  const days = weekDays(weekStart);
+  const selected = days.includes(day) ? day : days[0]!;
+  const week = await getWeekPlan(householdId, weekStart);
+  return { today, days, selected, week };
 }

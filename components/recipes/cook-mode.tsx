@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { markCooked } from "@/lib/plan/actions";
 import type { Enums } from "@/lib/supabase/database.types";
 import { cn } from "@/lib/utils/cn";
+import { StepVideo } from "./step-video";
 
 type Step = { position: number; text: string; video_start_seconds: number | null };
 type Ingredient = { name: string; amount: string; removed: boolean };
@@ -96,29 +97,12 @@ export function CookMode({
     if (timer && remaining <= 0) navigator.vibrate?.([300, 150, 300]);
   }, [timer, remaining]);
 
-  const videoSrc = useMemo(() => {
-    if (!videoId) return null;
-    if (platform === "youtube") {
-      const start = step.video_start_seconds ?? 0;
-      return `https://www.youtube-nocookie.com/embed/${videoId}?start=${start}&autoplay=1&mute=1&playsinline=1`;
-    }
-    if (platform === "tiktok") return `https://www.tiktok.com/player/v1/${videoId}?autoplay=0`;
-    if (platform === "instagram") return `https://www.instagram.com/reel/${videoId}/embed`;
-    return null;
-  }, [platform, videoId, step.video_start_seconds]);
 
   return (
     <main className="flex min-h-dvh flex-1 flex-col bg-surface">
       <div className="relative aspect-video w-full bg-black">
-        {videoSrc ? (
-          <iframe
-            key={platform === "youtube" ? videoSrc : "video"}
-            src={videoSrc}
-            title={`Video: ${title}`}
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-            allowFullScreen
-            className="absolute inset-0 size-full"
-          />
+        {videoId ? (
+          <StepVideo platform={platform} videoId={videoId} startSeconds={step.video_start_seconds} title={title} />
         ) : null}
         <Link
           href={`/recipes/${recipeId}${planMealId ? `?meal=${planMealId}` : ""}`}

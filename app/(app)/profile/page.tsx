@@ -8,7 +8,7 @@ import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { requireReadyMembership } from "@/lib/auth";
 import { signOut } from "@/lib/household/actions";
-import { createClient } from "@/lib/supabase/server";
+import { listMembers } from "@/lib/household/queries";
 import { InviteButton } from "./invite-button";
 
 export const metadata: Metadata = { title: "Perfil" };
@@ -42,13 +42,7 @@ export default function ProfilePage() {
 
 async function HouseholdCard() {
   const { member, household } = await requireReadyMembership();
-  const supabase = await createClient();
-  const { data: members } = await supabase
-    .from("members")
-    .select("id, display_name, accent_color, role")
-    .order("created_at");
-
-  const housemates = members ?? [];
+  const housemates = await listMembers();
 
   return (
     <Card className="flex flex-col gap-5">

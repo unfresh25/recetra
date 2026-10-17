@@ -5,9 +5,13 @@ import { connection } from "next/server";
 import { env } from "@/lib/env";
 import type { Database } from "./database.types";
 
-export async function createClient() {
-  // Supabase reads the clock to validate tokens; mark this as request-time work for Cache Components.
-  await connection();
+/**
+ * Server Supabase client bound to the request's cookies.
+ * Inside a "use cache: private" function pass { privateCache: true }: that scope may read the clock
+ * and cookies, but not connection(). Everywhere else we mark the work as request-time explicitly.
+ */
+export async function createClient({ privateCache = false }: { privateCache?: boolean } = {}) {
+  if (!privateCache) await connection();
   const cookieStore = await cookies();
 
   return createServerClient<Database>(env.supabaseUrl, env.supabasePublishableKey, {

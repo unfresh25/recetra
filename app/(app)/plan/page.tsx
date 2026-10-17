@@ -10,8 +10,8 @@ import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { requireReadyMembership } from "@/lib/auth";
 import { formatCop } from "@/lib/onboarding/options";
-import { getWeekPlan } from "@/lib/plan/queries";
-import { dayLabel, mondayOf, todayInBogota, weekDays } from "@/lib/plan/week";
+import { getPlanView } from "@/lib/plan/queries";
+import { dayLabel } from "@/lib/plan/week";
 import { countInbox } from "@/lib/recipes/queries";
 
 export const metadata: Metadata = { title: "Plan" };
@@ -54,13 +54,8 @@ function PlanSkeleton() {
 async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams">) {
   const query = await searchParams;
   const { household } = await requireReadyMembership();
-  const today = todayInBogota();
-  const requested = typeof query.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(query.day) ? query.day : today;
-  const weekStart = mondayOf(requested);
-  const days = weekDays(weekStart);
-  const selected = days.includes(requested) ? requested : days[0]!;
-
-  const week = await getWeekPlan(household.id, weekStart);
+  const requested = typeof query.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(query.day) ? query.day : null;
+  const { today, days, selected, week } = await getPlanView(household.id, requested);
   if (!week) return <GenerateWeek day={selected} />;
 
   const dayMeals = week.meals.filter((m) => m.day === selected);
