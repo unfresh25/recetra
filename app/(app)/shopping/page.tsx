@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Compras" };
 export default function ShoppingPage() {
   return (
     <>
-      <ScreenHeader title="Compras" />
+      <ScreenHeader title="Compras" backHref="/plan" />
       <ShoppingTabs current="list" />
       <div className="flex flex-col gap-6 px-5 pt-4">
         <Suspense fallback={<PanLoaderScreen />}>

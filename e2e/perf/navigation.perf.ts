@@ -19,16 +19,21 @@ test("tab navigation timings", async ({ page }) => {
   await page.waitForTimeout(1500); // let prefetches settle
 
   const routes: [string, RegExp | string][] = [
-    ["Recetas", "Mis recetas"],
+    ["Guardados", "Mis recetas"],
     ["Perfil", "Mis preferencias"],
     ["Plan", "Pericos perf"],
-    ["Recetas", "Mis recetas"],
+    ["Guardados", "Mis recetas"],
     ["Plan", "Pericos perf"],
   ];
   const results: string[] = [];
   for (const [tab, marker] of routes) {
     const t0 = Date.now();
-    await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: tab }).click();
+    if (tab === "Guardados") {
+      await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Perfil" }).click();
+      await page.getByRole("link", { name: "Guardados Tus recetas y favoritos" }).click();
+    } else {
+      await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: tab }).click();
+    }
     await expect(page.getByText(marker).first()).toBeVisible({ timeout: 15_000 });
     results.push(`${tab}: ${Date.now() - t0} ms`);
     await page.waitForTimeout(800);

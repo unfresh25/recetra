@@ -19,7 +19,7 @@ test("the shopping list prices the week and suggests where to buy", async ({ pag
   await personalSetup(page, {});
   await expect(page.getByRole("heading", { name: /Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo/ })).toBeVisible({ timeout: 20_000 });
 
-  await page.getByRole("link", { name: "Compras", exact: true }).click();
+  await page.getByRole("link", { name: "Lista de compras", exact: true }).click();
   await expect(page.getByRole("radio", { name: /Combinar/ })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByText(/D1 \+ Olímpica|Olímpica \+ D1/)).toBeVisible();
   await page.waitForLoadState("networkidle");
