@@ -2,6 +2,35 @@ import "server-only";
 import { privateData } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { RecipeSearchFilters } from "./search-params";
+import type { DiscoverRecipe } from "@/lib/discover/queries";
+
+/** Public, approved recipes by this creator, with the same cover and like data as discover. */
+export async function listRecipesByAuthor(authorName: string, excludeRecipeId: string, memberId: string): Promise<DiscoverRecipe[]> {
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
+  const [{ data: recipes, error }, { data: overrides, error: coverError }] = await Promise.all([
+    supabase.from("recipes")
+      .select("id, title, author_name, total_minutes, meal_types, kcal_per_serving, source_platform, source_video_id, source_image_path, styles")
+      .eq("visibility", "public").eq("status", "approved").eq("author_name", authorName)
+      .neq("id", excludeRecipeId).order("created_at", { ascending: false }).limit(10),
+    supabase.from("household_recipe_overrides").select("recipe_id, cover_image_path"),
+  ]);
+  if (error) throw error;
+  if (coverError) throw coverError;
+  if (!recipes.length) return [];
+  const ids = recipes.map((recipe) => recipe.id);
+  const [counts, favorites] = await Promise.all([
+    supabase.rpc("recipe_like_counts", { p_recipe_ids: ids }),
+    supabase.from("reactions").select("recipe_id").eq("member_id", memberId).eq("kind", "favorite").in("recipe_id", ids),
+  ]);
+  if (counts.error) throw counts.error;
+  if (favorites.error) throw favorites.error;
+  const covers = new Map(overrides.map((cover) => [cover.recipe_id, cover.cover_image_path]));
+  const likes = new Map(counts.data.map((row) => [row.recipe_id, row.likes]));
+  const liked = new Set(favorites.data.map((row) => row.recipe_id));
+  return recipes.map((recipe) => ({ ...recipe, coverPath: covers.get(recipe.id) ?? recipe.source_image_path, likes: likes.get(recipe.id) ?? 0, likedByMe: liked.has(recipe.id) }));
+}
 
 /** Approved public catalog recipes, newest first. Reads use the session's RLS. */
 export async function listDiscover() {

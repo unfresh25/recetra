@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadPlanInputs } from "./data";
 import { alternativesFor, generatePlan } from "./engine";
 import type { Adjustment, MealType, PlannedMeal } from "./types";
-import { mondayOf, todayInBogota } from "./week";
+import { addDays, mondayOf, todayInBogota } from "./week";
 
 const toJson = (adjustments: Adjustment[]) => ({ removed: adjustments }) as unknown as Json;
 
@@ -118,6 +118,30 @@ export async function replaceMeal(planMealId: string, recipeId: string, reason: 
 }
 
 type ToggleKind = "favorite" | "veto" | "dislike";
+
+/** Resolve the household's slot, then reuse replacement eligibility, adjustments and RPC. */
+export async function placeRecipeInPlan(recipeId: string, day: string, mealType: string): Promise<{ error?: string }> {
+  const { household } = await requireReadyMembership();
+  const parsed = z.object({ recipeId: z.uuid(), day: z.iso.date(), mealType: z.enum(Constants.public.Enums.meal_type) }).safeParse({ recipeId, day, mealType });
+  if (!parsed.success) return { error: "Selecciona un día y una comida válidos." };
+  const today = todayInBogota();
+  const monday = mondayOf(today);
+  if (day < today || day > addDays(monday, 13)) return { error: "Elige un día disponible de esta semana o la próxima." };
+  const supabase = await createClient();
+  const { data: plan, error: planError } = await supabase.from("meal_plans").select("id")
+    .eq("household_id", household.id).eq("week_start", mondayOf(day)).maybeSingle();
+  if (planError) return { error: "No pudimos consultar tu plan. Intenta de nuevo." };
+  if (!plan) return { error: "Aún no tienes plan para esa semana." };
+  const { data: meal, error: mealError } = await supabase.from("plan_meals").select("id, recipe_id")
+    .eq("meal_plan_id", plan.id).eq("day", day).eq("meal_type", parsed.data.mealType).maybeSingle();
+  if (mealError) return { error: "No pudimos consultar esa comida. Intenta de nuevo." };
+  if (!meal) return { error: "No encontramos esa comida en tu plan." };
+  if (meal.recipe_id === recipeId) return { error: "Esta receta ya está en esa comida del plan." };
+  const result = await replaceMeal(meal.id, recipeId, null);
+  if (result.error === "Esa receta no es apta para su hogar.") return { error: "Esta receta no es apta para su hogar." };
+  if (result.error === "No pudimos reemplazarla.") return { error: "No pudimos agregar la receta al plan. Intenta de nuevo." };
+  return result;
+}
 
 /** Favorite and veto are toggles; "no me gusta" is recorded once per recipe. */
 export async function toggleReaction(recipeId: string, kind: ToggleKind): Promise<{ active: boolean }> {

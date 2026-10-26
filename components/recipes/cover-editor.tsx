@@ -60,9 +60,9 @@ export function CoverEditor({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Cambiar portada"
-        className="flex size-11 items-center justify-center text-white"
+        className="flex size-[38px] items-center justify-center rounded-full bg-canvas/90 text-ink"
       >
-        {pending ? <span className="size-5 animate-spin rounded-full border-2 border-brand border-r-transparent" /> : <Icon name="pencil" />}
+        {pending ? <span className="size-5 animate-spin rounded-full border-2 border-ink border-r-transparent" /> : <Icon name="pencil" size={18} />}
       </button>
       <input
         ref={input}
@@ -86,8 +86,8 @@ export function CoverEditor({
             <span className="mx-auto mb-4 block h-1.5 w-10 rounded-full bg-line" />
             <p className="mb-3 font-display text-xl font-bold">Portada de la receta</p>
             <div className="flex flex-col gap-2">
-              <button type="button" disabled={pending} onClick={() => input.current?.click()} className="flex items-center gap-3 border-b border-line py-4 text-left font-semibold">
-                <Icon name="image" className="text-brand" /> Elegir foto o tomar una
+              <button type="button" disabled={pending} onClick={() => input.current?.click()} className="flex items-center gap-3 border-b border-line py-4 text-left font-display">
+                <Icon name="image" className="text-ink" /> Elegir foto o tomar una
               </button>
               {hasCustomCover ? (
                 <button
@@ -99,13 +99,13 @@ export function CoverEditor({
                       setOpen(false);
                     })
                   }
-                  className="flex items-center gap-3 border-b border-line py-4 text-left font-semibold"
+                  className="flex items-center gap-3 border-b border-line py-4 text-left font-display"
                 >
-                  <Icon name="refresh" className="text-brand" /> Volver a la imagen del video
+                  <Icon name="refresh" className="text-ink" /> Volver a la imagen del video
                 </button>
               ) : null}
-              {error ? <p role="alert" className="text-sm text-brand">{error}</p> : null}
-              <button type="button" onClick={() => setOpen(false)} className="mt-1 h-12 font-semibold text-ink-muted">
+              {error ? <p role="alert" className="text-sm text-ink">{error}</p> : null}
+              <button type="button" onClick={() => setOpen(false)} className="mt-1 h-12 font-display text-ink-muted">
                 Cancelar
               </button>
             </div>

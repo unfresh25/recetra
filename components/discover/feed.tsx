@@ -95,7 +95,7 @@ export function DiscoverFeed({ data, styles }: { data: DiscoverData; styles: Rec
             <h2 className="mt-2 font-display text-[25px] font-semibold leading-[1.15]">{daily.title}</h2>
             <p className="mt-2 text-[12px] text-ink-muted">{[daily.author_name, daily.total_minutes !== null ? `${daily.total_minutes} min` : null, daily.kcal_per_serving !== null ? `${daily.kcal_per_serving} kcal` : null].filter(Boolean).join(" · ")}</p>
           </Link>
-          <div className="absolute top-3 right-3"><LikeButton recipeId={daily.id} likes={daily.likes} likedByMe={daily.likedByMe} /></div>
+          <div className="absolute top-3 right-3"><LikeButton recipeId={daily.id} recipeTitle={daily.title} likes={daily.likes} likedByMe={daily.likedByMe} /></div>
         </article>
       ) : <EmptyState illustration="empty-recipes" title="Pronto habrá más por descubrir" description="Aquí encontrarás recetas para inspirar tu próxima comida." />}
       <DiscoverChips />

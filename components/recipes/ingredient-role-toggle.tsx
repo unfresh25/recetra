@@ -14,7 +14,7 @@ export function IngredientRoleToggle({ recipeId, position, role }: { recipeId: s
       onClick={() => startTransition(() => setIngredientRole(recipeId, position, role === "core" ? "accessory" : "core"))}
       className={cn(
         "text-xs font-semibold underline decoration-dotted underline-offset-4 transition-opacity",
-        role === "core" ? "text-ink-muted" : "text-teal",
+        role === "core" ? "text-ink-muted" : "text-ink",
         pending && "opacity-50",
       )}
     >

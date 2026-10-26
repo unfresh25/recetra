@@ -22,7 +22,7 @@ export function RecipeTile({ recipe, layout = "rail", styles = [] }: { recipe: D
             <Icon name="play" size={12} /> {PLATFORM_LABELS[recipe.source_platform]}
           </span>
         ) : null}
-        <div className={`absolute right-2 ${grid ? "top-2" : "bottom-2"}`}><LikeButton recipeId={recipe.id} likes={recipe.likes} likedByMe={recipe.likedByMe} /></div>
+        <div className={`absolute right-2 ${grid ? "top-2" : "bottom-2"}`}><LikeButton recipeId={recipe.id} recipeTitle={recipe.title} likes={recipe.likes} likedByMe={recipe.likedByMe} /></div>
       </div>
       <Link href={`/recipes/${recipe.id}`} className="mt-2.5 block">
         <h3 className="line-clamp-2 font-display text-[14.5px] font-semibold leading-[1.3] text-ink">{recipe.title}</h3>

@@ -86,7 +86,7 @@ export function ImportForm({ initialUrl }: { initialUrl?: string }) {
       </fieldset>
 
       <Card className="flex gap-3">
-        <Icon name="sparkles" size={22} className="shrink-0 text-teal" />
+        <Icon name="chef-hat" size={22} className="shrink-0 text-teal" />
         <p className="text-sm text-ink">
           Leemos el texto del video y armamos ingredientes, pasos y el momento del día. Si el video no los escribe, lo
           escuchamos. Te avisamos en la bandeja para que la revises.

@@ -208,7 +208,7 @@ export type IconName = keyof typeof icons;
 export function Icon({
   name,
   size = 22,
-  strokeWidth = 1.8,
+  strokeWidth = name === "chef-hat" ? 1.5 : 1.8,
   className,
 }: {
   name: IconName;
