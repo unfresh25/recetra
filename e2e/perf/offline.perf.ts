@@ -17,7 +17,7 @@ test("the shopping list opens without signal", async ({ page, context }) => {
   await householdSetup(page);
   await personalSetup(page, {});
   await expect(page.getByRole("heading", { name: /Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo/ })).toBeVisible({ timeout: 20_000 });
-  await page.getByRole("link", { name: "Compras", exact: true }).click();
+  await page.getByRole("link", { name: "Lista de compras", exact: true }).click();
   await expect(page.getByRole("button", { name: /Arroz blanco/ })).toBeVisible();
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, { timeout: 15_000 }).catch(() => page.reload());
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null);

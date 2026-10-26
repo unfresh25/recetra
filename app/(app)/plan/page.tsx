@@ -22,7 +22,14 @@ export const metadata: Metadata = { title: "Plan" };
 export default function PlanPage({ searchParams }: PageProps<"/plan">) {
   return (
     <>
-      <ScreenHeader title="Plan" />
+      <ScreenHeader
+        title="Plan"
+        action={
+          <Link href="/shopping" aria-label="Lista de compras" className="flex size-11 items-center justify-center text-ink">
+            <Icon name="basket" size={24} />
+          </Link>
+        }
+      />
       <div className="flex flex-col gap-5 px-5 pt-4">
         <Suspense fallback={<PanLoaderScreen />}>
           <WeekPlan searchParams={searchParams} />

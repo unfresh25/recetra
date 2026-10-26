@@ -2,6 +2,15 @@ import "server-only";
 import { privateData } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 
+/** Avatars live in a private bucket; sign them with the member's session. */
+export async function getMemberAvatarUrl(memberId: string) {
+  const supabase = await createClient();
+  const { data: member } = await supabase.from("members").select("avatar_path").eq("id", memberId).maybeSingle();
+  if (!member?.avatar_path) return null;
+  const { data } = await supabase.storage.from("avatars").createSignedUrl(member.avatar_path, 3600);
+  return data?.signedUrl ?? null;
+}
+
 export async function listMembers() {
   "use cache: private";
   privateData();

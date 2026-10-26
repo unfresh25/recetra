@@ -15,7 +15,7 @@ import {
 import { listMembers } from "@/lib/household/queries";
 import { cn } from "@/lib/utils/cn";
 
-export const metadata: Metadata = { title: "Recetas" };
+export const metadata: Metadata = { title: "Guardados" };
 
 const TABS = [
   { value: "mine", label: "Mis recetas" },
@@ -26,20 +26,12 @@ export default function RecipesPage({ searchParams }: PageProps<"/recipes">) {
   return (
     <>
       <ScreenHeader
-        title="Recetas"
+        title="Guardados"
+        backHref="/profile"
         action={
-          <>
-            <Suspense fallback={<InboxBell count={0} />}>
-              <InboxBellCount />
-            </Suspense>
-            <Link
-              href="/recipes/import"
-              className="flex h-11 items-center gap-1.5 rounded-full bg-brand px-4 font-display font-bold text-white"
-            >
-              <Icon name="add" size={18} strokeWidth={2.4} />
-              Añadir
-            </Link>
-          </>
+          <Suspense fallback={<InboxBell count={0} />}>
+            <InboxBellCount />
+          </Suspense>
         }
       />
       <div className="flex flex-col gap-4 px-5 pt-4">

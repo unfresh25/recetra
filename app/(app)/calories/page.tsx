@@ -21,7 +21,7 @@ const kcal = new Intl.NumberFormat("es-CO");
 export default function CaloriesPage({ searchParams }: PageProps<"/calories">) {
   return (
     <>
-      <ScreenHeader title="Calorías" />
+      <ScreenHeader title="Calorías" backHref="/profile" />
       <div className="flex flex-col gap-5 px-5 pt-4">
         <Suspense fallback={<PanLoaderScreen />}>
           <CalorieLog searchParams={searchParams} />

@@ -2,6 +2,46 @@ import "server-only";
 import { privateData } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 
+/** Approved public catalog recipes, newest first. Reads use the session's RLS. */
+export async function listDiscover() {
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
+  const [{ data: recipes, error }, { data: overrides }] = await Promise.all([
+    supabase
+      .from("recipes")
+      .select("id, title, author_name, source_platform, source_image_path, total_minutes, meal_types, status")
+      .eq("visibility", "public")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false })
+      .limit(30),
+    supabase.from("household_recipe_overrides").select("recipe_id, cover_image_path"),
+  ]);
+  if (error) throw error;
+  const covers = new Map((overrides ?? []).map((o) => [o.recipe_id, o.cover_image_path]));
+  return (recipes ?? []).map((r) => ({ ...r, coverPath: covers.get(r.id) ?? r.source_image_path }));
+}
+
+/** RLS includes the public catalog and the current household's recipes. */
+export async function searchRecipes(query: string) {
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
+  const [{ data: recipes, error }, { data: overrides }] = await Promise.all([
+    supabase
+      .from("recipes")
+      .select("id, title, author_name, source_platform, source_image_path, total_minutes, meal_types, status")
+      .ilike("title", `%${query.replace(/[\\%_]/g, "\\$&")}%`)
+      .neq("status", "rejected")
+      .order("created_at", { ascending: false })
+      .limit(30),
+    supabase.from("household_recipe_overrides").select("recipe_id, cover_image_path"),
+  ]);
+  if (error) throw error;
+  const covers = new Map((overrides ?? []).map((o) => [o.recipe_id, o.cover_image_path]));
+  return (recipes ?? []).map((r) => ({ ...r, coverPath: covers.get(r.id) ?? r.source_image_path }));
+}
+
 export async function getRecipe(recipeId: string, householdId: string) {
   "use cache: private";
   privateData();
