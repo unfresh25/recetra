@@ -2,7 +2,26 @@ import "server-only";
 import { privateData } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Adjustment } from "./types";
-import { mondayOf, todayInBogota, weekDays } from "./week";
+import { addDays, mondayOf, todayInBogota, weekDays } from "./week";
+import type { PlacementWeek } from "./placement";
+
+/** Only existing plans for this week and next; no plan is created from recipe detail. */
+export async function getPlacementWeeks(householdId: string, today: string): Promise<PlacementWeek[]> {
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
+  const monday = mondayOf(today);
+  const { data, error } = await supabase.from("meal_plans")
+    .select("week_start, plan_meals (day, meal_type, recipes (title))")
+    .eq("household_id", householdId)
+    .in("week_start", [monday, addDays(monday, 7)])
+    .order("week_start");
+  if (error) throw error;
+  return data.map((week) => ({
+    weekStart: week.week_start,
+    slots: week.plan_meals.map((meal) => ({ day: meal.day, mealType: meal.meal_type, title: meal.recipes?.title ?? null })),
+  }));
+}
 
 export type PlanMealView = {
   id: string;

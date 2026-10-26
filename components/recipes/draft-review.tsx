@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
 import { reviewRecipe } from "@/lib/recipes/actions";
 import { MEAL_TYPES, MEAL_TYPE_LABELS } from "@/lib/recipes/labels";
 import type { Enums } from "@/lib/supabase/database.types";
@@ -36,13 +35,13 @@ export function DraftReview({ recipeId, initialMeals }: { recipeId: string; init
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">¿Cuándo se come?</p>
         <div className="flex flex-wrap gap-2">
           {MEAL_TYPES.map((meal) => (
-            <Chip key={meal} selected={meals.has(meal)} onClick={() => toggle(meal)} className="h-9 px-3 text-sm">
+            <Button key={meal} size="sm" variant={meals.has(meal) ? "primary" : "secondary"} aria-pressed={meals.has(meal)} onPress={() => toggle(meal)} className="h-9 border-line px-3 text-sm shadow-none">
               {MEAL_TYPE_LABELS[meal]}
-            </Chip>
+            </Button>
           ))}
         </div>
       </div>
-      {error ? <p role="alert" className="text-sm text-brand">{error}</p> : null}
+      {error ? <p role="alert" className="text-sm text-ink">{error}</p> : null}
       <div className="grid grid-cols-2 gap-2">
         <Button size="md" variant="secondary" disabled={pending} onClick={() => review(false)}>
           Descartar

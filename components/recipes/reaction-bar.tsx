@@ -1,8 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { createContext, use, useEffect, useOptimistic, useState, useTransition, type ReactNode } from "react";
-import { DrawablyButton } from "@/components/ui/drawably";
+import Link from "next/link";
+import { createContext, use, useOptimistic, useState, useTransition, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { AddToPlan } from "./add-to-plan";
+import type { PlacementWeek } from "@/lib/plan/placement";
+import type { MealType } from "@/lib/plan/types";
+import { dayLabel, dayOfMonth } from "@/lib/plan/week";
 import { Icon } from "@/components/ui/icon";
 import { toggleReaction } from "@/lib/plan/actions";
 import { LikePill } from "./like-button";
@@ -48,54 +52,29 @@ function useReactions() {
 /** Heart over the hero, CREME-style. */
 export function FavoriteButton() {
   const { state, toggle, likes, pending } = useReactions();
-  return <LikePill liked={state.favorite} likes={likes} pending={pending} onClick={() => toggle("favorite")} />;
+  return <LikePill liked={state.favorite} likes={likes} pending={pending} onClick={() => toggle("favorite")} className="min-h-[38px] min-w-[38px]" />;
 }
 
-/** Horizontal action pills under the title: cook, dislike, veto. */
-export function ActionPills({ cookHref }: { cookHref: string | null }) {
-  const { state, toggle } = useReactions();
-  const router = useRouter();
-  useEffect(() => {
-    if (cookHref) router.prefetch(cookHref);
-  }, [cookHref, router]);
+/** Reactions share the hero's optimistic state; plan feedback stays outside the scroll row. */
+export function ActionPills({ recipeId, mealTypes, weeks, today }: { recipeId: string; mealTypes: MealType[]; weeks: PlacementWeek[]; today: string }) {
+  const { state, toggle, pending } = useReactions();
+  const [addedDay, setAddedDay] = useState<string>();
+  const pillClass = "h-[38px] shrink-0 gap-2 border-line px-4 text-[13.5px] shadow-none";
   return (
-    <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      {cookHref ? (
-        <DrawablyButton
-          type="button"
-          variant="solid"
-          onClick={() => router.push(cookHref)}
-          className="h-11 shrink-0 px-5 font-bold"
-        >
-          <span className="inline-flex items-center gap-2">
-            <Icon name="fire" size={18} /> Cocinar
-          </span>
-        </DrawablyButton>
-      ) : null}
-      <DrawablyButton
-        type="button"
-        aria-pressed={state.dislike}
-        onClick={() => toggle("dislike")}
-        variant={state.dislike ? "solid" : "outline"}
-        tone={state.dislike ? undefined : "neutral"}
-        className="h-11 shrink-0 px-4 font-semibold"
-      >
-        <span className="inline-flex items-center gap-2">
+    <div className="flex flex-col gap-3">
+      <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <AddToPlan recipeId={recipeId} mealTypes={mealTypes} weeks={weeks} today={today} onAdded={setAddedDay} />
+        <Link href="/ask" className="inline-flex h-[38px] shrink-0 items-center gap-2 rounded-full border border-line px-4 font-display text-[13.5px]">
+          <Icon name="chef-hat" size={18} /> Preguntar
+        </Link>
+        <Button size="sm" disabled={pending} aria-pressed={state.dislike} onPress={() => toggle("dislike")} variant={state.dislike ? "primary" : "secondary"} className={pillClass}>
           <Icon name="thumbs-down" size={18} /> No me gusta
-        </span>
-      </DrawablyButton>
-      <DrawablyButton
-        type="button"
-        aria-pressed={state.veto}
-        onClick={() => toggle("veto")}
-        variant={state.veto ? "solid" : "outline"}
-        tone={state.veto ? undefined : "neutral"}
-        className="h-11 shrink-0 px-4 font-semibold"
-      >
-        <span className="inline-flex items-center gap-2">
+        </Button>
+        <Button size="sm" disabled={pending} aria-pressed={state.veto} onPress={() => toggle("veto")} variant={state.veto ? "primary" : "secondary"} className={pillClass}>
           <Icon name="ban" size={18} /> {state.veto ? "Vetada" : "Vetar"}
-        </span>
-      </DrawablyButton>
+        </Button>
+      </div>
+      {addedDay ? <p role="status" className="text-sm text-ink">Agregada al plan del {dayLabel(addedDay, "long").toLowerCase()} {dayOfMonth(addedDay)}. <Link href={`/plan?day=${addedDay}`} className="font-semibold underline underline-offset-4">Ver plan</Link></p> : null}
     </div>
   );
 }
