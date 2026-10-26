@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { PlatformIcon } from "@/components/recipes/platform-icon";
 import { RecipeThumb } from "@/components/recipes/recipe-thumb";
 import { Card } from "@/components/ui/card";
@@ -21,7 +22,7 @@ export default function InboxPage() {
     <>
       <ScreenHeader backHref="/recipes" title="Por confirmar" subtitle="Revisa lo que importamos antes de que entre a tu plan." />
       <div className="flex flex-col gap-4 px-5 pt-4">
-        <Suspense fallback={<Card className="h-40 animate-pulse" />}>
+        <Suspense fallback={<PanLoaderScreen />}>
           <Inbox />
         </Suspense>
       </div>

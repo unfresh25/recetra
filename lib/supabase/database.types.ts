@@ -455,32 +455,44 @@ export type Database = {
       members: {
         Row: {
           accent_color: Database["public"]["Enums"]["member_accent"]
+          avatar_path: string | null
           created_at: string
           display_name: string
+          full_name: string | null
           household_id: string
           id: string
+          measurement_system: Database["public"]["Enums"]["measurement_system"]
           onboarded_at: string | null
           role: Database["public"]["Enums"]["member_role"]
+          temperature_unit: Database["public"]["Enums"]["temperature_unit"]
           user_id: string
         }
         Insert: {
           accent_color: Database["public"]["Enums"]["member_accent"]
+          avatar_path?: string | null
           created_at?: string
           display_name: string
+          full_name?: string | null
           household_id: string
           id?: string
+          measurement_system?: Database["public"]["Enums"]["measurement_system"]
           onboarded_at?: string | null
           role?: Database["public"]["Enums"]["member_role"]
+          temperature_unit?: Database["public"]["Enums"]["temperature_unit"]
           user_id: string
         }
         Update: {
           accent_color?: Database["public"]["Enums"]["member_accent"]
+          avatar_path?: string | null
           created_at?: string
           display_name?: string
+          full_name?: string | null
           household_id?: string
           id?: string
+          measurement_system?: Database["public"]["Enums"]["measurement_system"]
           onboarded_at?: string | null
           role?: Database["public"]["Enums"]["member_role"]
+          temperature_unit?: Database["public"]["Enums"]["temperature_unit"]
           user_id?: string
         }
         Relationships: [
@@ -1040,7 +1052,12 @@ export type Database = {
     }
     Functions: {
       accept_invitation: {
-        Args: { p_display_name: string; p_token: string }
+        Args: {
+          p_avatar_path?: string
+          p_display_name: string
+          p_full_name?: string
+          p_token: string
+        }
         Returns: string
       }
       add_branch: {
@@ -1055,7 +1072,12 @@ export type Database = {
       }
       can_read_recipe: { Args: { p_recipe_id: string }; Returns: boolean }
       create_household: {
-        Args: { p_display_name: string; p_name: string }
+        Args: {
+          p_avatar_path?: string
+          p_display_name: string
+          p_full_name?: string
+          p_name: string
+        }
         Returns: string
       }
       create_invitation: { Args: never; Returns: string }
@@ -1077,6 +1099,7 @@ export type Database = {
         Args: { p_from: string; p_into: string }
         Returns: undefined
       }
+      own_avatar_path: { Args: { p_path: string }; Returns: string }
       pin_brand: {
         Args: { p_brand: string; p_ingredient_id: string }
         Returns: undefined
@@ -1149,6 +1172,9 @@ export type Database = {
         | "pescatarian"
         | "gluten_free"
         | "dairy_free"
+        | "paleo"
+        | "low_carb"
+        | "keto"
       ingredient_category:
         | "produce"
         | "herbs"
@@ -1183,6 +1209,7 @@ export type Database = {
         | "rice_cooker"
       match_status: "auto" | "pending_review" | "confirmed" | "rejected"
       meal_type: "breakfast" | "lunch" | "dinner"
+      measurement_system: "metric" | "imperial"
       member_accent: "coral" | "teal"
       member_role: "owner" | "member"
       plan_meal_status: "planned" | "cooked" | "replaced"
@@ -1208,6 +1235,7 @@ export type Database = {
       restriction_kind: "allergy" | "dislike" | "diet"
       source_platform: "tiktok" | "instagram" | "youtube" | "manual"
       store_source: "vtex" | "instaleap" | "manual"
+      temperature_unit: "celsius" | "fahrenheit"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1351,7 +1379,16 @@ export const Constants = {
       ],
       base_unit: ["g", "ml", "unit"],
       branch_source: ["osm", "manual"],
-      diet: ["vegetarian", "vegan", "pescatarian", "gluten_free", "dairy_free"],
+      diet: [
+        "vegetarian",
+        "vegan",
+        "pescatarian",
+        "gluten_free",
+        "dairy_free",
+        "paleo",
+        "low_carb",
+        "keto",
+      ],
       ingredient_category: [
         "produce",
         "herbs",
@@ -1388,6 +1425,7 @@ export const Constants = {
       ],
       match_status: ["auto", "pending_review", "confirmed", "rejected"],
       meal_type: ["breakfast", "lunch", "dinner"],
+      measurement_system: ["metric", "imperial"],
       member_accent: ["coral", "teal"],
       member_role: ["owner", "member"],
       plan_meal_status: ["planned", "cooked", "replaced"],
@@ -1415,6 +1453,7 @@ export const Constants = {
       restriction_kind: ["allergy", "dislike", "diet"],
       source_platform: ["tiktok", "instagram", "youtube", "manual"],
       store_source: ["vtex", "instaleap", "manual"],
+      temperature_unit: ["celsius", "fahrenheit"],
     },
   },
 } as const

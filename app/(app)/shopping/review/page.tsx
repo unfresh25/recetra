@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { MatchReview } from "@/components/shopping/match-review";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ScreenHeader } from "@/components/ui/screen-header";
@@ -13,7 +14,7 @@ export default function MatchReviewPage() {
     <>
       <ScreenHeader backHref="/shopping" title="Revisar productos" subtitle="No estamos seguros de estos. ¿Es lo que comprarías?" />
       <div className="flex flex-col px-5 pt-4">
-        <Suspense fallback={<span className="h-40 animate-pulse rounded-2xl bg-sunken" />}>
+        <Suspense fallback={<PanLoaderScreen />}>
           <PendingMatches />
         </Suspense>
       </div>

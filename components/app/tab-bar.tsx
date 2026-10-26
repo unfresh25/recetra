@@ -19,7 +19,7 @@ export function TabBar() {
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-md border-t border-line bg-canvas px-2 pb-safe"
+      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-xl border-t border-line bg-canvas px-2 pb-safe"
     >
       <ul className="flex items-center justify-between pt-1">
         {tabs.map((tab) => {

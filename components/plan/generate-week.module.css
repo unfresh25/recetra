@@ -1,0 +1,14 @@
+.currentDot {
+  animation: current-pulse 1400ms ease-in-out infinite;
+}
+
+@keyframes current-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .currentDot {
+    animation: none;
+  }
+}

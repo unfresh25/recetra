@@ -2,7 +2,7 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { alternativesFor, checkEligibility, generatePlan } from "./engine";
 import { summarizeReactions } from "./reactions";
-import type { Allergen, Candidate, CandidateIngredient, IngredientCategory, MealType, MemberProfile, PlanContext } from "./types";
+import type { Allergen, Candidate, CandidateIngredient, Diet, IngredientCategory, MealType, MemberProfile, PlanContext } from "./types";
 
 const ing = (slug: string, category: IngredientCategory, opts: Partial<CandidateIngredient> = {}): CandidateIngredient => ({
   ingredientId: `id-${slug}`,
@@ -75,6 +75,53 @@ describe("checkEligibility", () => {
     const veggie = ctx({ members: [{ ...jorge, diets: ["vegetarian"] }] });
     expect(checkEligibility(sancocho, veggie)).toEqual({ ok: false, reason: "diet" });
     expect(checkEligibility(lasagna, ctx())).toEqual({ ok: false, reason: "equipment" });
+  });
+
+  const dietCases: [Diet, string, IngredientCategory][] = [
+    ["paleo", "arroz-blanco", "grains"],
+    ["paleo", "lenteja", "legumes"],
+    ["paleo", "leche", "dairy"],
+    ["paleo", "arepa", "bakery"],
+    ["paleo", "panela", "sweeteners"],
+    ...(["low_carb", "keto"] as const).flatMap((diet): [Diet, string, IngredientCategory][] => [
+      [diet, "arroz-blanco", "grains"],
+      [diet, "arepa", "bakery"],
+      [diet, "miel", "sweeteners"],
+      ...["papa-pastusa", "papa-sabanera", "papa-criolla", "yuca", "platano-maduro", "platano-verde"].map(
+        (slug): [Diet, string, IngredientCategory] => [diet, slug, "produce"],
+      ),
+    ]),
+    ["keto", "lenteja", "legumes"],
+    ...["banano", "mango", "pina", "uvas", "papaya", "guayaba"].map(
+      (slug): [Diet, string, IngredientCategory] => ["keto", slug, "produce"],
+    ),
+  ];
+
+  it.each(dietCases)("%s excludes a core %s (%s)", (diet, slug, category) => {
+    const dish = recipe("diet-test", ["lunch"], [ing(slug, category)]);
+    expect(checkEligibility(dish, ctx({ members: [{ ...jorge, diets: [diet] }] }))).toEqual({ ok: false, reason: "diet" });
+  });
+
+  it.each(dietCases)("%s removes an accessory %s (%s)", (diet, slug, category) => {
+    const dish = recipe("diet-test", ["lunch"], [ing("tomate", "produce"), ing(slug, category, { role: "accessory" })]);
+    expect(checkEligibility(dish, ctx({ members: [{ ...jorge, diets: [diet] }] }))).toEqual({
+      ok: true,
+      adjustments: [{ ingredientId: `id-${slug}`, ingredientName: slug, memberNames: ["Jorge"], substituteName: null }],
+    });
+  });
+
+  it("paleo keeps honey without overriding another diet or an allergy", () => {
+    const dish = recipe("honey", ["breakfast"], [ing("miel", "sweeteners")]);
+    const paleo = { ...jorge, diets: ["paleo"] as Diet[] };
+    expect(checkEligibility(dish, ctx({ members: [paleo] }))).toEqual({ ok: true, adjustments: [] });
+    expect(checkEligibility(dish, ctx({ members: [{ ...paleo, diets: ["paleo", "vegan"] }] }))).toEqual({ ok: false, reason: "diet" });
+    const withAllergen = recipe("honey-allergen", ["breakfast"], [ing("miel", "sweeteners", { allergens: ["peanut"] })]);
+    expect(checkEligibility(withAllergen, ctx({ members: [{ ...paleo, allergies: ["peanut"] }] }))).toEqual({ ok: false, reason: "allergy" });
+  });
+
+  it("low carb keeps legumes and fruit that keto excludes", () => {
+    const dish = recipe("lentils-mango", ["lunch"], [ing("lenteja", "legumes"), ing("mango", "produce")]);
+    expect(checkEligibility(dish, ctx({ members: [{ ...jorge, diets: ["low_carb"] }] }))).toEqual({ ok: true, adjustments: [] });
   });
 
   it("respects vetoes from either member", () => {
@@ -172,7 +219,7 @@ const memberArb = fc.record({
   allergies: fc.subarray(allergens, { maxLength: 3 }),
   dislikeIngredientIds: fc.subarray(Array.from({ length: 20 }, (_, i) => `i${i}`), { maxLength: 4 }),
   dislikeCategories: fc.subarray(categories, { maxLength: 2 }),
-  diets: fc.subarray(["vegetarian", "vegan", "pescatarian", "gluten_free", "dairy_free"] as const, { maxLength: 1 }),
+  diets: fc.subarray(["vegetarian", "vegan", "pescatarian", "gluten_free", "dairy_free", "paleo", "low_carb", "keto"] as const, { maxLength: 1 }),
 });
 
 describe("generatePlan properties", () => {

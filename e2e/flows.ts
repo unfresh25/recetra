@@ -1,12 +1,26 @@
 import { expect, type Page } from "@playwright/test";
 import { readOtp } from "./mailpit";
 
-const next = (page: Page) => page.getByRole("button", { name: /^(Continuar|Terminar|Como de todo)/ }).click();
+const next = (page: Page, name = "Continuar") => page.getByRole("button", { name, exact: true }).click();
+
+async function selectOption(page: Page, name: string | RegExp) {
+  const checkbox = page.getByRole("checkbox", { name, exact: true });
+  // HeroUI hides the input; its wrapping label is the visible pointer target.
+  await page.locator("label").filter({ has: checkbox }).click();
+  await expect(checkbox).toBeChecked();
+}
+
+/** Kitchen units are the first setup step for everyone; the defaults (metric, °C) are fine. */
+export async function preferencesSetup(page: Page) {
+  await expect(page).toHaveURL(/\/setup\/preferences$/);
+  await next(page);
+}
 
 export async function householdSetup(page: Page) {
+  await preferencesSetup(page);
   await expect(page).toHaveURL(/\/setup\/stores$/);
-  await page.getByRole("checkbox", { name: "D1", exact: true }).click();
-  await page.getByRole("checkbox", { name: "Olímpica", exact: true }).click();
+  await selectOption(page, "D1");
+  await selectOption(page, "Olímpica");
   await page.screenshot({ path: "e2e/__screens__/10-setup-stores.png" });
   await next(page);
   await expect(page).toHaveURL(/\/setup\/people$/);
@@ -15,18 +29,18 @@ export async function householdSetup(page: Page) {
   await page.screenshot({ path: "e2e/__screens__/11-setup-budget.png" });
   await next(page);
   await expect(page).toHaveURL(/\/setup\/styles$/);
-  await page.getByRole("checkbox", { name: /Rápido y fácil/ }).click();
-  await page.getByRole("checkbox", { name: /Saludable/ }).click();
+  await selectOption(page, "Rápido y fácil");
+  await selectOption(page, "Saludable");
   await page.screenshot({ path: "e2e/__screens__/12-setup-styles.png" });
   await next(page);
   await expect(page).toHaveURL(/\/setup\/kitchen$/);
-  await page.getByRole("checkbox", { name: /Olla a presión/ }).click();
+  await selectOption(page, "Olla a presión");
   await next(page);
 }
 
 export async function personalSetup(page: Page, opts: { allergy?: RegExp; dislike?: string }) {
   await expect(page).toHaveURL(/\/setup\/allergies$/);
-  await page.getByRole("checkbox", { name: opts.allergy ?? /Ninguna/ }).click();
+  if (opts.allergy) await selectOption(page, opts.allergy);
   await page.screenshot({ path: "e2e/__screens__/13-setup-allergies.png" });
   await next(page);
   await expect(page).toHaveURL(/\/setup\/dislikes$/);
@@ -34,25 +48,22 @@ export async function personalSetup(page: Page, opts: { allergy?: RegExp; dislik
   await page.screenshot({ path: "e2e/__screens__/14-setup-dislikes.png" });
   await next(page);
   await expect(page).toHaveURL(/\/setup\/diet$/);
-  await page.getByRole("checkbox", { name: /Ninguna/ }).click();
-  await next(page);
-  await expect(page).toHaveURL(/\/setup\/done$/);
-  await page.getByRole("button", { name: "Ir a mi plan" }).click();
+  await next(page, "Terminar");
   await expect(page).toHaveURL(/\/plan$/);
 }
 
 export async function signIn(page: Page, email: string) {
-  await page.getByLabel("Correo").fill(email);
-  await page.getByRole("button", { name: "Enviar código" }).click();
+  await page.getByLabel("Correo electrónico").fill(email);
+  await page.getByRole("button", { name: "Continuar" }).click();
   const code = await readOtp(email);
+  // The sixth digit submits on its own.
   await page.getByLabel(/Código enviado a/).fill(code);
-  await page.getByRole("button", { name: "Entrar" }).click();
 }
 
-/** Onboarding asks one question per screen: your name, then the household's. */
+/** "Cuéntanos acerca de ti" (the nickname defaults to the first name), then the household's name. */
 export async function createHousehold(page: Page, name: string, household: string) {
-  await page.getByLabel("¿Cómo te llamas?").fill(name);
-  await page.getByRole("button", { name: "Siguiente" }).click();
-  await page.getByLabel("Ponle nombre a tu hogar").fill(household);
-  await page.getByRole("button", { name: "Crear hogar" }).click();
+  await page.getByLabel("Tu nombre").fill(name);
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await page.getByLabel("Nombre del hogar").fill(household);
+  await page.getByRole("button", { name: "Continuar" }).click();
 }

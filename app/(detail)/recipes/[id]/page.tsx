@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { CoverEditor } from "@/components/recipes/cover-editor";
 import { DraftReview } from "@/components/recipes/draft-review";
 import { IngredientsSection } from "@/components/recipes/ingredients-section";
@@ -11,6 +12,7 @@ import { ReadyAt } from "@/components/recipes/ready-at";
 import { VideoEmbed } from "@/components/recipes/video-embed";
 import { Icon } from "@/components/ui/icon";
 import { requireReadyMembership } from "@/lib/auth";
+import { householdPortions } from "@/lib/household/portions";
 import { recipeImageUrl } from "@/lib/recipes/images";
 import { MEAL_TYPE_LABELS, PLATFORM_LABELS } from "@/lib/recipes/labels";
 import { getPlanMealAdjustments, getRecipe, getRecipeSocial } from "@/lib/recipes/queries";
@@ -20,7 +22,7 @@ export const metadata: Metadata = { title: "Receta" };
 export default function RecipePage({ params, searchParams }: PageProps<"/recipes/[id]">) {
   return (
     <main className="flex flex-1 flex-col">
-      <Suspense fallback={<div className="aspect-[4/5] w-full animate-pulse bg-sunken" />}>
+      <Suspense fallback={<PanLoaderScreen />}>
         <RecipeContent params={params} searchParams={searchParams} />
       </Suspense>
     </main>
@@ -42,7 +44,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
   const isOwnDraft = recipe.status === "pending_review" && recipe.imported_by_household_id === household.id;
   const removed = new Set(planMeal?.removed.map((r) => r.ingredientId) ?? []);
   const cookHref = !isOwnDraft && steps.length ? `/recipes/${recipe.id}/cook${planMealId ? `?meal=${planMealId}` : ""}` : null;
-  const servings = household.servings_adults + household.servings_kids;
+  const servings = householdPortions({ adults: household.servings_adults, kids: household.servings_kids });
 
   return (
     <ReactionProvider recipeId={recipe.id} mine={social.mine}>
@@ -165,7 +167,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
       </article>
 
       {isOwnDraft ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-md border-t border-line bg-canvas px-5 pt-4 pb-safe">
+        <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-xl border-t border-line bg-canvas px-5 pt-4 pb-safe">
           <DraftReview recipeId={recipe.id} initialMeals={recipe.meal_types} />
         </div>
       ) : null}

@@ -9,64 +9,66 @@ export type IngredientCategory = Enums<"ingredient_category">;
 
 type Option<T extends string> = { value: T; icon: IconName; label: string; description?: string };
 
-export const ALLERGEN_OPTIONS: Option<Allergen>[] = [
-  { value: "peanut", icon: "nut", label: "Maní" },
-  { value: "tree_nut", icon: "nut", label: "Frutos secos" },
-  { value: "dairy", icon: "milk", label: "Lácteos" },
-  { value: "egg", icon: "egg", label: "Huevo" },
-  { value: "gluten", icon: "wheat", label: "Gluten / trigo" },
-  { value: "soy", icon: "bean", label: "Soya" },
-  { value: "fish", icon: "fish", label: "Pescado" },
-  { value: "shellfish", icon: "shrimp", label: "Mariscos" },
-  { value: "sesame", icon: "plant", label: "Ajonjolí" },
+export const ALLERGEN_OPTIONS: (Option<Allergen> & { image: string })[] = [
+  { value: "peanut", icon: "nut", image: "/images/allergies/peanut.webp", label: "Maní" },
+  { value: "tree_nut", icon: "nut", image: "/images/allergies/tree_nut.webp", label: "Frutos secos" },
+  { value: "dairy", icon: "milk", image: "/images/allergies/dairy.webp", label: "Lácteos" },
+  { value: "egg", icon: "egg", image: "/images/allergies/egg.webp", label: "Huevo" },
+  { value: "gluten", icon: "wheat", image: "/images/allergies/gluten.webp", label: "Gluten / Trigo" },
+  { value: "soy", icon: "bean", image: "/images/allergies/soy.webp", label: "Soya" },
+  { value: "fish", icon: "fish", image: "/images/allergies/fish.webp", label: "Pescados" },
+  { value: "shellfish", icon: "shrimp", image: "/images/allergies/shellfish.webp", label: "Mariscos" },
+  { value: "sesame", icon: "plant", image: "/images/allergies/sesame.webp", label: "Ajonjolí" },
 ];
 
-export const DIET_OPTIONS: Option<Diet>[] = [
-  { value: "vegetarian", icon: "carrot", label: "Vegetariana" },
-  { value: "vegan", icon: "vegan", label: "Vegana" },
-  { value: "pescatarian", icon: "fish", label: "Pescetariana" },
-  { value: "gluten_free", icon: "wheat-off", label: "Sin gluten" },
-  { value: "dairy_free", icon: "milk-off", label: "Sin lácteos" },
+export const DIET_OPTIONS: (Option<Diet> & { image: string })[] = [
+  { value: "vegan", icon: "vegan", label: "Vegana", image: "/images/diets/vegan.webp" },
+  { value: "vegetarian", icon: "carrot", label: "Vegetariana", image: "/images/diets/vegetarian.webp" },
+  { value: "pescatarian", icon: "fish", label: "Pescetariana", image: "/images/diets/pescatarian.webp" },
+  { value: "paleo", icon: "carrot", label: "Paleo", image: "/images/diets/paleo.webp" },
+  { value: "low_carb", icon: "salad", label: "Bajo-carbo", image: "/images/diets/low_carb.webp" },
+  { value: "keto", icon: "salad", label: "Keto", image: "/images/diets/keto.webp" },
 ];
 
-export const STYLE_OPTIONS: Option<RecipeStyle>[] = [
-  { value: "quick", icon: "flash", label: "Rápido y fácil", description: "Listo en 20 min" },
-  { value: "high_protein", icon: "dumbbell", label: "Alto en proteína", description: "Comidas energéticas" },
-  { value: "healthy", icon: "salad", label: "Saludable", description: "Opciones saludables" },
-  { value: "family", icon: "users", label: "Familiares", description: "Para toda la familia" },
-  { value: "balanced", icon: "balance", label: "Equilibrado", description: "Carbohidratos, proteína y verduras" },
-  { value: "low_calorie", icon: "scale", label: "Bajo en calorías", description: "Cenas más ligeras" },
-  { value: "gut_friendly", icon: "leaf", label: "Amigable con el intestino", description: "Opciones nutritivas" },
-  { value: "one_pot", icon: "pot", label: "Todo en una olla", description: "Menos platos, mismo sabor" },
+export const STYLE_OPTIONS: (Option<RecipeStyle> & { image: string })[] = [
+  { value: "quick", icon: "flash", image: "/images/styles/quick.webp", label: "Rápido y fácil", description: "Listo en 20 min" },
+  { value: "high_protein", icon: "dumbbell", image: "/images/styles/high_protein.webp", label: "Alto en proteína", description: "Comidas energéticas" },
+  { value: "healthy", icon: "salad", image: "/images/styles/healthy.webp", label: "Saludable", description: "Opciones saludables" },
+  { value: "family", icon: "users", image: "/images/styles/family.webp", label: "Familiares", description: "Para toda la familia" },
+  { value: "balanced", icon: "balance", image: "/images/styles/balanced.webp", label: "Equilibrado", description: "Carbohidratos, proteína y verduras" },
+  { value: "low_calorie", icon: "scale", image: "/images/styles/low_calorie.webp", label: "Bajo en calorías", description: "Cenas más ligeras" },
+  { value: "gut_friendly", icon: "leaf", image: "/images/styles/gut_friendly.webp", label: "Amigable con el intestino", description: "Opciones nutritivas" },
+  { value: "one_pot", icon: "pot", image: "/images/styles/one_pot.webp", label: "Todo en una olla", description: "Menos platos, mismo sabor" },
 ];
 
 export const MAX_STYLES = 3;
 
-export const EQUIPMENT_OPTIONS: Option<KitchenEquipment>[] = [
-  { value: "stovetop", icon: "stove", label: "Estufa" },
-  { value: "oven", icon: "oven", label: "Horno" },
-  { value: "microwave", icon: "microwave", label: "Microondas" },
-  { value: "air_fryer", icon: "fan", label: "Freidora de aire" },
-  { value: "pressure_cooker", icon: "pot", label: "Olla a presión" },
-  { value: "slow_cooker", icon: "kettle", label: "Olla de cocción lenta" },
-  { value: "blender", icon: "blender", label: "Licuadora" },
-  { value: "rice_cooker", icon: "rice-bowl", label: "Arrocera" },
+export const EQUIPMENT_OPTIONS: (Option<KitchenEquipment> & { image: string })[] = [
+  { value: "stovetop", icon: "stove", image: "/images/kitchen/stovetop.webp", label: "Estufa" },
+  { value: "oven", icon: "oven", image: "/images/kitchen/oven.webp", label: "Horno" },
+  { value: "microwave", icon: "microwave", image: "/images/kitchen/microwave.webp", label: "Microondas" },
+  { value: "air_fryer", icon: "fan", image: "/images/kitchen/air_fryer.webp", label: "Freidora de aire" },
+  { value: "pressure_cooker", icon: "pot", image: "/images/kitchen/pressure_cooker.webp", label: "Olla a presión" },
+  { value: "slow_cooker", icon: "kettle", image: "/images/kitchen/slow_cooker.webp", label: "Olla de cocción lenta" },
+  { value: "blender", icon: "blender", image: "/images/kitchen/blender.webp", label: "Licuadora" },
+  { value: "rice_cooker", icon: "rice-bowl", image: "/images/kitchen/rice_cooker.webp", label: "Arrocera" },
 ];
 
-/** Quick picks for "¿Algo que no comas?". Categories cover every ingredient in them. */
-export const COMMON_DISLIKES: ({ kind: "ingredient"; slug: string } | { kind: "category"; value: IngredientCategory; label: string; icon: IconName })[] = [
-  { kind: "ingredient", slug: "cilantro" },
+/** Quick picks for "¿Algún ingrediente que no comas?". Categories cover every ingredient in them. */
+export const COMMON_DISLIKES: ({ kind: "ingredient"; slug: string; label?: string } | { kind: "category"; value: IngredientCategory; label: string; icon: IconName })[] = [
   { kind: "category", value: "seafood", label: "Mariscos", icon: "shrimp" },
+  { kind: "ingredient", slug: "cilantro", label: "Cilantro" },
   { kind: "category", value: "fish", label: "Pescado", icon: "fish" },
-  { kind: "ingredient", slug: "cebolla-cabezona" },
-  { kind: "ingredient", slug: "champinon" },
-  { kind: "ingredient", slug: "berenjena" },
-  { kind: "ingredient", slug: "higado-res" },
-  { kind: "ingredient", slug: "aguacate" },
-  { kind: "ingredient", slug: "aji-picante" },
-  { kind: "ingredient", slug: "coco" },
-  { kind: "ingredient", slug: "pimenton-rojo" },
-  { kind: "ingredient", slug: "ajo" },
+  { kind: "ingredient", slug: "champinon", label: "Champiñones" },
+  { kind: "ingredient", slug: "berenjena", label: "Berenjena" },
+  { kind: "ingredient", slug: "higado-res", label: "Hígado" },
+  { kind: "ingredient", slug: "coco", label: "Coco" },
+  { kind: "ingredient", slug: "pimenton-rojo", label: "Pimentón" },
+  { kind: "ingredient", slug: "ajo", label: "Ajo" },
+  { kind: "ingredient", slug: "aguacate", label: "Aguacate" },
+  { kind: "ingredient", slug: "cebolla-cabezona", label: "Cebolla" },
+  { kind: "ingredient", slug: "aji-picante", label: "Ají picante" },
+  { kind: "ingredient", slug: "huevo", label: "Huevo" },
 ];
 
 export const CATEGORY_LABELS: Partial<Record<IngredientCategory, string>> = {
@@ -89,4 +91,8 @@ const cop = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP",
 
 export function formatCop(value: number) {
   return cop.format(value).replace(/\s/g, "");
+}
+
+export function formatCopK(cop: number): string {
+  return `$${Math.round(cop / 1_000)}k`;
 }

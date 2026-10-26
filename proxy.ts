@@ -24,6 +24,8 @@ export async function proxy(request: NextRequest) {
   const { response, isSignedIn } = await updateSession(request);
   const { pathname } = request.nextUrl;
 
+  // Legal and help pages are open to everyone, signed in or not.
+  if (pathname.startsWith("/legal/") || pathname === "/help") return response;
   if (pathname === "/") {
     return redirectWithCookies(request, response, isSignedIn ? "/plan" : "/welcome");
   }

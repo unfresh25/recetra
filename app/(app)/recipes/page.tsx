@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { RecipeCard } from "@/components/recipes/recipe-card";
-import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
@@ -43,7 +43,7 @@ export default function RecipesPage({ searchParams }: PageProps<"/recipes">) {
         }
       />
       <div className="flex flex-col gap-4 px-5 pt-4">
-        <Suspense fallback={<Card className="h-48 animate-pulse" />}>
+        <Suspense fallback={<PanLoaderScreen />}>
           <RecipesContent searchParams={searchParams} />
         </Suspense>
       </div>

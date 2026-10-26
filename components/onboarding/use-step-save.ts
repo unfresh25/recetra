@@ -2,9 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import type { ActionResult } from "@/lib/onboarding/actions";
+import { finishSetup, type ActionResult } from "@/lib/onboarding/actions";
 
-/** Runs a save action and navigates to `nextHref` on success. */
+/** Saves the step, finishing setup before navigating to the plan. */
 export function useStepSave(nextHref: string) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -15,6 +15,11 @@ export function useStepSave(nextHref: string) {
     startTransition(async () => {
       const result = await action();
       if (result.error) {
+        setError(result.error);
+        return;
+      }
+      if (nextHref === "/plan") {
+        const result = await finishSetup();
         setError(result.error);
         return;
       }

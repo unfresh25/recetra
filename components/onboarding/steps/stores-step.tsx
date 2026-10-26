@@ -1,10 +1,13 @@
 "use client";
 
+import { Checkbox, CheckboxGroup, Input, TextField } from "@heroui/react";
 import { useMemo, useState } from "react";
 import { saveStores } from "@/lib/onboarding/actions";
-import { DrawablyCheckbox, DrawablyInput } from "@/components/ui/drawably";
+import { ClearButton } from "@/components/ui/clear-button";
+import { FlowScreen } from "@/components/ui/flow-screen";
+import { NextButton } from "@/components/ui/next-button";
+import { SquareCheck } from "@/components/ui/square-check";
 import { StoreLogo } from "@/components/ui/store-logo";
-import { StepFooter } from "../step-footer";
 import { useStepSave } from "../use-step-save";
 
 export type StoreOption = { id: string; name: string; brand_color: string; logo_url: string | null };
@@ -13,7 +16,19 @@ function normalize(text: string) {
   return text.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 }
 
-export function StoresStep({ stores, initial, nextHref }: { stores: StoreOption[]; initial: string[]; nextHref: string }) {
+export function StoresStep({
+  stores,
+  initial,
+  progress,
+  back,
+  nextHref,
+}: {
+  stores: StoreOption[];
+  initial: string[];
+  progress: number;
+  back: string | null;
+  nextHref: string;
+}) {
   const [selected, setSelected] = useState(() => new Set(initial));
   const [query, setQuery] = useState("");
   const { save, pending, error } = useStepSave(nextHref);
@@ -23,51 +38,66 @@ export function StoresStep({ stores, initial, nextHref }: { stores: StoreOption[
     [stores, query],
   );
 
-  function toggle(id: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
   return (
-    <>
-      <DrawablyInput
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Buscar tiendas…"
+    <FlowScreen
+      back={back ?? undefined}
+      progress={progress}
+      title="¿Dónde haces tus compras?"
+      subtitle="Elige todas las tiendas que frecuentas para realizar tus compras."
+      action={
+        <NextButton
+          isDisabled={selected.size === 0}
+          loading={pending}
+          onPress={() => save(() => saveStores([...selected]))}
+        />
+      }
+    >
+      <TextField
         aria-label="Buscar tiendas"
-        className="mb-4 h-12 w-full bg-transparent px-4 text-[16px] outline-none placeholder:text-ink-faint"
-      />
-      <div className="grid grid-cols-2 gap-3">
+        value={query}
+        onChange={setQuery}
+        fullWidth
+        className="border-b-[0.5px] border-[#a9a9a9] pb-[5px]"
+      >
+        <div className="flex items-center gap-3">
+          <Input
+            type="search"
+            placeholder="Buscar tiendas"
+            className="min-w-0 flex-1 rounded-none border-0 bg-transparent p-0 font-display text-[16px] leading-5 text-ink caret-brand shadow-none outline-none placeholder:text-[#8f8f8f] hover:bg-transparent focus:bg-transparent focus:ring-0 data-[focused=true]:bg-transparent data-[focused=true]:shadow-none data-[hovered=true]:bg-transparent sm:text-[16px] [&::-webkit-search-cancel-button]:appearance-none"
+          />
+          {query ? <ClearButton label="Borrar búsqueda" onClear={() => setQuery("")} /> : null}
+        </div>
+      </TextField>
+      <CheckboxGroup
+        aria-label="Tiendas"
+        value={[...selected]}
+        onChange={(values) => setSelected(new Set(values))}
+        className="mt-5 flex flex-col gap-2.5"
+      >
         {visible.map((store) => (
-          <label
-            key={store.id}
-            className="relative flex cursor-pointer flex-col items-center justify-center gap-3 rounded-card bg-surface px-3 py-5"
-          >
-            <span className="absolute right-3 top-3">
-              <DrawablyCheckbox
-                checked={selected.has(store.id)}
-                onChange={() => toggle(store.id)}
-                aria-label={store.name}
-                stroke={selected.has(store.id) ? "var(--color-brand)" : "var(--color-ink-faint)"}
-              />
-            </span>
-            <StoreLogo store={store} size={56} />
-            <span className="font-semibold">{store.name}</span>
-          </label>
+          <Checkbox key={store.id} value={store.id} aria-label={store.name} className="mt-0 w-full">
+            <Checkbox.Content className="flex w-full items-center gap-2.5">
+              {({ isSelected, isFocusVisible }) => (
+                <>
+                  <span className="size-15 shrink-0 overflow-hidden rounded-[5px] [&>*]:rounded-[5px]">
+                    <StoreLogo store={store} size={60} />
+                  </span>
+                  <span className="min-w-0 flex-1 font-display text-[16px] leading-5 font-normal text-ink">{store.name}</span>
+                  <SquareCheck checked={isSelected} focusVisible={isFocusVisible} />
+                </>
+              )}
+            </Checkbox.Content>
+          </Checkbox>
         ))}
-      </div>
-      <StepFooter
-        label={selected.size > 0 ? `Continuar (${selected.size})` : "Continuar"}
-        disabled={selected.size === 0}
-        pending={pending}
-        error={error}
-        onClick={() => save(() => saveStores([...selected]))}
-      />
-    </>
+      </CheckboxGroup>
+      {visible.length === 0 ? (
+        <p className="font-sans text-sm text-[#8f8f8f]">No encontramos esa tienda.</p>
+      ) : null}
+      {error ? (
+        <p role="alert" className="mt-6 font-sans text-sm text-danger">
+          {error}
+        </p>
+      ) : null}
+    </FlowScreen>
   );
 }

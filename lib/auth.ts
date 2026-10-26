@@ -7,7 +7,14 @@ import type { Tables } from "@/lib/supabase/database.types";
 
 export type Member = Pick<
   Tables<"members">,
-  "id" | "display_name" | "accent_color" | "role" | "user_id" | "onboarded_at"
+  | "id"
+  | "display_name"
+  | "accent_color"
+  | "role"
+  | "user_id"
+  | "onboarded_at"
+  | "measurement_system"
+  | "temperature_unit"
 >;
 export type Household = Pick<
   Tables<"households">,
@@ -33,6 +40,17 @@ export async function requireUserId(): Promise<string> {
   return userId;
 }
 
+/** Signed-in user's id and email (for screens that show the account email). */
+export async function requireUserIdentity(): Promise<{ id: string; email: string }> {
+  "use cache: private";
+  privateData();
+  const supabase = await createClient({ privateCache: true });
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) redirect("/login");
+  return { id: claims.sub, email: typeof claims.email === "string" ? claims.email : "" };
+}
+
 /** Current member and household, or null when the user has not joined one yet. */
 export async function getMembership() {
   "use cache: private";
@@ -42,7 +60,7 @@ export async function getMembership() {
   const { data, error } = await supabase
     .from("members")
     .select(
-      "id, display_name, accent_color, role, user_id, onboarded_at, households (id, name, city, onboarded_at, weekly_budget_cop, servings_adults, servings_kids, equipment, styles)",
+      "id, display_name, accent_color, role, user_id, onboarded_at, measurement_system, temperature_unit, households (id, name, city, onboarded_at, weekly_budget_cop, servings_adults, servings_kids, equipment, styles)",
     )
     .eq("user_id", userId)
     .maybeSingle();

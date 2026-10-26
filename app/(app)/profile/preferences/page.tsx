@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { ScreenHeader } from "@/components/ui/screen-header";
@@ -24,7 +25,7 @@ export default function PreferencesPage() {
     <>
       <ScreenHeader title="Preferencias" backHref="/profile" />
       <div className="flex flex-col gap-6 px-5 pt-4">
-        <Suspense fallback={<Card className="h-96 animate-pulse" />}>
+        <Suspense fallback={<PanLoaderScreen />}>
           <Preferences />
         </Suspense>
       </div>
@@ -67,13 +68,18 @@ async function Preferences() {
       label: "Presupuesto semanal",
       value: household.weekly_budget_cop
         ? `${formatCop(household.weekly_budget_cop)} · ${budgetTier(household.weekly_budget_cop).label}`
-        : "Sin definir",
+        : "Sin presupuesto fijo",
     },
     { step: "styles", label: "Estilo", value: summary(labelsFor(STYLE_OPTIONS, household.styles), "Sin definir") },
     { step: "kitchen", label: "Cocina", value: summary(labelsFor(EQUIPMENT_OPTIONS, household.equipment), "Sin definir") },
   ];
 
   const memberItems: { step: SetupStep; label: string; value: string }[] = [
+    {
+      step: "preferences",
+      label: "Medidas",
+      value: `${member.measurement_system === "imperial" ? "Imperial" : "Métrico"} · ${member.temperature_unit === "fahrenheit" ? "°F" : "°C"}`,
+    },
     {
       step: "allergies",
       label: "Alergias",

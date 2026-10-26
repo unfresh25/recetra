@@ -1,18 +1,21 @@
 @import "tailwindcss";
+/* HeroUI v3: must come after Tailwind. */
+@import "@heroui/styles";
 
 /* Recetra design tokens. See docs/plans/2026-10-16-recetra-design.md §7. */
 @theme {
-  /* BitePal-based system with Recetra's red as primary. Flat: no shadows, no card chrome. */
-  --color-brand: #e8202a;
-  --color-brand-press: #c8141d;
-  --color-brand-soft: #fce3e4;
-  --color-canvas: #eeedf4;
+  /* Mise: flat, ink on a warm paper white, one green. No shadows, no card chrome.
+     Canvas is not pure #fff (glare on large areas); white is kept for raised surfaces. */
+  --color-brand: #76c457;
+  --color-brand-press: #5ea842;
+  --color-brand-soft: #e6f4df;
+  --color-canvas: #faf9f7;
   --color-surface: #ffffff;
-  --color-sunken: #e2e1ea;
-  --color-ink: #232325;
-  --color-ink-muted: #77768a;
-  --color-ink-faint: #a9a8b8;
-  --color-line: #d9d8e3;
+  --color-sunken: #f0eeea;
+  --color-ink: #18181b;
+  --color-ink-muted: #6f6b66;
+  --color-ink-faint: #a8a29e;
+  --color-line: #e7e4df;
   --color-savings: #3fa45b;
   --color-savings-soft: #dff2e4;
   --color-warning: #c2410c;
@@ -21,7 +24,7 @@
   --color-teal: #1aa3a3;
   --color-teal-soft: #d6f1f0;
 
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-working), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   --radius-card: 1.5rem;
@@ -29,9 +32,67 @@
 
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --animate-settle: settle 1600ms var(--ease-out-soft) both;
+
+  @keyframes settle {
+    from {
+      transform: scale(1.06);
+    }
+  }
 }
 
-/* drawably (hand-drawn controls) themed with our tokens */
+/* HeroUI theme: monochrome and premium. Ink drives primary actions and selection;
+   the brand green is kept for brand moments, not controls. */
+:root {
+  --accent: oklch(0.2103 0.0059 285.89);
+  --accent-foreground: oklch(0.9911 0 0);
+  --focus: var(--color-brand);
+  --background: var(--color-canvas);
+  --foreground: var(--color-ink);
+  --surface: var(--color-surface);
+  --radius: 0.75rem;
+}
+
+/* Bare one-time code: digits only, a quiet dot per empty slot, no boxes or rings in any state.
+   Scoped with a class because HeroUI's state rules outrank utility classes. */
+.otp-bare .input-otp__slot {
+  width: 0.62em;
+  height: 2rem;
+  flex: none;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 2rem;
+  color: var(--color-ink);
+}
+.otp-bare .input-otp__slot:is([data-active="true"], [data-filled="true"], [data-invalid="true"], :hover) {
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+.otp-bare .input-otp__slot[data-invalid="true"] {
+  color: var(--color-danger, #d12724);
+}
+.otp-bare .input-otp__slot:not([data-filled]):not([data-active="true"])::before {
+  content: "·";
+  color: #a9a9a9;
+}
+.otp-bare .input-otp__slot-value {
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: normal;
+}
+.otp-bare .input-otp__caret {
+  background: var(--color-brand);
+  height: 1.5rem;
+}
+
+/* drawably (legacy hand-drawn controls, being replaced by HeroUI) */
 :root {
   --drawably-stroke: var(--color-ink);
   --drawably-fill: var(--color-brand);
@@ -64,7 +125,7 @@
   }
 }
 
-/* Display type: Bricolage condensed and heavy, BitePal-style statements. */
+/* Display type (Working). The width axis is a no-op for it; kept for legacy screens. */
 @utility font-condensed {
   font-family: var(--font-display);
   font-stretch: 75%;

@@ -2,17 +2,17 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Recetra",
-    short_name: "Recetra",
+    name: "Mise",
+    short_name: "Mise",
     description: "Tu plan de comidas de la semana, con recetas reales y los mejores precios.",
     lang: "es-CO",
     start_url: "/plan",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#eeedf4",
-    theme_color: "#eeedf4",
-    // Android: "Compartir → Recetra" from TikTok, Instagram or YouTube opens the importer.
+    background_color: "#faf9f7",
+    theme_color: "#faf9f7",
+    // Android: "Compartir → Mise" from TikTok, Instagram or YouTube opens the importer.
     share_target: {
       action: "/recipes/import",
       method: "get",
