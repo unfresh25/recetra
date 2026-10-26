@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createHousehold, householdSetup, personalSetup, preferencesSetup, signIn } from "./flows";
+import { createHousehold, hideDevOverlay, householdSetup, personalSetup, preferencesSetup, signIn } from "./flows";
 
 const run = Date.now();
 const owner = { email: `owner-${run}@test.co`, name: "Jorge" };
@@ -7,6 +7,7 @@ const partner = { email: `partner-${run}@test.co`, name: "Ana" };
 
 test("a couple creates a household and joins it through an invitation", async ({ browser }) => {
   const ownerPage = await (await browser.newContext()).newPage();
+  await hideDevOverlay(ownerPage);
 
   await ownerPage.goto("/");
   await expect(ownerPage).toHaveURL(/\/welcome$/);
@@ -34,6 +35,7 @@ test("a couple creates a household and joins it through an invitation", async ({
   await ownerPage.screenshot({ path: "e2e/__screens__/05-profile-invite.png" });
 
   const partnerPage = await (await browser.newContext()).newPage();
+  await hideDevOverlay(partnerPage);
   await partnerPage.goto(inviteUrl.pathname);
   await expect(partnerPage).toHaveURL(/\/login\?next=/);
   await signIn(partnerPage, partner.email);
@@ -50,6 +52,7 @@ test("a couple creates a household and joins it through an invitation", async ({
 
   // The invitation is single-use.
   const intruder = await (await browser.newContext()).newPage();
+  await hideDevOverlay(intruder);
   await intruder.goto(inviteUrl.pathname);
   await signIn(intruder, `intruder-${run}@test.co`);
   await expect(intruder.getByText("Esta invitación ya fue usada")).toBeVisible();

@@ -121,23 +121,12 @@ type ToggleKind = "favorite" | "veto" | "dislike";
 
 /** Favorite and veto are toggles; "no me gusta" is recorded once per recipe. */
 export async function toggleReaction(recipeId: string, kind: ToggleKind): Promise<{ active: boolean }> {
-  const { member } = await requireReadyMembership();
+  await requireReadyMembership();
   const supabase = await createClient();
-  const { data: existing } = await supabase
-    .from("reactions")
-    .select("id")
-    .eq("member_id", member.id)
-    .eq("recipe_id", recipeId)
-    .eq("kind", kind)
-    .limit(1);
-  if (existing?.length) {
-    await supabase.from("reactions").delete().eq("member_id", member.id).eq("recipe_id", recipeId).eq("kind", kind);
-    updateTag(DATA_TAG);
-    return { active: false };
-  }
-  await supabase.from("reactions").insert({ member_id: member.id, recipe_id: recipeId, kind });
+  const { data, error } = await supabase.rpc("toggle_recipe_reaction", { p_recipe_id: recipeId, p_kind: kind });
+  if (error) throw error;
   updateTag(DATA_TAG);
-  return { active: true };
+  return { active: data };
 }
 
 export async function markCooked(recipeId: string, planMealId?: string) {

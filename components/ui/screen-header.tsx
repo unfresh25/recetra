@@ -7,11 +7,13 @@ export function ScreenHeader({
   subtitle,
   backHref,
   action,
+  titleClassName,
 }: {
   title: string;
   subtitle?: string;
   backHref?: string;
   action?: ReactNode;
+  titleClassName?: string;
 }) {
   return (
     <header className="flex flex-col gap-2 px-5 pt-safe">
@@ -22,7 +24,7 @@ export function ScreenHeader({
       ) : null}
       <div className={backHref ? undefined : "pt-4"}>
         <div className="flex items-center justify-between gap-3">
-          <h1 className="font-condensed text-[44px] font-extrabold leading-[0.95] tracking-tight">{title}</h1>
+          <h1 className={titleClassName ?? "font-condensed text-[44px] font-extrabold leading-[0.95] tracking-tight"}>{title}</h1>
           {action ? <div className="flex shrink-0 items-center gap-1">{action}</div> : null}
         </div>
         {subtitle ? <p className="mt-2 text-[15px] text-ink-muted">{subtitle}</p> : null}

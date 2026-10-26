@@ -6,22 +6,36 @@ import { daysSinceCooked, summarizeReactions, type ReactionRow } from "./reactio
 import type { Candidate, MealType, MemberProfile, PlanContext } from "./types";
 
 /** Everything the engine needs, read with the household's own permissions (RLS). */
-export async function loadPlanInputs(membership: Membership, weekStart: string, seed: number) {
-  const supabase = await createClient();
+export async function loadPlanInputs(membership: Membership, weekStart: string, seed: number, { privateCache = false }: { privateCache?: boolean } = {}) {
+  const supabase = await createClient({ privateCache });
   const { household } = membership;
 
-  const [{ data: recipes }, { data: members }, { data: restrictions }, { data: reactions }, { data: learned }] = await Promise.all([
-    supabase
-      .from("recipes")
-      .select(
-        "id, title, meal_types, total_minutes, styles, equipment, recipe_ingredients (role, substitute_ids, ingredients (id, slug, name, category, allergens))",
-      )
-      .eq("status", "approved"),
+  async function readAll<T>(page: (offset: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
+    const rows: T[] = [];
+    for (let offset = 0; ; offset += 1000) {
+      const result = await page(offset);
+      if (result.error) throw result.error;
+      const batch = result.data ?? [];
+      rows.push(...batch);
+      if (batch.length < 1000) return rows;
+    }
+  }
+
+  const [recipes, membersResult, restrictions, reactions, learnedResult] = await Promise.all([
+    readAll((offset) => supabase.from("recipes").select(
+      "id, title, author_name, source_platform, source_video_id, source_image_path, visibility, created_at, kcal_per_serving, meal_types, total_minutes, styles, equipment, recipe_ingredients (role, substitute_ids, ingredients (id, slug, name, category, allergens))",
+    ).eq("status", "approved").order("id").range(offset, offset + 999)),
     supabase.from("members").select("id, display_name"),
-    supabase.from("restrictions").select("member_id, kind, allergen, ingredient_id, ingredient_category, diet"),
-    supabase.from("reactions").select("member_id, recipe_id, kind, reason, created_at"),
+    readAll((offset) => supabase.from("restrictions").select("member_id, kind, allergen, ingredient_id, ingredient_category, diet").order("id").range(offset, offset + 999)),
+    readAll((offset) => supabase.from("reactions").select("member_id, recipe_id, kind, reason, created_at").order("id").range(offset, offset + 999)),
     supabase.from("household_learned_prefs").select("max_minutes_by_meal_type, price_sensitivity").maybeSingle(),
   ]);
+
+  for (const result of [membersResult, learnedResult]) {
+    if (result.error) throw result.error;
+  }
+  const members = membersResult.data;
+  const learned = learnedResult.data;
 
   const candidates: Candidate[] = (recipes ?? []).map((r) => ({
     id: r.id,
@@ -76,5 +90,5 @@ export async function loadPlanInputs(membership: Membership, weekStart: string, 
     seed,
   };
 
-  return { candidates, ctx, servings: householdPortions({ adults: household.servings_adults, kids: household.servings_kids }) };
+  return { recipes, candidates, ctx, servings: householdPortions({ adults: household.servings_adults, kids: household.servings_kids }) };
 }

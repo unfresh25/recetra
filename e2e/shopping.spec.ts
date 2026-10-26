@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { seedBranch, seedCatalog, seedStorePrices } from "./db";
-import { createHousehold, householdSetup, personalSetup, signIn } from "./flows";
+import { createHousehold, hideDevOverlay, householdSetup, personalSetup, signIn } from "./flows";
 
 test("the shopping list prices the week and suggests where to buy", async ({ page, context }) => {
+  await hideDevOverlay(page);
   await seedCatalog([
     { title: "Huevos pericos Compras", meal: "breakfast", minutes: 15, ingredients: [{ slug: "huevo", unit: "unit", quantity: 4 }, { slug: "tomate" }] },
     { title: "Arroz con pollo Compras", meal: "lunch", minutes: 45, ingredients: [{ slug: "arroz-blanco", quantity: 300 }, { slug: "pechuga-pollo", quantity: 400 }] },

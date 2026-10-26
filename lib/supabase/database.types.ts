@@ -1104,6 +1104,14 @@ export type Database = {
         Args: { p_brand: string; p_ingredient_id: string }
         Returns: undefined
       }
+      recipe_like_counts: {
+        Args: { p_recipe_ids: string[] }
+        Returns: { recipe_id: string; likes: number }[]
+      }
+      toggle_recipe_reaction: {
+        Args: { p_recipe_id: string; p_kind: Database["public"]["Enums"]["reaction_kind"] }
+        Returns: boolean
+      }
       remove_branch: { Args: { p_branch_id: string }; Returns: undefined }
       replace_household_stores: {
         Args: { p_store_ids: string[] }

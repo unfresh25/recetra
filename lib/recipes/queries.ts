@@ -1,6 +1,7 @@
 import "server-only";
 import { privateData } from "@/lib/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { RecipeSearchFilters } from "./search-params";
 
 /** Approved public catalog recipes, newest first. Reads use the session's RLS. */
 export async function listDiscover() {
@@ -23,18 +24,22 @@ export async function listDiscover() {
 }
 
 /** RLS includes the public catalog and the current household's recipes. */
-export async function searchRecipes(query: string) {
+export async function searchRecipes(query: string, filters: RecipeSearchFilters = {}) {
   "use cache: private";
   privateData();
   const supabase = await createClient({ privateCache: true });
+  let request = supabase.from("recipes")
+    .select("id, title, author_name, source_platform, source_image_path, total_minutes, meal_types, status")
+    .neq("status", "rejected")
+    .order("created_at", { ascending: false })
+    .limit(30);
+  if (query) request = request.ilike("title", `%${query.replace(/[\\%_]/g, "\\$&")}%`);
+  if (filters.style) request = request.contains("styles", [filters.style]);
+  if (filters.meal) request = request.contains("meal_types", [filters.meal]);
+  if (filters.max) request = request.lte("total_minutes", filters.max);
+  if (filters.video) request = request.not("source_video_id", "is", null);
   const [{ data: recipes, error }, { data: overrides }] = await Promise.all([
-    supabase
-      .from("recipes")
-      .select("id, title, author_name, source_platform, source_image_path, total_minutes, meal_types, status")
-      .ilike("title", `%${query.replace(/[\\%_]/g, "\\$&")}%`)
-      .neq("status", "rejected")
-      .order("created_at", { ascending: false })
-      .limit(30),
+    request,
     supabase.from("household_recipe_overrides").select("recipe_id, cover_image_path"),
   ]);
   if (error) throw error;
@@ -130,14 +135,17 @@ export async function getRecipeSocial(recipeId: string, memberId: string) {
   "use cache: private";
   privateData();
   const supabase = await createClient({ privateCache: true });
-  const [{ data: reactions }, { data: members }] = await Promise.all([
+  const [{ data: reactions }, { data: members }, counts] = await Promise.all([
     supabase.from("reactions").select("member_id, kind").eq("recipe_id", recipeId).in("kind", ["favorite", "dislike", "veto"]),
     supabase.from("members").select("id, display_name, accent_color"),
+    supabase.rpc("recipe_like_counts", { p_recipe_ids: [recipeId] }),
   ]);
+  if (counts.error) throw counts.error;
   const rows = reactions ?? [];
   const has = (member: string, kind: string) => rows.some((r) => r.member_id === member && r.kind === kind);
   const partner = (members ?? []).find((m) => m.id !== memberId);
   return {
+    likes: counts.data[0]?.likes ?? rows.filter((row) => row.kind === "favorite").length,
     mine: { favorite: has(memberId, "favorite"), dislike: has(memberId, "dislike"), veto: has(memberId, "veto") },
     partner: partner ? { name: partner.display_name, accent: partner.accent_color, favorite: has(partner.id, "favorite") } : null,
   };

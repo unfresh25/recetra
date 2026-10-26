@@ -1,14 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { seedDraftRecipe } from "./db";
-import { createHousehold, householdSetup, personalSetup, signIn } from "./flows";
+import { createHousehold, hideDevOverlay, householdSetup, personalSetup, signIn } from "./flows";
 
 test("an imported recipe is reviewed in the inbox and then shows in Mis recetas", async ({ page }) => {
+  await hideDevOverlay(page);
   const email = `recipes-${Date.now()}@test.co`;
   await page.goto("/login");
   await signIn(page, email);
   await createHousehold(page, "Jorge", "Casa Recetas");
   await householdSetup(page);
   await personalSetup(page, {});
+
+  await page.getByRole("navigation", { name: "Principal" }).getByRole("link", { name: "Descubre", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Descubre", exact: true })).toBeVisible();
 
   await seedDraftRecipe(email);
   await page.goto("/recipes");
