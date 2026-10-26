@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { DayStrip } from "@/components/plan/day-strip";
 import { GenerateWeek } from "@/components/plan/generate-week";
 import { DayRoute } from "@/components/plan/day-route";
@@ -23,25 +24,10 @@ export default function PlanPage({ searchParams }: PageProps<"/plan">) {
     <>
       <ScreenHeader title="Plan" />
       <div className="flex flex-col gap-5 px-5 pt-4">
-        <Suspense fallback={<PlanSkeleton />}>
+        <Suspense fallback={<PanLoaderScreen />}>
           <WeekPlan searchParams={searchParams} />
         </Suspense>
       </div>
-    </>
-  );
-}
-
-function PlanSkeleton() {
-  return (
-    <>
-      <Card className="h-24 animate-pulse" />
-      <div className="flex gap-2">
-        {Array.from({ length: 7 }, (_, i) => (
-          <span key={i} className="h-16 w-14 animate-pulse rounded-2xl bg-surface" />
-        ))}
-      </div>
-      <Card className="h-28 animate-pulse" />
-      <Card className="h-28 animate-pulse" />
     </>
   );
 }
@@ -76,7 +62,7 @@ async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams
     return (
       <>
         {nav}
-        <GenerateWeek day={selected} auto={weekStart === thisWeek} />
+        <GenerateWeek key={selected} day={selected} auto={weekStart === thisWeek} />
       </>
     );
   }

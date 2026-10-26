@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { ShoppingList } from "@/components/shopping/shopping-list";
 import { ShoppingTabs } from "@/components/shopping/shopping-tabs";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -16,21 +17,10 @@ export default function ShoppingPage() {
       <ScreenHeader title="Compras" />
       <ShoppingTabs current="list" />
       <div className="flex flex-col gap-6 px-5 pt-4">
-        <Suspense fallback={<ShoppingSkeleton />}>
+        <Suspense fallback={<PanLoaderScreen />}>
           <ShoppingContent />
         </Suspense>
       </div>
-    </>
-  );
-}
-
-function ShoppingSkeleton() {
-  return (
-    <>
-      <span className="h-20 w-56 animate-pulse rounded-2xl bg-sunken" />
-      {Array.from({ length: 6 }, (_, i) => (
-        <span key={i} className="h-12 animate-pulse rounded-2xl bg-sunken" />
-      ))}
     </>
   );
 }

@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils/cn";
 export const illustrations = {
   "welcome-plan": "Bowl con arroz, aguacate, huevo y patacón",
   "welcome-shopping": "Bolsa de mercado con frutas, verduras y monedas",
-  "welcome-taste": "Olla humeante con dos corazones",
   "empty-plan": "Calendario con cubiertos",
   "empty-recipes": "Cuaderno de recetas y celular con video",
   "empty-shopping": "Canasta de mercado",

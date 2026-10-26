@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -18,7 +19,7 @@ export default function ProfilePage() {
     <>
       <ScreenHeader title="Perfil" />
       <div className="flex flex-col gap-4 px-5 pt-4">
-        <Suspense fallback={<Card className="h-48 animate-pulse" />}>
+        <Suspense fallback={<PanLoaderScreen />}>
           <HouseholdCard />
         </Suspense>
         <Link href="/profile/preferences" className="flex items-center gap-4 py-4">

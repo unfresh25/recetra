@@ -80,7 +80,7 @@ export function CoverEditor({
           <div
             role="dialog"
             aria-label="Cambiar portada"
-            className="mx-auto w-full max-w-md rounded-t-[28px] bg-canvas px-5 pt-3 pb-safe"
+            className="mx-auto w-full max-w-xl rounded-t-[28px] bg-canvas px-5 pt-3 pb-safe"
             onClick={(e) => e.stopPropagation()}
           >
             <span className="mx-auto mb-4 block h-1.5 w-10 rounded-full bg-line" />

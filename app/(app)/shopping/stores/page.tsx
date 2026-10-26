@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { ShoppingTabs } from "@/components/shopping/shopping-tabs";
 import { NearbyStores } from "@/components/stores/nearby-stores";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -15,7 +16,7 @@ export default function StoresPage() {
       <ScreenHeader title="Compras" />
       <ShoppingTabs current="stores" />
       <div className="flex flex-col px-5 pt-4">
-        <Suspense fallback={<span className="h-64 animate-pulse rounded-3xl bg-sunken" />}>
+        <Suspense fallback={<PanLoaderScreen />}>
           <Stores />
         </Suspense>
       </div>

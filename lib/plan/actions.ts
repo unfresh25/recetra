@@ -13,7 +13,7 @@ import { mondayOf, todayInBogota } from "./week";
 
 const toJson = (adjustments: Adjustment[]) => ({ removed: adjustments }) as unknown as Json;
 
-/** Generates (or regenerates) the plan for the week containing `day` (defaults to this week). */
+/** Saves the week without invalidating the route, so callers control when to reveal it. */
 export async function generateWeek(day?: string): Promise<{ error?: string }> {
   const membership = await requireReadyMembership();
   const weekStart = mondayOf(day ?? todayInBogota());
@@ -32,8 +32,14 @@ export async function generateWeek(day?: string): Promise<{ error?: string }> {
     })) as unknown as Json,
   });
   if (error) return { error: "No pudimos armar el plan. Intenta de nuevo." };
-  updateTag(DATA_TAG);
   return {};
+}
+
+/** Reveal a saved week only after the caller's progress UI has finished. */
+export async function refreshGeneratedWeek(): Promise<void> {
+  await requireReadyMembership();
+  // updateTag expires the data and includes the refreshed route in this action's response.
+  updateTag(DATA_TAG);
 }
 
 async function loadSlot(planMealId: string) {

@@ -17,12 +17,25 @@ const DAYS = 7;
 const EXPLORATION_SHARE = 0.15;
 
 /** Ingredients a diet forbids. Core violations exclude the recipe; accessory ones are removed. */
-const DIET_RULES: Record<Diet, { categories?: IngredientCategory[]; allergens?: string[]; slugs?: string[] }> = {
+type DietRule = { categories?: IngredientCategory[]; allergens?: string[]; slugs?: string[]; allowSlugs?: string[] };
+
+const LOW_CARB_RULE = {
+  categories: ["grains", "bakery", "sweeteners"],
+  slugs: ["papa-pastusa", "papa-sabanera", "papa-criolla", "yuca", "platano-maduro", "platano-verde", "arepa"],
+} satisfies DietRule;
+
+const DIET_RULES: Record<Diet, DietRule> = {
   vegetarian: { categories: ["meat", "poultry", "fish", "seafood"] },
   vegan: { categories: ["meat", "poultry", "fish", "seafood", "dairy", "eggs"], slugs: ["miel"] },
   pescatarian: { categories: ["meat", "poultry"] },
   gluten_free: { allergens: ["gluten"] },
   dairy_free: { allergens: ["dairy"] },
+  paleo: { categories: ["grains", "legumes", "dairy", "bakery", "sweeteners"], allowSlugs: ["miel"] },
+  low_carb: LOW_CARB_RULE,
+  keto: {
+    categories: [...LOW_CARB_RULE.categories, "legumes"],
+    slugs: [...LOW_CARB_RULE.slugs, "banano", "mango", "pina", "uvas", "papaya", "guayaba"],
+  },
 };
 
 /** Garnish swaps we can suggest when an accessory ingredient is removed. */
@@ -38,6 +51,7 @@ const PROTEIN_CATEGORIES: IngredientCategory[] = ["meat", "poultry", "fish", "se
 
 function violatesDiet(ingredient: CandidateIngredient, diet: Diet) {
   const rule = DIET_RULES[diet];
+  if (rule.allowSlugs?.includes(ingredient.slug)) return false;
   return (
     rule.categories?.includes(ingredient.category) ||
     rule.allergens?.some((a) => ingredient.allergens.includes(a as never)) ||

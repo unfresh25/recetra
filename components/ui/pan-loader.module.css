@@ -1,0 +1,193 @@
+.pan,
+.letter {
+  /* Parabolic flight: fast departure, zero vertical speed at the apex. */
+  --rise: cubic-bezier(0.33, 0.67, 0.67, 1);
+  --fall: cubic-bezier(0.33, 0, 0.67, 0.33);
+  --settle: cubic-bezier(0.23, 1, 0.32, 1);
+  animation-duration: 3s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.pan {
+  transform-box: fill-box;
+  /* Joint (67, 69) relative to the artwork's fill bounds (18.6331, 63). */
+  transform-origin: 48.3669px 6px;
+  animation-name: pan-toss;
+}
+
+.letter {
+  --late-contact-y: 0px;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation-name: letter-flight;
+}
+
+.letterM {
+  --first-x: -4px;
+  --first-y: -43px;
+  --first-spin: -15deg;
+  --second-x: -2px;
+  --second-y: -44px;
+  --second-spin: 10deg;
+  --contact-y: 0px;
+  --contact-spin: 0deg;
+  --contact-squash: 0.94;
+}
+
+.letterI {
+  --first-x: -1px;
+  --first-y: -38px;
+  --first-spin: 12deg;
+  --second-x: 1px;
+  --second-y: -36px;
+  --second-spin: -15deg;
+  --contact-y: -3px;
+  --contact-spin: 1deg;
+  --contact-squash: 0.98;
+}
+
+.letterS {
+  --first-x: 3px;
+  --first-y: -36px;
+  --first-spin: -32deg;
+  --second-x: 4px;
+  --second-y: -40px;
+  --second-spin: 22deg;
+  --contact-y: -6px;
+  --late-contact-y: -2px;
+  --contact-spin: 3deg;
+  --contact-squash: 1;
+}
+
+.letterE {
+  --first-x: 6px;
+  --first-y: -40px;
+  --first-spin: 42deg;
+  --second-x: 5px;
+  --second-y: -37px;
+  --second-spin: -22deg;
+  --contact-y: -3px;
+  --contact-spin: 2deg;
+  --contact-squash: 0.98;
+}
+
+/* Seconds: launch .30 / 1.50, apex .70 / 1.90, catch ~1.00 / 2.30. */
+@keyframes letter-flight {
+  0%, 8%, 40%, 46%, 82%, 100% {
+    transform: translate(0, 0) rotate(0deg) scale(1, 1);
+    animation-timing-function: var(--fall);
+  }
+  10%, 50% {
+    /* Still touching the pan at the end of each wind-up. */
+    transform: translate(0, 1px) rotate(1deg) scale(1, 1);
+    animation-timing-function: var(--rise);
+  }
+  23.333% {
+    transform: translate(var(--first-x), var(--first-y)) rotate(var(--first-spin)) scale(1, 1);
+    animation-timing-function: var(--fall);
+  }
+  32.222% {
+    /* M touches first; I/E follow one frame later, then S. */
+    transform: translate(0, var(--contact-y)) rotate(var(--contact-spin)) scale(1, 1);
+    animation-timing-function: linear;
+  }
+  33.333%, 76.667% {
+    transform: translate(0, var(--late-contact-y)) rotate(0deg) scale(1.02, var(--contact-squash));
+    animation-timing-function: var(--settle);
+  }
+  34.444%, 77.778% {
+    transform: translate(0, 1.5px) rotate(0deg) scale(1.06, 0.9);
+    animation-timing-function: var(--settle);
+  }
+  37%, 80% {
+    transform: translate(0, -0.5px) rotate(0deg) scale(0.99, 1.02);
+    animation-timing-function: var(--settle);
+  }
+  63.333% {
+    transform: translate(var(--second-x), var(--second-y)) rotate(var(--second-spin)) scale(1, 1);
+    animation-timing-function: var(--fall);
+  }
+  75.556% {
+    transform: translate(0, var(--contact-y)) rotate(calc(var(--contact-spin) * -1)) scale(1, 1);
+    animation-timing-function: linear;
+  }
+}
+
+@keyframes pan-toss {
+  0%, 8%, 40%, 46%, 82%, 100% {
+    transform: translateY(0) rotate(0deg);
+    animation-timing-function: var(--fall);
+  }
+  10% {
+    transform: translateY(1px) rotate(2deg);
+    animation-timing-function: var(--rise);
+  }
+  15% {
+    transform: translateY(-3px) rotate(-11deg);
+    animation-timing-function: var(--settle);
+  }
+  23.333% {
+    transform: translateY(-1px) rotate(-4deg);
+    animation-timing-function: var(--fall);
+  }
+  30% {
+    transform: translateY(0) rotate(2deg);
+    animation-timing-function: var(--fall);
+  }
+  34.444% {
+    transform: translateY(1.5px) rotate(3deg);
+    animation-timing-function: var(--settle);
+  }
+  37% {
+    transform: translateY(-0.5px) rotate(-1deg);
+    animation-timing-function: var(--settle);
+  }
+  50% {
+    transform: translateY(1.5px) rotate(4deg);
+    animation-timing-function: var(--rise);
+  }
+  55% {
+    transform: translateY(-4px) rotate(-12deg);
+    animation-timing-function: var(--settle);
+  }
+  63.333% {
+    transform: translateY(-1px) rotate(-3deg);
+    animation-timing-function: var(--fall);
+  }
+  73.333% {
+    transform: translateY(0) rotate(1deg);
+    animation-timing-function: var(--fall);
+  }
+  77.778% {
+    transform: translateY(1.5px) rotate(2.5deg);
+    animation-timing-function: var(--settle);
+  }
+  80% {
+    transform: translateY(-0.5px) rotate(-0.5deg);
+    animation-timing-function: var(--settle);
+  }
+}
+
+@keyframes letter-fade {
+  0%, 40%, 100% { opacity: 0.65; }
+  20% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pan {
+    animation: none;
+  }
+
+  .letter {
+    animation-name: letter-fade;
+    /* Outrank the global !important duration reset, regardless of CSS order. */
+    animation-duration: 1800ms !important;
+    animation-timing-function: ease-in-out;
+  }
+
+  .letterM { animation-delay: 0ms; }
+  .letterI { animation-delay: 150ms; }
+  .letterS { animation-delay: 300ms; }
+  .letterE { animation-delay: 450ms; }
+}

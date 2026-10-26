@@ -40,8 +40,8 @@ export async function savePeople(adults: number, kids: number): Promise<ActionRe
   return updateHousehold({ servings_adults: parsed.data.adults, servings_kids: parsed.data.kids });
 }
 
-export async function saveBudget(weeklyCop: number): Promise<ActionResult> {
-  const parsed = z.int().min(BUDGET.min).max(BUDGET.max).safeParse(weeklyCop);
+export async function saveBudget(weeklyCop: number | null): Promise<ActionResult> {
+  const parsed = z.int().min(BUDGET.min).max(BUDGET.max).nullable().safeParse(weeklyCop);
   if (!parsed.success) return { error: "Elige un presupuesto válido." };
   return updateHousehold({ weekly_budget_cop: parsed.data });
 }
@@ -103,16 +103,47 @@ export async function saveDiets(diets: string[]): Promise<ActionResult> {
   return replaceRestrictions({ p_kind: "diet", p_diets: parsed.data });
 }
 
+export async function savePreferences(measurementSystem: string, temperatureUnit: string): Promise<ActionResult> {
+  const parsed = z
+    .object({
+      measurement_system: z.enum(enums.measurement_system),
+      temperature_unit: z.enum(enums.temperature_unit),
+    })
+    .safeParse({ measurement_system: measurementSystem, temperature_unit: temperatureUnit });
+  if (!parsed.success) return { error: "Elige una opción de medidas y una de temperatura." };
+  const { member } = await requireMembership();
+  const supabase = await createClient();
+  const { error } = await supabase.from("members").update(parsed.data).eq("id", member.id);
+  updateTag(DATA_TAG);
+  return error ? { error: "No pudimos guardar. Intenta de nuevo." } : {};
+}
+
 /** Marks setup as finished for this member (and the household, if this was the first pass). */
-export async function finishSetup() {
+export async function finishSetup(): Promise<ActionResult> {
   const { member, household } = await requireMembership();
   const supabase = await createClient();
   const now = new Date().toISOString();
   if (!household.onboarded_at) {
-    await supabase.from("households").update({ onboarded_at: now }).eq("id", household.id);
+    const { error } = await supabase
+      .from("households")
+      .update({ onboarded_at: now })
+      .eq("id", household.id)
+      .is("onboarded_at", null);
+    if (error) {
+      updateTag(DATA_TAG);
+      return { error: "No pudimos terminar la configuración. Intenta de nuevo." };
+    }
   }
   if (!member.onboarded_at) {
-    await supabase.from("members").update({ onboarded_at: now }).eq("id", member.id);
+    const { error } = await supabase
+      .from("members")
+      .update({ onboarded_at: now })
+      .eq("id", member.id)
+      .is("onboarded_at", null);
+    if (error) {
+      updateTag(DATA_TAG);
+      return { error: "No pudimos terminar la configuración. Intenta de nuevo." };
+    }
   }
   updateTag(DATA_TAG);
   redirect("/plan");

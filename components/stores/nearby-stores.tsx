@@ -5,6 +5,7 @@ import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Chip } from "@/components/ui/chip";
 import { Icon } from "@/components/ui/icon";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { StoreLogo } from "@/components/ui/store-logo";
 import { TextField } from "@/components/ui/text-field";
 import { addBranch, removeBranch } from "@/lib/stores/actions";
@@ -15,7 +16,7 @@ import { cn } from "@/lib/utils/cn";
 // Leaflet touches window on import: load it in the browser only.
 const BranchMap = dynamic(() => import("./branch-map"), {
   ssr: false,
-  loading: () => <span className="block h-64 animate-pulse rounded-3xl bg-sunken" />,
+  loading: () => <PanLoaderScreen label="Cargando el mapa…" className="min-h-64 py-12" />,
 });
 
 type Point = { lat: number; lng: number };

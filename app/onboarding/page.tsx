@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getMembership } from "@/lib/auth";
+import { getMembership, requireUserIdentity } from "@/lib/auth";
 import { OnboardingForms } from "./onboarding-forms";
 
-export const metadata: Metadata = { title: "Tu hogar" };
+export const metadata: Metadata = { title: "Cuéntanos acerca de ti" };
 
 export default function OnboardingPage() {
   return (
     <Suspense>
-      <RedirectIfMember />
-      <OnboardingForms />
+      <OnboardingContent />
     </Suspense>
   );
 }
 
-async function RedirectIfMember() {
-  if (await getMembership()) redirect("/plan");
-  return null;
+async function OnboardingContent() {
+  const [membership, user] = await Promise.all([getMembership(), requireUserIdentity()]);
+  if (membership) redirect("/plan");
+  return <OnboardingForms userId={user.id} email={user.email} />;
 }

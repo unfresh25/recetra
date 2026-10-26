@@ -14,6 +14,7 @@ const RPC_ERRORS: Record<string, string> = {
   invitation_used: "Esta invitación ya fue usada. Pide una nueva.",
   invitation_expired: "Esta invitación venció. Pide una nueva.",
   not_in_household: "Primero crea o únete a un hogar.",
+  invalid_avatar: "No pudimos guardar tu foto. Intenta subirla de nuevo.",
 };
 
 function rpcErrorMessage(message: string) {
@@ -22,15 +23,26 @@ function rpcErrorMessage(message: string) {
 
 const displayName = z.string().trim().min(1, "Escribe tu nombre.").max(40, "Máximo 40 caracteres.");
 
+const fullName = z.string().trim().min(1, "Escribe tu nombre.").max(80, "Máximo 80 caracteres.");
+const avatarPath = z
+  .string()
+  .regex(/^[0-9a-f-]{36}\/[A-Za-z0-9._-]+$/)
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
 const createHouseholdSchema = z.object({
   householdName: z.string().trim().min(1, "Ponle nombre a tu hogar.").max(60, "Máximo 60 caracteres."),
   displayName,
+  fullName,
+  avatarPath,
 });
 
 export async function createHousehold(_: FormState, formData: FormData): Promise<FormState> {
   const parsed = createHouseholdSchema.safeParse({
     householdName: formData.get("householdName"),
     displayName: formData.get("displayName"),
+    fullName: formData.get("fullName"),
+    avatarPath: formData.get("avatarPath") ?? undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
@@ -38,6 +50,8 @@ export async function createHousehold(_: FormState, formData: FormData): Promise
   const { error } = await supabase.rpc("create_household", {
     p_name: parsed.data.householdName,
     p_display_name: parsed.data.displayName,
+    p_full_name: parsed.data.fullName,
+    p_avatar_path: parsed.data.avatarPath,
   });
   if (error) return { error: rpcErrorMessage(error.message) };
 

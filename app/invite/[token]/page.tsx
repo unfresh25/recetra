@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { Illustration } from "@/components/ui/illustration";
 import { QuestionScreen } from "@/components/ui/question-screen";
 import { getMembership } from "@/lib/auth";
@@ -13,7 +14,7 @@ export const metadata: Metadata = { title: "Invitación" };
 export default function InvitePage({ params }: PageProps<"/invite/[token]">) {
   return (
     <QuestionScreen compact>
-      <Suspense fallback={<span className="size-44 animate-pulse rounded-full bg-surface" />}>
+      <Suspense fallback={<PanLoaderScreen />}>
         <Invitation params={params} />
       </Suspense>
     </QuestionScreen>

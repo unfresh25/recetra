@@ -1,5 +1,6 @@
 import "server-only";
 import type { Membership } from "@/lib/auth";
+import { householdPortions } from "@/lib/household/portions";
 import { createClient } from "@/lib/supabase/server";
 import { daysSinceCooked, summarizeReactions, type ReactionRow } from "./reactions";
 import type { Candidate, MealType, MemberProfile, PlanContext } from "./types";
@@ -75,5 +76,5 @@ export async function loadPlanInputs(membership: Membership, weekStart: string, 
     seed,
   };
 
-  return { candidates, ctx, servings: household.servings_adults + household.servings_kids };
+  return { candidates, ctx, servings: householdPortions({ adults: household.servings_adults, kids: household.servings_kids }) };
 }

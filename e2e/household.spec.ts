@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createHousehold, householdSetup, personalSetup, signIn } from "./flows";
+import { createHousehold, householdSetup, personalSetup, preferencesSetup, signIn } from "./flows";
 
 const run = Date.now();
 const owner = { email: `owner-${run}@test.co`, name: "Jorge" };
@@ -11,12 +11,7 @@ test("a couple creates a household and joins it through an invitation", async ({
   await ownerPage.goto("/");
   await expect(ownerPage).toHaveURL(/\/welcome$/);
   await ownerPage.screenshot({ path: "e2e/__screens__/01-welcome.png" });
-  // Desktop-friendly carousel: the main button advances, the last slide starts.
-  await ownerPage.getByRole("button", { name: "Siguiente" }).click();
-  await expect(ownerPage.getByRole("heading", { name: "Compra donde más rinde" })).toBeInViewport();
-  await ownerPage.getByRole("button", { name: "Siguiente" }).click();
-  await expect(ownerPage.getByRole("heading", { name: "Aprende de sus gustos" })).toBeInViewport();
-  await ownerPage.getByRole("button", { name: "Empezar" }).click();
+  await ownerPage.getByRole("link", { name: "Empecemos" }).click();
   await expect(ownerPage).toHaveURL(/\/login$/);
   await ownerPage.screenshot({ path: "e2e/__screens__/02-login.png" });
 
@@ -48,6 +43,7 @@ test("a couple creates a household and joins it through an invitation", async ({
   await partnerPage.getByLabel("¿Cómo te llamas?").fill(partner.name);
   await partnerPage.getByRole("button", { name: "Unirme al hogar" }).click();
   // The household is already configured, so the partner only answers personal questions.
+  await preferencesSetup(partnerPage);
   await personalSetup(partnerPage, { allergy: /Mariscos/ });
   await expect(partnerPage).toHaveURL(/\/plan$/);
   await expect(partnerPage.getByText("Casa Borja").first()).toBeVisible({ timeout: 20_000 });

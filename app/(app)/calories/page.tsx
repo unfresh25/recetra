@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { DayStrip } from "@/components/plan/day-strip";
 import { EatenToggle } from "@/components/plan/eaten-toggle";
 import { WeekNav } from "@/components/plan/week-nav";
@@ -22,7 +23,7 @@ export default function CaloriesPage({ searchParams }: PageProps<"/calories">) {
     <>
       <ScreenHeader title="Calorías" />
       <div className="flex flex-col gap-5 px-5 pt-4">
-        <Suspense fallback={<span className="h-72 animate-pulse rounded-3xl bg-sunken" />}>
+        <Suspense fallback={<PanLoaderScreen />}>
           <CalorieLog searchParams={searchParams} />
         </Suspense>
       </div>
