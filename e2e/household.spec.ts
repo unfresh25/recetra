@@ -11,7 +11,7 @@ test("a couple creates a household and joins it through an invitation", async ({
   await ownerPage.goto("/");
   await expect(ownerPage).toHaveURL(/\/welcome$/);
   await ownerPage.screenshot({ path: "e2e/__screens__/01-welcome.png" });
-  await ownerPage.getByRole("link", { name: "Empecemos" }).click();
+  await ownerPage.getByRole("button", { name: "Empecemos", exact: true }).click();
   await expect(ownerPage).toHaveURL(/\/login$/);
   await ownerPage.screenshot({ path: "e2e/__screens__/02-login.png" });
 

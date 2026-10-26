@@ -1,7 +1,14 @@
 import { expect, type Page } from "@playwright/test";
 import { readOtp } from "./mailpit";
 
-const next = (page: Page) => page.getByRole("button", { name: /^(Continuar|Terminar|Como de todo)/ }).click();
+const next = (page: Page, name = "Continuar") => page.getByRole("button", { name, exact: true }).click();
+
+async function selectOption(page: Page, name: string | RegExp) {
+  const checkbox = page.getByRole("checkbox", { name, exact: true });
+  // HeroUI hides the input; its wrapping label is the visible pointer target.
+  await page.locator("label").filter({ has: checkbox }).click();
+  await expect(checkbox).toBeChecked();
+}
 
 /** Kitchen units are the first setup step for everyone; the defaults (metric, °C) are fine. */
 export async function preferencesSetup(page: Page) {
@@ -12,8 +19,8 @@ export async function preferencesSetup(page: Page) {
 export async function householdSetup(page: Page) {
   await preferencesSetup(page);
   await expect(page).toHaveURL(/\/setup\/stores$/);
-  await page.getByRole("checkbox", { name: "D1", exact: true }).click();
-  await page.getByRole("checkbox", { name: "Olímpica", exact: true }).click();
+  await selectOption(page, "D1");
+  await selectOption(page, "Olímpica");
   await page.screenshot({ path: "e2e/__screens__/10-setup-stores.png" });
   await next(page);
   await expect(page).toHaveURL(/\/setup\/people$/);
@@ -22,18 +29,18 @@ export async function householdSetup(page: Page) {
   await page.screenshot({ path: "e2e/__screens__/11-setup-budget.png" });
   await next(page);
   await expect(page).toHaveURL(/\/setup\/styles$/);
-  await page.getByRole("checkbox", { name: /Rápido y fácil/ }).click();
-  await page.getByRole("checkbox", { name: /Saludable/ }).click();
+  await selectOption(page, "Rápido y fácil");
+  await selectOption(page, "Saludable");
   await page.screenshot({ path: "e2e/__screens__/12-setup-styles.png" });
   await next(page);
   await expect(page).toHaveURL(/\/setup\/kitchen$/);
-  await page.getByRole("checkbox", { name: /Olla a presión/ }).click();
+  await selectOption(page, "Olla a presión");
   await next(page);
 }
 
 export async function personalSetup(page: Page, opts: { allergy?: RegExp; dislike?: string }) {
   await expect(page).toHaveURL(/\/setup\/allergies$/);
-  if (opts.allergy) await page.getByRole("checkbox", { name: opts.allergy }).click();
+  if (opts.allergy) await selectOption(page, opts.allergy);
   await page.screenshot({ path: "e2e/__screens__/13-setup-allergies.png" });
   await next(page);
   await expect(page).toHaveURL(/\/setup\/dislikes$/);
@@ -41,7 +48,7 @@ export async function personalSetup(page: Page, opts: { allergy?: RegExp; dislik
   await page.screenshot({ path: "e2e/__screens__/14-setup-dislikes.png" });
   await next(page);
   await expect(page).toHaveURL(/\/setup\/diet$/);
-  await next(page);
+  await next(page, "Terminar");
   await expect(page).toHaveURL(/\/plan$/);
 }
 
