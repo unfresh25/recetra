@@ -1,31 +1,42 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { createContext, use, useEffect, useOptimistic, useTransition, type ReactNode } from "react";
+import { createContext, use, useEffect, useOptimistic, useState, useTransition, type ReactNode } from "react";
 import { DrawablyButton } from "@/components/ui/drawably";
 import { Icon } from "@/components/ui/icon";
 import { toggleReaction } from "@/lib/plan/actions";
-import { cn } from "@/lib/utils/cn";
+import { LikePill } from "./like-button";
 
 type State = { favorite: boolean; dislike: boolean; veto: boolean };
-type Ctx = { state: State; toggle: (kind: keyof State) => void };
+type Ctx = { state: State; likes: number; pending: boolean; toggle: (kind: keyof State) => void };
 
 const ReactionContext = createContext<Ctx | null>(null);
 
 /** Shares one optimistic reaction state between the hero heart and the action pills. */
-export function ReactionProvider({ recipeId, mine, children }: { recipeId: string; mine: State; children: ReactNode }) {
+export function ReactionProvider({ recipeId, mine, likes, children }: { recipeId: string; mine: State; likes: number; children: ReactNode }) {
   const [state, setOptimistic] = useOptimistic(mine, (s: State, kind: keyof State) => ({ ...s, [kind]: !s[kind] }));
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState(false);
 
   function toggle(kind: keyof State) {
     if (kind === "veto" && !state.veto && !confirm("¿Vetar esta receta? No volverá a salir en el plan del hogar.")) return;
+    setError(false);
     startTransition(async () => {
       setOptimistic(kind);
-      await toggleReaction(recipeId, kind);
+      try {
+        await toggleReaction(recipeId, kind);
+      } catch {
+        setError(true);
+      }
     });
   }
 
-  return <ReactionContext value={{ state, toggle }}>{children}</ReactionContext>;
+  return (
+    <ReactionContext value={{ state, toggle, pending, likes: Math.max(0, likes + Number(state.favorite) - Number(mine.favorite)) }}>
+      {error ? <p role="alert" className="px-5 py-2 text-sm text-ink">No pudimos guardar tu reacción. Intenta de nuevo.</p> : null}
+      {children}
+    </ReactionContext>
+  );
 }
 
 function useReactions() {
@@ -36,18 +47,8 @@ function useReactions() {
 
 /** Heart over the hero, CREME-style. */
 export function FavoriteButton() {
-  const { state, toggle } = useReactions();
-  return (
-    <button
-      type="button"
-      aria-pressed={state.favorite}
-      aria-label={state.favorite ? "Quitar de favoritos" : "Agregar a favoritos"}
-      onClick={() => toggle("favorite")}
-      className={cn("flex size-11 items-center justify-center", state.favorite ? "text-brand" : "text-white")}
-    >
-      <Icon name="heart" size={26} strokeWidth={state.favorite ? 2.6 : 1.8} />
-    </button>
-  );
+  const { state, toggle, likes, pending } = useReactions();
+  return <LikePill liked={state.favorite} likes={likes} pending={pending} onClick={() => toggle("favorite")} />;
 }
 
 /** Horizontal action pills under the title: cook, dislike, veto. */

@@ -1,6 +1,16 @@
 import { expect, type Page } from "@playwright/test";
 import { readOtp } from "./mailpit";
 
+export async function hideDevOverlay(page: Page) {
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      const style = document.createElement("style");
+      style.textContent = "nextjs-portal{display:none!important}";
+      document.head.appendChild(style);
+    });
+  });
+}
+
 const next = (page: Page, name = "Continuar") => page.getByRole("button", { name, exact: true }).click();
 
 async function selectOption(page: Page, name: string | RegExp) {

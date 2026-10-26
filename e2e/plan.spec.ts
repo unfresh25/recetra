@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { plannedRecipeIds, seedCatalog } from "./db";
-import { createHousehold, householdSetup, personalSetup, signIn } from "./flows";
+import { createHousehold, hideDevOverlay, householdSetup, personalSetup, signIn } from "./flows";
 
 test("the weekly plan respects allergies and dislikes, and learns from replacements", async ({ page }) => {
+  await hideDevOverlay(page);
   const ids = await seedCatalog([
     { title: "Huevos pericos E2E", meal: "breakfast", minutes: 15, ingredients: [{ slug: "huevo" }, { slug: "tomate" }] },
     { title: "Arepa con queso E2E", meal: "breakfast", minutes: 10, ingredients: [{ slug: "arepa", unit: "unit", quantity: 2 }, { slug: "queso-costeno" }] },
@@ -49,8 +50,8 @@ test("the weekly plan respects allergies and dislikes, and learns from replaceme
 
   // Favorite the new lunch and cook it.
   await lunchCard.getByRole("link").first().click();
-  await page.getByRole("button", { name: "Agregar a favoritos" }).click();
-  await expect(page.getByRole("button", { name: "Quitar de favoritos" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Me gusta", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Quitar me gusta", exact: true })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "Cocinar", exact: true }).click();
   await expect(page.getByText("Paso 1")).toBeVisible();
   await expect(page.getByRole("button", { name: /10 minutos/ })).toHaveCount(0);

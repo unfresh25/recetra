@@ -1,47 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { RecipeCard } from "@/components/recipes/recipe-card";
-import { EmptyState } from "@/components/ui/empty-state";
+import { DiscoverFeed } from "@/components/discover/feed";
 import { Icon } from "@/components/ui/icon";
 import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { requireReadyMembership } from "@/lib/auth";
-import { listDiscover } from "@/lib/recipes/queries";
+import { getDiscover } from "@/lib/discover/queries";
 
 export const metadata: Metadata = { title: "Descubre" };
 
 export default function DiscoverPage() {
-  return (
-    <>
-      <ScreenHeader
-        title="Descubre"
-        action={
-          <Link href="/ask" aria-label="Preguntar a Mise" title="Preguntar" className="flex size-11 items-center justify-center text-ink">
-            <Icon name="sparkles" size={24} />
-          </Link>
-        }
-      />
-      <div className="px-5 pt-4">
-        <Suspense fallback={<PanLoaderScreen />}>
-          <DiscoverRecipes />
-        </Suspense>
-      </div>
-    </>
-  );
+  return <Suspense fallback={<PanLoaderScreen />}><DiscoverContent /></Suspense>;
 }
 
-async function DiscoverRecipes() {
-  await requireReadyMembership();
-  const recipes = await listDiscover();
-
-  if (!recipes.length) {
-    return <EmptyState illustration="empty-recipes" title="Pronto habrá más por descubrir" description="Aquí encontrarás recetas para inspirar tu próxima comida." />;
-  }
-
+async function DiscoverContent() {
+  const membership = await requireReadyMembership();
+  const data = await getDiscover(membership);
   return (
-    <ul className="divide-y divide-line" aria-label="Recetas para descubrir">
-      {recipes.map((recipe) => <li key={recipe.id}><RecipeCard recipe={recipe} /></li>)}
-    </ul>
+    <div className="bg-canvas text-ink">
+      <ScreenHeader
+        title="Descubre"
+        titleClassName="font-display text-[32px] font-semibold leading-tight tracking-tight"
+        subtitle={`Hola, ${membership.member.display_name}. ¿Qué cocinamos hoy?`}
+        action={<Link href="/ask" aria-label="Preguntar a Mise" className="flex size-11 items-center justify-center text-ink"><Icon name="sparkles" size={24} /></Link>}
+      />
+      <DiscoverFeed data={data} styles={membership.household.styles} />
+    </div>
   );
 }

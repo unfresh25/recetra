@@ -47,7 +47,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
   const servings = householdPortions({ adults: household.servings_adults, kids: household.servings_kids });
 
   return (
-    <ReactionProvider recipeId={recipe.id} mine={social.mine}>
+    <ReactionProvider recipeId={recipe.id} mine={social.mine} likes={social.likes}>
       {/* Hero: media with the title over it (CREME) */}
       <div className="relative aspect-[4/5] w-full overflow-hidden bg-ink">
         <VideoEmbed
