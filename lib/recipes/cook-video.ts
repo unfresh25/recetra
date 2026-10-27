@@ -7,17 +7,19 @@ export function segmentProgress(seconds: number | null, start: number | null, en
   return Math.max(0, Math.min(1, (seconds - start) / (end - start)));
 }
 
-export function videoRingFraction({ platform, seconds, startSeconds, endSeconds, stepIndex, stepCount }: {
-  platform: string;
-  seconds: number | null;
-  startSeconds: number | null;
-  endSeconds: number | null;
-  stepIndex: number;
-  stepCount: number;
-}): number {
-  if (platform === "youtube") return segmentProgress(seconds, startSeconds, endSeconds);
-  if (!Number.isFinite(stepIndex) || !Number.isFinite(stepCount) || stepCount <= 0) return 0;
-  return Math.max(0, Math.min(1, (stepIndex + 1) / stepCount));
+export const TIKTOK_FRAME = { width: 390, height: 390 * 16 / 9, barHeight: 70 } as const;
+
+/** Cover, then zoom about the bottom-left corner to retain TikTok's pause/mute bar. */
+export function tiktokLayout(width: number, height: number, zoom = 1.18) {
+  const frameWidth = Math.max(width, height * 9 / 16) * zoom;
+  return {
+    width: frameWidth,
+    height: frameWidth * 16 / 9,
+    left: 0,
+    bottom: 0,
+    // Real iframe sizing leaves native controls at their logical CSS size.
+    barHeight: TIKTOK_FRAME.barHeight,
+  };
 }
 
 /** Horizontal gestures navigate; vertical gestures remain available for long text. */
@@ -119,12 +121,11 @@ export class CookPlayerController {
   }
 }
 
-export function tiktokPlayerUrl(videoId: string, { autoplay = true, loop = true, controls = false }: { autoplay?: boolean; loop?: boolean; controls?: boolean } = {}) {
-  const chrome = controls ? "1" : "0";
+export function tiktokPlayerUrl(videoId: string, { autoplay = true, loop = true, fullscreen = false, timestamp = false }: { autoplay?: boolean; loop?: boolean; fullscreen?: boolean; timestamp?: boolean } = {}) {
   const params = new URLSearchParams({
-    autoplay: autoplay ? "1" : "0", controls: chrome, progress_bar: chrome,
-    play_button: "1", volume_control: chrome, fullscreen_button: chrome,
-    timestamp: chrome, music_info: "0", description: "0", loop: loop ? "1" : "0", rel: "0", closed_caption_button: "0",
+    autoplay: autoplay ? "1" : "0", controls: "1", progress_bar: "1",
+    play_button: "1", volume_control: "1", fullscreen_button: fullscreen ? "1" : "0",
+    timestamp: timestamp ? "1" : "0", music_info: "0", description: "0", loop: loop ? "1" : "0", rel: "0", closed_caption_button: "0",
   });
   return `https://www.tiktok.com/player/v1/${videoId}?${params}`;
 }

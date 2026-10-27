@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useEffectEvent, useImperativeHandle, useRef, useState, type Ref } from "react";
-import { CookPlayerController, tiktokPlayerUrl } from "@/lib/recipes/cook-video";
+import { CookPlayerController, TIKTOK_FRAME, tiktokPlayerUrl } from "@/lib/recipes/cook-video";
 import type { Enums } from "@/lib/supabase/database.types";
 
 type YTPlayer = {
@@ -72,12 +72,12 @@ export function StepVideo(props: StepVideoProps) {
   return props.platform === "tiktok" ? <TikTokStepVideo {...props} /> : <ControlledStepVideo {...props} />;
 }
 
-function TikTokStepVideo({ videoId, title, onError, ref }: StepVideoProps) {
+function TikTokStepVideo({ videoId, title, expanded, onError, ref }: StepVideoProps) {
   // TikTok exposes no working command/event transport. Navigation only changes our step text.
   useImperativeHandle(ref, () => ({ seek() {}, activate() {}, togglePlayback() {} }), []);
 
-  return <div className="cook-player-stage cook-player-portrait">
-    <iframe src={tiktokPlayerUrl(videoId)} title={`Video: ${title}`} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen onError={onError} className="pointer-events-auto size-full border-0" />
+  return <div className="cook-player-stage cook-player-tiktok" style={{ width: `var(--tiktok-width, ${TIKTOK_FRAME.width}px)`, height: `var(--tiktok-height, ${TIKTOK_FRAME.height}px)` }}>
+    <iframe src={tiktokPlayerUrl(videoId)} width={TIKTOK_FRAME.width} height={TIKTOK_FRAME.height} tabIndex={expanded ? 0 : -1} title={`Video: ${title}`} allow="autoplay; encrypted-media; picture-in-picture" onError={onError} className={`size-full border-0 ${expanded ? "pointer-events-auto" : "pointer-events-none"}`} />
   </div>;
 }
 

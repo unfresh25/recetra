@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CookPlayerController, pipDragX, pipSnapCorner, segmentEnd, segmentProgress, stepFromTime, tiktokPlayerUrl, videoRingFraction, videoSwipeDirection, type PlayerCommand } from "./cook-video";
+import { CookPlayerController, pipDragX, pipSnapCorner, segmentEnd, segmentProgress, stepFromTime, TIKTOK_FRAME, tiktokLayout, tiktokPlayerUrl, videoSwipeDirection, type PlayerCommand } from "./cook-video";
 
 afterEach(() => { vi.useRealTimers(); });
 
@@ -18,28 +18,56 @@ describe("segmentProgress", () => {
   });
 });
 
-describe("videoRingFraction", () => {
-  const input = { platform: "youtube", seconds: 20, startSeconds: 15, endSeconds: 35, stepIndex: 2, stepCount: 6 };
-
-  it("uses segment playback for YouTube, independently of step count", () => {
-    expect(videoRingFraction(input)).toBe(0.25);
-    expect(videoRingFraction({ ...input, stepIndex: 5 })).toBe(0.25);
-    expect(videoRingFraction({ ...input, seconds: null })).toBe(0);
-    expect(videoRingFraction({ ...input, endSeconds: null })).toBe(0);
-  });
-
-  it("uses step progress for TikTok without timestamps or player events", () => {
-    const tiktok = { ...input, platform: "tiktok", seconds: null, startSeconds: null, endSeconds: null };
-    expect(videoRingFraction({ ...tiktok, stepIndex: 0 })).toBeCloseTo(1 / 6);
-    expect(videoRingFraction(tiktok)).toBe(0.5);
-    expect(videoRingFraction({ ...tiktok, stepIndex: 5 })).toBe(1);
-    expect(videoRingFraction({ ...tiktok, stepIndex: 1 })).toBeCloseTo(2 / 6);
-  });
-
+describe("tiktokLayout", () => {
   it.each([
-    [-2, 6, 0], [8, 6, 1], [0, 0, 0], [0, -1, 0], [NaN, 6, 0], [0, Infinity, 0],
-  ])("bounds step progress safely (%s / %s)", (stepIndex, stepCount, fraction) => {
-    expect(videoRingFraction({ ...input, platform: "tiktok", stepIndex, stepCount })).toBe(fraction);
+    [320, 484], [390, 760], [390, 844], [430, 848], [576, 690], [844, 306], [1024, 684],
+  ])("crops the rail/header but retains pause, mute and progress in a %s×%s card", (width, height) => {
+    const layout = tiktokLayout(width, height, 1.18);
+    expect(layout).not.toHaveProperty("scale");
+    expect(layout.width / layout.height).toBeCloseTo(9 / 16);
+    expect(layout.width).toBeGreaterThanOrEqual(width);
+    expect(layout.height).toBeGreaterThanOrEqual(height);
+    const top = height - layout.bottom - layout.height;
+    // The rail starts at ~85% across; the header ends at ~9% down.
+    expect(layout.left + layout.width * 0.85).toBeGreaterThan(width);
+    expect(top + layout.height * 0.09).toBeLessThan(0);
+    // Native controls keep their logical CSS size when the iframe is resized.
+    const bar = { left: layout.left, right: layout.left + 120, top: height - layout.bottom - 60, bottom: height - layout.bottom };
+    expect(bar.left).toBeGreaterThanOrEqual(0);
+    expect(bar.right).toBeLessThanOrEqual(width);
+    expect(bar.top).toBeGreaterThanOrEqual(0);
+    expect(bar.bottom).toBeLessThanOrEqual(height);
+    expect(layout.left).toBe(0);
+    expect(layout.bottom).toBe(0);
+    expect(layout.barHeight).toBe(TIKTOK_FRAME.barHeight);
+    expect(height - layout.bottom - layout.barHeight).toBeGreaterThanOrEqual(0);
+  });
+
+  it.each([120, 132.6, 168])("also supplies cover geometry for a %spx PiP scaled from the logical frame", (width) => {
+    const height = width * 16 / 9;
+    const layout = tiktokLayout(width, height);
+    const scale = layout.width / TIKTOK_FRAME.width;
+    expect(TIKTOK_FRAME.height * scale).toBeCloseTo(layout.height);
+    expect(layout.width).toBeCloseTo(width * 1.18);
+    expect(layout.height).toBeCloseTo(height * 1.18);
+    expect(width / scale).toBeGreaterThanOrEqual(120);
+    expect(height / scale).toBeGreaterThanOrEqual(60);
+  });
+
+  it("uses real iframe dimensions for the mobile video card above its dock", () => {
+    const layout = tiktokLayout(390, 760);
+    expect(layout.width).toBeCloseTo(504.45);
+    expect(layout.height).toBeCloseTo(896.8);
+  });
+
+  it("applies the configured crop zoom on top of cover", () => {
+    const base = tiktokLayout(390, 390 * 16 / 9, 1);
+    const cropped = tiktokLayout(390, 390 * 16 / 9, 1.25);
+    expect(base.width).toBeCloseTo(390);
+    expect(base.height).toBeCloseTo(390 * 16 / 9);
+    expect(cropped.width).toBeCloseTo(base.width * 1.25);
+    expect(cropped.height).toBeCloseTo(base.height * 1.25);
+    expect(cropped.barHeight).toBe(base.barHeight);
   });
 });
 
@@ -220,18 +248,18 @@ describe("CookPlayerController (YouTube)", () => {
 });
 
 describe("tiktokPlayerUrl", () => {
-  it("hides chrome, retains center play and requests autoplay and looping in cook mode", () => {
+  it("keeps native pause, mute and progress with autoplay and looping in cook mode", () => {
     const url = new URL(tiktokPlayerUrl("123"));
     expect(url.origin + url.pathname).toBe("https://www.tiktok.com/player/v1/123");
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      controls: "0", progress_bar: "0", volume_control: "0", fullscreen_button: "0",
+      controls: "1", progress_bar: "1", volume_control: "1", fullscreen_button: "0",
       timestamp: "0", music_info: "0", description: "0", rel: "0", closed_caption_button: "0",
       play_button: "1", loop: "1", autoplay: "1",
     });
   });
 
   it("preserves the recipe hero's full controls and non-looping playback", () => {
-    const url = new URL(tiktokPlayerUrl("123", { autoplay: true, loop: false, controls: true }));
+    const url = new URL(tiktokPlayerUrl("123", { autoplay: true, loop: false, fullscreen: true, timestamp: true }));
     for (const key of ["controls", "play_button", "progress_bar", "volume_control", "fullscreen_button", "timestamp", "autoplay"]) {
       expect(url.searchParams.get(key)).toBe("1");
     }

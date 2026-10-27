@@ -1,4 +1,5 @@
 import { createRef, type ComponentProps } from "react";
+import { TIKTOK_FRAME } from "@/lib/recipes/cook-video";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { CookVideo } from "./cook-video";
@@ -42,21 +43,24 @@ function openingTag(markup: string, tag: string, label: string) {
 }
 
 describe("shared cook video layout", () => {
-  it("keeps TikTok's center player interactive and the PiP expand target separate", () => {
+  it("keeps TikTok at a fixed logical size and makes the entire PiP an expand target", () => {
     const markup = renderVideo();
     expect(markup).toContain('data-native-controls="true"');
     const iframe = markup.match(/<iframe[^>]*>/)?.[0];
     expect(iframe).toContain("https://www.tiktok.com/player/v1/123?");
-    expect(iframe).toContain("controls=0");
+    expect(iframe).toContain("controls=1");
     expect(iframe).toContain("autoplay=1");
     expect(iframe).toContain("play_button=1");
-    expect(iframe).toContain("pointer-events-auto");
-    expect(iframe).not.toContain('tabindex="-1"');
-    expect(markup).toContain("cook-video-native-guard");
+    expect(iframe).toContain(`width="${TIKTOK_FRAME.width}" height="${TIKTOK_FRAME.height}"`);
+    expect(iframe).toContain("pointer-events-none");
+    expect(iframe).toContain('tabindex="-1"');
+    expect(markup).toContain("cook-player-tiktok");
+    expect(markup).toContain(`width:var(--tiktok-width, ${TIKTOK_FRAME.width}px);height:var(--tiktok-height, ${TIKTOK_FRAME.height}px)`);
+    expect(markup).toContain('data-tiktok-sizing="pip"');
+    expect(markup).not.toContain("cook-video-native-guard");
     const expand = openingTag(markup, "button", "Abrir modo video");
-    expect(expand).toContain("size-7");
-    expect(expand).toContain("top-1 left-1");
-    expect(expand).not.toContain("inset-0");
+    expect(expand).toContain("inset-0");
+    expect(markup).toContain("btn-float absolute top-1 left-1");
     expect(openingTag(markup, "button", "Ocultar video")).toContain("right-1");
   });
 
@@ -70,7 +74,7 @@ describe("shared cook video layout", () => {
     expect(markup).not.toContain("cook-tiktok-panel");
     expect(markup).not.toContain("cook-tiktok-topbar");
     expect(markup).not.toContain("Paso 03 de 06");
-    expect(markup).not.toContain('aria-label="Paso anterior"');
+    expect(markup).toContain('aria-label="Paso anterior"');
     const close = openingTag(markup, "button", "Volver a los pasos");
     expect(close).toContain("size-11");
     expect(close).toContain("bg-transparent");
@@ -80,24 +84,45 @@ describe("shared cook video layout", () => {
     expect(markup).toContain("Pregúntale a Carmy");
   });
 
-  it("uses step progress for TikTok and leaves native playback accessible without a tap overlay", () => {
+  it("leaves TikTok's whole video surface interactive to reveal its native bar", () => {
     const markup = renderVideo({ expanded: true });
+    expect(markup).toContain('data-tiktok-sizing="video"');
     expect(markup).not.toContain('aria-label="Reproducir video"');
     expect(markup).not.toContain('aria-label="Pausar video"');
-    expect(markup).toContain('stroke-dashoffset="0.5"');
-    expect(renderVideo({ expanded: true, stepIndex: 0 })).toContain(`stroke-dashoffset="${1 - 1 / 6}"`);
-    const last = renderVideo({ expanded: true, stepIndex: 5 });
-    expect(last).toContain('stroke-dashoffset="0"');
-    expect(openingTag(last, "button", "Siguiente paso")).not.toContain("disabled");
+    expect(markup).not.toContain("cook-video-progress");
+    expect(markup).not.toContain("cook-video-native-guard");
+    expect(markup.match(/<iframe[^>]*>/)?.[0]).toContain("pointer-events-auto");
+    expect(markup).toContain("Toca el video para ver la pausa");
+    expect(renderVideo()).not.toContain("Toca el video para ver la pausa");
+    expect(renderVideo({ expanded: true, hidden: true })).not.toContain("Toca el video para ver la pausa");
   });
 
-  it("makes the ring the first chip and uses the upper bound for timer ranges", () => {
-    const markup = renderVideo({ expanded: true, tokens: [
+  it.each(["youtube", "tiktok"] as const)("disables step navigation at the boundaries for %s", (platform) => {
+    const first = renderVideo({ platform, expanded: true, stepIndex: 0 });
+    expect(openingTag(first, "button", "Paso anterior")).toContain(' disabled=""');
+    expect(openingTag(first, "button", "Siguiente paso")).not.toContain(' disabled=""');
+    const last = renderVideo({ platform, expanded: true, stepIndex: 5 });
+    expect(openingTag(last, "button", "Paso anterior")).not.toContain(' disabled=""');
+    expect(openingTag(last, "button", "Siguiente paso")).toContain(' disabled=""');
+    for (const label of ["Paso anterior", "Siguiente paso"]) {
+      const button = openingTag(first, "button", label);
+      expect(button).toContain("size-[52px]");
+      expect(button).toContain("rounded-full bg-white/12 text-white");
+    }
+  });
+
+  it.each(["youtube", "tiktok"] as const)("orders navigation, playback and chips for %s and uses the upper timer bound", (platform) => {
+    const markup = renderVideo({ platform, expanded: true, tokens: [
       { kind: "text", text: "Cocina " }, { kind: "time", text: "5 a 10 minutos", seconds: 600 },
       { kind: "text", text: " a " }, { kind: "temperature", text: "100°C" },
     ] });
     const chips = markup.slice(markup.indexOf('<div class="cook-video-chips">'));
+    expect(chips.indexOf('aria-label="Paso anterior"')).toBeLessThan(chips.indexOf('aria-label="Siguiente paso"'));
     expect(chips.indexOf('aria-label="Siguiente paso"')).toBeLessThan(chips.indexOf("10 min"));
+    if (platform === "youtube") {
+      expect(chips.indexOf('aria-label="Siguiente paso"')).toBeLessThan(chips.indexOf('aria-label="Reproducir video"'));
+      expect(chips.indexOf('aria-label="Reproducir video"')).toBeLessThan(chips.indexOf("10 min"));
+    } else expect(chips).not.toContain("cook-video-progress");
     expect(chips.indexOf("10 min")).toBeLessThan(chips.indexOf("Ingredientes"));
     expect(chips.indexOf("Ingredientes")).toBeLessThan(chips.indexOf("Pregúntale a Carmy"));
     expect(chips).toContain("bg-white text-ink");
