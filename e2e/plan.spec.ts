@@ -62,7 +62,7 @@ test("the weekly plan respects allergies and dislikes, and learns from replaceme
   await page.getByRole("button", { name: "Terminar", exact: true }).click();
   await page.getByRole("button", { name: "Marcar como cocinada" }).click();
   await expect(page.getByRole("button", { name: "Cocinada", exact: true })).toBeDisabled();
-  await page.getByRole("link", { name: "Salir del modo cocina" }).click();
+  await page.getByRole("button", { name: "Salir del modo cocina" }).click();
   await page.goto("/plan");
   await expect(page).toHaveURL(/\/plan$/);
   await firstDay.click();

@@ -3,9 +3,11 @@
 import { Drawer } from "@heroui/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition, ViewTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { addTransitionType, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition, ViewTransition, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { getNavigationStack, previousRecipeDetail } from "@/lib/navigation/origin";
 import { markCooked } from "@/lib/plan/actions";
 import { swipeDirection } from "@/lib/recipes/cook-navigation";
 import { formatDuration, stepIngredientIndexes, tokenizeStep } from "@/lib/recipes/step-tokens";
@@ -15,7 +17,7 @@ import { CookVideo } from "./cook-video";
 import { StepText } from "./step-text";
 import type { StepVideoHandle } from "./step-video";
 import { ShareConfirmation, useRecipeShare } from "./share-confirmation";
-import { segmentEnd, stepFromTime } from "@/lib/recipes/cook-video";
+import { segmentEnd, stepFromTime, type PipCorner } from "@/lib/recipes/cook-video";
 import { NewTimerSheet, TimerTray, useTimers } from "./timers";
 
 type Step = { position: number; text: string; video_start_seconds: number | null };
@@ -33,6 +35,7 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
   servings: number;
   moreByAuthor?: ReactNode;
 }) {
+  const router = useRouter();
   const [index, setIndex] = useState(0);
   const [finished, setFinished] = useState(false);
   const [cooked, setCooked] = useState(false);
@@ -40,6 +43,7 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
   const [showVideo, setShowVideo] = useState(false);
   const [videoHidden, setVideoHidden] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
+  const [pipCorner, setPipCorner] = useState<{ side: PipCorner }>({ side: "right" });
   const player = useRef<StepVideoHandle | null>(null);
   const [newTimer, setNewTimer] = useState(false);
   const [marking, startMarking] = useTransition();
@@ -47,8 +51,7 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
   const { message: shareMessage, share } = useRecipeShare(title, `/recipes/${recipeId}`);
   const timers = useTimers();
   const scrollArea = useRef<HTMLDivElement>(null);
-  const layout = useRef<HTMLElement>(null);
-  const bottomControls = useRef<HTMLDivElement>(null);
+  const pipSlot = useRef<HTMLDivElement>(null);
   const stepContent = useRef<HTMLDivElement>(null);
   const closingHeading = useRef<HTMLHeadingElement>(null);
   const stepLabel = useRef<HTMLHeadingElement>(null);
@@ -57,25 +60,12 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
   const last = index === steps.length - 1;
   const recipeHref = `/recipes/${recipeId}${planMealId ? `?meal=${planMealId}` : ""}`;
   const hasVideo = !videoFailed && Boolean(videoId && (platform === "youtube" || platform === "tiktok"));
+  // Keep the slot laid out while expanded so collapse has a stable destination.
+  const hasPipRow = hasVideo && !videoHidden && !finished;
   const names = useMemo(() => ingredients.map((ingredient) => [ingredient.name, ...ingredient.aliases]), [ingredients]);
   const tokens = useMemo(() => tokenizeStep(step.text, names), [step.text, names]);
   const mentioned = stepIngredientIndexes(tokens);
   const timeTokens = tokens.filter((token) => token.kind === "time");
-
-  useLayoutEffect(() => {
-    const root = layout.current;
-    const controls = bottomControls.current;
-    if (!root || !controls) return;
-    // Includes navigation, dock, borders and the dock's safe-area padding.
-    const measure = () => root.style.setProperty("--cook-controls-height", `${controls.getBoundingClientRect().height}px`);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(controls);
-    return () => {
-      observer.disconnect();
-      root.style.removeProperty("--cook-controls-height");
-    };
-  }, [finished]);
 
   const navigate = useCallback((direction: "next" | "previous", animate = true) => {
     if (finished || (direction === "previous" && index === 0)) return;
@@ -208,18 +198,26 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
   }
 
   return (
-    <main ref={layout} aria-label="Modo cocina" data-portrait={platform !== "youtube"} className="cook-mode relative isolate flex h-dvh min-h-0 shrink-0 flex-col overflow-hidden bg-canvas text-ink [--focus:var(--color-ink)] [&_:focus-visible]:outline-ink">
+    <main aria-label="Modo cocina" data-portrait={platform !== "youtube"} className="cook-mode relative isolate flex h-dvh min-h-0 shrink-0 flex-col overflow-hidden bg-canvas text-ink [--focus:var(--color-ink)] [&_:focus-visible]:outline-ink">
       {!finished ? <ViewTransition name={`recipe-media-${recipeId}`} share="recipe-media" default="none"><div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[210px] overflow-hidden">
         {coverUrl ? <Image src={coverUrl} alt="" fill unoptimized sizes="(max-width: 576px) 100vw, 576px" className="scale-110 object-cover opacity-[0.18] blur-[3px]" /> : null}
         <div className="absolute inset-0 bg-gradient-to-b from-canvas/30 to-canvas" />
       </div></ViewTransition> : null}
 
       <header inert={showVideo} aria-hidden={showVideo} className="flex shrink-0 items-center justify-between px-5 pt-safe pb-3">
-        <Link href={recipeHref} prefetch={true} transitionTypes={["cook-back"]} aria-label="Salir del modo cocina" className="btn-outline flex size-10 items-center justify-center rounded-xl border border-line bg-canvas/80"><Icon name="close" size={21} /></Link>
+        <button type="button" onClick={() => {
+          if (previousRecipeDetail(getNavigationStack(), recipeHref)) {
+            startTransition(() => {
+              addTransitionType("cook-back");
+              router.back();
+            });
+          } else router.replace(recipeHref, { transitionTypes: ["cook-back"] });
+        }} aria-label="Salir del modo cocina" className="btn-outline flex size-10 items-center justify-center rounded-xl border border-line bg-canvas/80"><Icon name="close" size={21} /></button>
       </header>
 
       <ViewTransition enter={{ "cook-forward": "cook-content", "cook-back": "cook-content", default: "none" }} exit={{ "cook-forward": "cook-content", "cook-back": "cook-content", default: "none" }} default="none">
-      <div ref={scrollArea} inert={showVideo} aria-hidden={showVideo} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-5 pb-8">
+      <div className="relative min-h-0 flex-1">
+      <div ref={scrollArea} inert={showVideo} aria-hidden={showVideo} className="cook-step-scroll h-full overflow-x-hidden overflow-y-auto overscroll-y-contain px-5 pb-8">
         {finished ? <div className="pb-8">
           <header className="flex flex-col gap-2 pt-5 pb-8">
             <h1 tabIndex={-1} ref={closingHeading} className="font-display text-[32px] leading-[1.15]">{title}</h1>
@@ -268,19 +266,22 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
           </section>
         </div>}
       </div>
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-b from-canvas/0 to-canvas" />
+      </div>
 
       </ViewTransition>
 
-      {hasVideo && !videoHidden && !finished ? <div aria-hidden className="cook-video-space" /> : null}
-
-      {!finished ? <div ref={bottomControls} className="shrink-0">
-      <nav inert={showVideo} aria-hidden={showVideo} aria-label="Pasos de la receta" className="flex shrink-0 flex-col items-center gap-2 bg-canvas px-5 py-3">
-        <div className="flex w-full items-center justify-center gap-5">
-          {index > 0 ? <button type="button" onClick={() => navigate("previous")} className="link-text min-h-11 shrink-0 font-display text-xs text-ink-muted">Paso anterior</button> : null}
-          {last ? <Button block className="bg-ink text-white shadow-none" onPress={() => navigate("next")}>Terminar</Button> : <button type="button" aria-label="Siguiente paso" onClick={() => navigate("next")} className="btn-outline flex size-11 shrink-0 items-center justify-center rounded-full border border-line"><Icon name="arrow-up" size={22} /></button>}
+      {!finished ? <div className="shrink-0">
+      <div className={cn("flex items-center gap-3 bg-canvas px-5 py-3", hasPipRow && pipCorner.side === "left" && "flex-row-reverse")}>
+      <nav inert={showVideo} aria-hidden={showVideo} aria-label="Pasos de la receta" className="flex min-w-0 flex-1 flex-col items-center gap-2">
+        <div className={cn("flex w-full items-center justify-center", hasPipRow ? "flex-wrap gap-x-3 gap-y-1" : "gap-5")}>
+          {index > 0 && !(last && hasPipRow) ? <button type="button" onClick={() => navigate("previous")} className={cn("link-text min-h-11 font-display text-xs text-ink-muted", !hasPipRow && "shrink-0")}>Paso anterior</button> : null}
+          {last ? <Button block className={cn("bg-ink text-white shadow-none", hasPipRow && "min-w-0 px-1 text-sm")} onPress={() => navigate("next")}>Terminar</Button> : <button type="button" aria-label="Siguiente paso" onClick={() => navigate("next")} className="btn-outline flex size-11 shrink-0 items-center justify-center rounded-full border border-line"><Icon name="arrow-up" size={22} /></button>}
         </div>
-        {index === 0 ? <p className="text-center text-[11.5px] text-ink-muted">Desliza hacia arriba para el siguiente paso</p> : null}
+        {index === 0 && (!last || !hasPipRow) ? <p className="text-center text-[11.5px] text-ink-muted">Desliza hacia arriba para el siguiente paso</p> : null}
       </nav>
+      {hasPipRow ? <div ref={pipSlot} aria-hidden className="cook-video-slot shrink-0" /> : null}
+      </div>
 
       <footer inert={showVideo} aria-hidden={showVideo} className="shrink-0 border-t border-line bg-canvas px-5 [padding-bottom:env(safe-area-inset-bottom)]">
         <div className="flex h-14 items-center gap-2">
@@ -316,6 +317,9 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
         tokens={tokens}
         expanded={showVideo}
         hidden={videoHidden || finished}
+        pipSlotRef={pipSlot}
+        corner={pipCorner}
+        onCornerChange={(side) => setPipCorner({ side })}
         playerRef={player}
         timers={timers}
         onExpandedChange={setShowVideo}

@@ -2,13 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/ui/icon";
+import { getNavigationStack, resolveRecipeOrigin } from "@/lib/navigation/origin";
 import { ShareConfirmation, useRecipeShare } from "./share-confirmation";
 
 const controlClass = "btn-float flex size-[38px] items-center justify-center rounded-full bg-canvas/90 text-ink";
 
 export function RecipeBackButton() {
   const router = useRouter();
-  return <button type="button" aria-label="Volver" onClick={() => window.history.length > 1 ? router.back() : router.replace("/discover")} className={controlClass}><Icon name="arrow-left" size={20} /></button>;
+  function goToOrigin() {
+    const { target, steps } = resolveRecipeOrigin(getNavigationStack(), window.location.pathname + window.location.search);
+    if (steps !== null && steps > 0) window.history.go(-steps);
+    else router.push(target);
+  }
+  return <button type="button" aria-label="Volver" onClick={goToOrigin} className={controlClass}><Icon name="arrow-left" size={20} /></button>;
 }
 
 export function RecipeShareButton({ title }: { title: string }) {

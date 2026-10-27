@@ -11,7 +11,7 @@ import { StepText } from "./step-text";
 import { StepVideo, type StepVideoHandle } from "./step-video";
 import { TimerTray, type TimersApi } from "./timers";
 
-export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, tokens, expanded, hidden, playerRef, timers, onExpandedChange, onHide, onError, onTime, onIngredients, onTimer }: {
+export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, tokens, expanded, hidden, pipSlotRef, corner, onCornerChange, playerRef, timers, onExpandedChange, onHide, onError, onTime, onIngredients, onTimer }: {
   platform: Enums<"source_platform">;
   videoId: string;
   title: string;
@@ -20,6 +20,9 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
   tokens: StepToken[];
   expanded: boolean;
   hidden: boolean;
+  pipSlotRef: RefObject<HTMLDivElement | null>;
+  corner: { side: PipCorner };
+  onCornerChange: (side: PipCorner) => void;
   playerRef: RefObject<StepVideoHandle | null>;
   timers: TimersApi;
   onExpandedChange: (expanded: boolean) => void;
@@ -34,7 +37,6 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
   const closeButton = useRef<HTMLButtonElement>(null);
   const before = useRef<{ rect: DOMRect; radius: string } | null>(null);
   const animation = useRef<Animation | null>(null);
-  const [corner, setCorner] = useState<{ side: PipCorner }>({ side: "right" });
   const drag = useRef<{ id: number; x: number; left: number; width: number; moved: boolean } | null>(null);
   const suppressClick = useRef(false);
   const wasExpanded = useRef(false);
@@ -67,6 +69,31 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
     playerRef.current?.activate(next);
     onExpandedChange(next);
   }
+
+  // Measure before FLIP reads its destination. Resizes also include wrapped navigation,
+  // the dock's safe area and viewport changes; the iframe keeps its original DOM slot.
+  useLayoutEffect(() => {
+    const slot = pipSlotRef.current;
+    const element = frame.current;
+    if (!slot || !element || hidden) return;
+    const measure = () => {
+      const rect = slot.getBoundingClientRect();
+      element.style.setProperty("--cook-pip-left", `${rect.left}px`);
+      element.style.setProperty("--cook-pip-top", `${rect.top}px`);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(slot);
+    if (slot.parentElement) observer.observe(slot.parentElement);
+    if (slot.parentElement?.parentElement) observer.observe(slot.parentElement.parentElement);
+    const root = slot.closest(".cook-mode");
+    if (root) observer.observe(root);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [pipSlotRef, corner, expanded, hidden]);
 
   // FLIP the live fixed container. The iframe is never moved, portaled, keyed or replaced.
   useLayoutEffect(() => {
@@ -111,7 +138,7 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
     const rect = frame.current.getBoundingClientRect();
     before.current = captureFrame();
     frame.current.style.transform = "";
-    setCorner({ side: cancelled ? corner.side : pipSnapCorner(rect.left + rect.width / 2, window.innerWidth) });
+    onCornerChange(cancelled ? corner.side : pipSnapCorner(rect.left + rect.width / 2, window.innerWidth));
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }
 
@@ -141,7 +168,7 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
       </button>
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-20 bg-gradient-to-b from-black via-black/90 to-transparent" />
     </> : null}
-    {!expanded ? <button type="button" aria-label="Ocultar video" onClick={onHide} className="absolute top-1 right-1 z-30 flex size-7 items-center justify-center rounded-full bg-black/65 text-white"><Icon name="close" size={15} /></button> : null}
+    {!expanded ? <button type="button" aria-label="Ocultar video" onClick={onHide} className="absolute top-1 right-1 z-30 flex size-7 min-h-7 min-w-7 items-center justify-center rounded-full bg-black/65 text-white"><Icon name="close" size={15} /></button> : null}
     <button ref={closeButton} type="button" aria-label="Volver a los pasos" aria-hidden={!expanded} inert={!expanded} onClick={() => changeView(false)} className={cn("absolute right-4 top-[max(env(safe-area-inset-top),0.75rem)] z-30 flex size-10 items-center justify-center rounded-full bg-white/12 text-white focus-visible:outline-white", !expanded && "invisible pointer-events-none")}><Icon name="close" size={22} /></button>
     <div aria-hidden={!expanded} inert={!expanded} className="cook-video-overlay absolute inset-0 z-20 text-white [&_:focus-visible]:outline-white">
       <div className="absolute top-0 left-0 right-16 flex max-h-24 items-start overflow-x-auto px-4 pt-safe">

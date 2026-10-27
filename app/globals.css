@@ -294,17 +294,22 @@
 
 /* Cook player: fixed in one DOM slot for its entire lifetime, including when hidden. */
 .cook-mode {
-  --cook-pip-width: 168px;
-  --cook-pip-height: 94.5px;
+  --cook-pip-width: clamp(200px, 58vw, 280px);
+  --cook-pip-height: calc(var(--cook-pip-width) * 9 / 16);
 }
-.cook-mode[data-portrait="true"] { --cook-pip-width: 96px; --cook-pip-height: 170.667px; }
-/* Reserve the entire player row so even inline step controls stay clear of it. */
-.cook-video-space { flex-shrink: 0; height: calc(var(--cook-pip-height) + 24px); }
+.cook-mode[data-portrait="true"] {
+  --cook-pip-width: clamp(120px, 34vw, 168px);
+  --cook-pip-height: calc(var(--cook-pip-width) * 16 / 9);
+}
+.cook-video-slot {
+  width: var(--cook-pip-width);
+  height: var(--cook-pip-height);
+}
 .cook-video-frame {
   position: fixed;
   z-index: 40;
-  bottom: calc(var(--cook-controls-height, 100dvh) + 12px);
-  right: max(16px, calc((100vw - 576px) / 2 + 16px));
+  top: var(--cook-pip-top, 100dvh);
+  left: var(--cook-pip-left, 100vw);
   width: var(--cook-pip-width);
   height: var(--cook-pip-height);
   overflow: hidden;
@@ -312,10 +317,6 @@
   border-radius: 16px;
   background: #000;
   container-type: size;
-}
-.cook-video-frame[data-corner="left"] {
-  left: max(16px, calc((100vw - 576px) / 2 + 16px));
-  right: auto;
 }
 .cook-video-frame[data-expanded="true"] {
   inset: 0;

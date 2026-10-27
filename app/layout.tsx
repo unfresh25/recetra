@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import localFont from "next/font/local";
+import { NavigationTracker } from "@/components/app/navigation-tracker";
 import "./globals.css";
 
 const sans = Inter({
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="es-CO" className={`${display.variable} ${sans.variable} h-full`}>
       <body className="min-h-full">
+        <NavigationTracker />
         <div className="mx-auto flex min-h-dvh w-full max-w-xl flex-col">{children}</div>
       </body>
     </html>

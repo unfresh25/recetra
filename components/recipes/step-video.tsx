@@ -162,7 +162,7 @@ export function StepVideo({ platform, videoId, startSeconds, segmentStart, segme
       host.replaceChildren(target);
       player.current = new YT.Player(target, {
         videoId,
-        playerVars: { autoplay: 1, mute: 1, controls: 0, rel: 0, iv_load_policy: 3, playsinline: 1, disablekb: 1, fs: 0, modestbranding: 1, enablejsapi: 1, origin: window.location.origin, start: firstStart.current },
+        playerVars: { autoplay: 1, mute: 1, controls: 0, rel: 0, iv_load_policy: 3, cc_load_policy: 0, hl: "es", playsinline: 1, disablekb: 1, fs: 0, modestbranding: 1, enablejsapi: 1, origin: window.location.origin, start: firstStart.current },
         events: {
           onReady: ({ target }) => { if (!cancelled) initialize(target); },
           onStateChange: ({ data }) => { if (!cancelled) reportPlayback(data); },
