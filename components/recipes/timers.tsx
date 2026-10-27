@@ -98,26 +98,26 @@ export function useTimers() {
   };
 }
 
-type TimersApi = ReturnType<typeof useTimers>;
+export type TimersApi = ReturnType<typeof useTimers>;
 
 /** Compact countdowns stay in the dock across steps. */
-export function TimerTray({ api }: { api: TimersApi }) {
+export function TimerTray({ api, video = false }: { api: TimersApi; video?: boolean }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = api.timers.find((timer) => timer.id === selectedId);
   const finished = api.timers.filter((timer) => remainingOf(timer, api.now) <= 0);
   return <>
     <p role="status" className="sr-only">{finished.map((timer) => `${timer.label}: listo`).join(". ")}</p>
-    <ul className="ml-auto flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" aria-label="Temporizadores">
+    <ul className={`${video ? "" : "ml-auto"} flex min-w-0 items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden`} aria-label="Temporizadores">
       {api.timers.map((timer) => {
         const remaining = remainingOf(timer, api.now);
         const done = remaining <= 0;
         const running = timer.endsAt !== null && !done;
-        return <li key={timer.id} role="timer" aria-label={`${timer.label}: ${done ? "listo" : formatClock(remaining)}`} className="flex h-10 shrink-0 items-center rounded-full bg-ink text-white">
-          <button type="button" aria-label={`${done ? "Ver" : running ? "Pausar" : "Iniciar"} temporizador ${timer.label}`} onClick={() => done ? setSelectedId(timer.id) : running ? api.pause(timer.id) : api.play(timer.id)} className="btn-ink flex h-10 rounded-l-full items-center gap-1.5 pl-3 pr-1 font-display text-xs tabular">
+        return <li key={timer.id} role="timer" aria-label={`${timer.label}: ${done ? "listo" : formatClock(remaining)}`} className={`flex h-10 shrink-0 items-center rounded-full ${video ? "bg-white text-ink" : "bg-ink text-white"}`}>
+          <button type="button" aria-label={`${done ? "Ver" : running ? "Pausar" : "Iniciar"} temporizador ${timer.label}`} onClick={() => done ? setSelectedId(timer.id) : running ? api.pause(timer.id) : api.play(timer.id)} className={`${video ? "btn-ghost" : "btn-ink"} flex h-10 rounded-l-full items-center gap-1.5 pl-3 pr-1 font-display text-xs tabular`}>
             <Icon name={done ? "check" : "timer"} size={16} />{done ? "Listo" : formatClock(remaining)}
             {!running && !done ? <Icon name="pause" size={12} /> : null}
           </button>
-          <button type="button" aria-label={`Opciones del temporizador ${timer.label}`} onClick={() => setSelectedId(timer.id)} className="btn-ink flex h-10 w-7 rounded-r-full items-center justify-center pr-1"><Icon name="arrow-up" size={13} /></button>
+          <button type="button" aria-label={`Opciones del temporizador ${timer.label}`} onClick={() => setSelectedId(timer.id)} className={`${video ? "btn-ghost" : "btn-ink"} flex h-10 w-7 rounded-r-full items-center justify-center pr-1`}><Icon name="arrow-up" size={13} /></button>
         </li>;
       })}
     </ul>

@@ -284,3 +284,99 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* The live region stays mounted so screen readers announce each fresh confirmation. */
+.share-confirmation > p {
+  opacity: 1;
+  transition: opacity 160ms var(--ease-out-soft);
+  @starting-style { opacity: 0; }
+}
+
+/* Cook player: fixed in one DOM slot for its entire lifetime, including when hidden. */
+.cook-mode {
+  --cook-pip-width: 168px;
+  --cook-pip-height: 94.5px;
+}
+.cook-mode[data-portrait="true"] { --cook-pip-width: 96px; --cook-pip-height: 170.667px; }
+/* Reserve the entire player row so even inline step controls stay clear of it. */
+.cook-video-space { flex-shrink: 0; height: calc(var(--cook-pip-height) + 24px); }
+.cook-video-frame {
+  position: fixed;
+  z-index: 40;
+  bottom: calc(var(--cook-controls-height, 100dvh) + 12px);
+  right: max(16px, calc((100vw - 576px) / 2 + 16px));
+  width: var(--cook-pip-width);
+  height: var(--cook-pip-height);
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  background: #000;
+  container-type: size;
+}
+.cook-video-frame[data-corner="left"] {
+  left: max(16px, calc((100vw - 576px) / 2 + 16px));
+  right: auto;
+}
+.cook-video-frame[data-expanded="true"] {
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  border: 0;
+  border-radius: 0;
+}
+.cook-player-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+/* Preserve the source ratio; in portrait fullscreen YouTube fills height and crops sides. */
+.cook-player-landscape { width: max(100cqw, 177.778cqh); height: max(56.25cqw, 100cqh); }
+.cook-player-portrait { width: max(100cqw, 56.25cqh); height: max(177.778cqw, 100cqh); }
+/* Overscan above and below the viewport to crop YouTube's title without changing ratio. */
+.cook-video-frame[data-expanded="true"] > .cook-player-landscape {
+  width: max(100cqw, calc((100cqh + 160px) * 16 / 9));
+  height: max(56.25cqw, calc(100cqh + 160px));
+}
+.cook-video-feedback { transition: opacity 160ms var(--ease-out-soft); }
+.cook-video-overlay {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 120ms var(--ease-out-soft), visibility 0s 120ms;
+}
+.cook-video-caption {
+  transform: translateY(16px);
+  transition: transform 200ms var(--ease-out-soft);
+}
+[data-expanded="true"] > .cook-video-overlay {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 120ms, 0s;
+}
+[data-expanded="true"] > .cook-video-overlay > * { pointer-events: auto; }
+[data-expanded="true"] .cook-video-caption { transform: translateY(0); transition-delay: 120ms; }
+
+/* React 19.3 + Next 16.4 activate these on Link/router navigation; no experimental flag. */
+::view-transition { pointer-events: none; }
+::view-transition-group(.recipe-media) {
+  animation-duration: 320ms;
+  animation-timing-function: var(--ease-out-soft);
+}
+::view-transition-old(.recipe-content),
+::view-transition-old(.cook-content) { animation: cook-fade-out 150ms var(--ease-out-soft) both; }
+::view-transition-new(.recipe-content) { animation: cook-fade-in 200ms var(--ease-out-soft) both; }
+::view-transition-new(.cook-content) { animation: cook-step-in 240ms var(--ease-out-soft) both; }
+::view-transition-old(.cook-content) { animation: cook-step-out 180ms var(--ease-out-soft) both; }
+@keyframes cook-fade-in { from { opacity: 0; } }
+@keyframes cook-fade-out { to { opacity: 0; } }
+@keyframes cook-step-in { from { opacity: 0; transform: translateY(16px); } }
+@keyframes cook-step-out { to { opacity: 0; transform: translateY(16px); } }
+@media (prefers-reduced-motion: reduce) {
+  .cook-video-overlay, .cook-video-caption, .cook-video-feedback, .share-confirmation > p { transition: none; }
+  .cook-video-caption { transform: none; }
+  ::view-transition-old(*), ::view-transition-new(*), ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

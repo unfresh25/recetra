@@ -3,36 +3,23 @@
 import { Drawer } from "@heroui/react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition, ViewTransition, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { markCooked } from "@/lib/plan/actions";
 import { swipeDirection } from "@/lib/recipes/cook-navigation";
-import { formatDuration, stepIngredientIndexes, stepTokenIcon, tokenizeStep, type StepToken } from "@/lib/recipes/step-tokens";
+import { formatDuration, stepIngredientIndexes, tokenizeStep } from "@/lib/recipes/step-tokens";
 import type { Enums } from "@/lib/supabase/database.types";
 import { cn } from "@/lib/utils/cn";
-import { StepVideo } from "./step-video";
+import { CookVideo } from "./cook-video";
+import { StepText } from "./step-text";
+import type { StepVideoHandle } from "./step-video";
+import { ShareConfirmation, useRecipeShare } from "./share-confirmation";
+import { segmentEnd, stepFromTime } from "@/lib/recipes/cook-video";
 import { NewTimerSheet, TimerTray, useTimers } from "./timers";
 
 type Step = { position: number; text: string; video_start_seconds: number | null };
 type Ingredient = { name: string; aliases: string[]; amount: string; removed: boolean };
-
-function StepText({ tokens, onTime }: { tokens: StepToken[]; onTime: (seconds: number) => void }) {
-  return (
-    <p className="font-display text-[25px] leading-[1.32]">
-      {tokens.map((token, index) => {
-        const icon = stepTokenIcon(token);
-        if (!icon) return <span key={index}>{token.text}</span>;
-        const content = <><Icon name={icon} size={21} className={cn("mr-1 inline-block -translate-y-0.5", token.kind === "tool" && "text-ink-muted")} />{token.text}</>;
-        return token.kind === "time" ? (
-          <button key={index} type="button" onClick={() => onTime(token.seconds)} aria-label={`Crear temporizador de ${token.text}`} className="link-text inline text-left text-ink underline decoration-2 decoration-dotted underline-offset-[6px]">
-            {content}
-          </button>
-        ) : <span key={index} className="text-ink">{content}</span>;
-      })}
-    </p>
-  );
-}
 
 export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, ingredients, planMealId, servings, moreByAuthor }: {
   recipeId: string;
@@ -51,12 +38,17 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
   const [cooked, setCooked] = useState(false);
   const [showIngredients, setShowIngredients] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const [videoHidden, setVideoHidden] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const player = useRef<StepVideoHandle | null>(null);
   const [newTimer, setNewTimer] = useState(false);
   const [marking, startMarking] = useTransition();
   const [error, setError] = useState<string>();
-  const [shareMessage, setShareMessage] = useState<string>();
+  const { message: shareMessage, share } = useRecipeShare(title, `/recipes/${recipeId}`);
   const timers = useTimers();
   const scrollArea = useRef<HTMLDivElement>(null);
+  const layout = useRef<HTMLElement>(null);
+  const bottomControls = useRef<HTMLDivElement>(null);
   const stepContent = useRef<HTMLDivElement>(null);
   const closingHeading = useRef<HTMLHeadingElement>(null);
   const stepLabel = useRef<HTMLHeadingElement>(null);
@@ -64,23 +56,43 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
   const step = steps[index]!;
   const last = index === steps.length - 1;
   const recipeHref = `/recipes/${recipeId}${planMealId ? `?meal=${planMealId}` : ""}`;
-  const hasVideo = Boolean(videoId && platform !== "manual");
+  const hasVideo = !videoFailed && Boolean(videoId && (platform === "youtube" || platform === "tiktok"));
   const names = useMemo(() => ingredients.map((ingredient) => [ingredient.name, ...ingredient.aliases]), [ingredients]);
   const tokens = useMemo(() => tokenizeStep(step.text, names), [step.text, names]);
   const mentioned = stepIngredientIndexes(tokens);
   const timeTokens = tokens.filter((token) => token.kind === "time");
 
+  useLayoutEffect(() => {
+    const root = layout.current;
+    const controls = bottomControls.current;
+    if (!root || !controls) return;
+    // Includes navigation, dock, borders and the dock's safe-area padding.
+    const measure = () => root.style.setProperty("--cook-controls-height", `${controls.getBoundingClientRect().height}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(controls);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--cook-controls-height");
+    };
+  }, [finished]);
+
   const navigate = useCallback((direction: "next" | "previous", animate = true) => {
     if (finished || (direction === "previous" && index === 0)) return;
     motion.current = animate ? direction : null;
     if (direction === "next" && last) setFinished(true);
-    else setIndex(index + (direction === "next" ? 1 : -1));
-  }, [finished, index, last]);
+    else {
+      const next = index + (direction === "next" ? 1 : -1);
+      const seconds = steps[next]!.video_start_seconds;
+      if (seconds !== null) player.current?.seek(seconds);
+      setIndex(next);
+    }
+  }, [finished, index, last, steps]);
 
   useLayoutEffect(() => {
     scrollArea.current?.scrollTo({ top: 0 });
     if (finished) closingHeading.current?.focus({ preventScroll: true });
-    else stepLabel.current?.focus({ preventScroll: true });
+    else if (!showVideo) stepLabel.current?.focus({ preventScroll: true });
     const direction = motion.current;
     motion.current = null;
     if (!direction || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -89,7 +101,7 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
       { transform: "translateY(0)", opacity: 1 },
     ], { duration: 180, easing: getComputedStyle(document.documentElement).getPropertyValue("--ease-out-soft").trim() });
     return () => animation?.cancel();
-  }, [index, finished]);
+  }, [index, finished, showVideo]);
 
   // Reacquire after returning to the app; release even if the request resolves after unmount.
   useEffect(() => {
@@ -181,42 +193,33 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
     };
   }, [finished, navigate]);
 
-  async function share() {
-    setShareMessage(undefined);
-    const url = new URL(`/recipes/${recipeId}`, window.location.origin).href;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, url });
-        return;
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") return;
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setShareMessage("Enlace copiado");
-    } catch {
-      setShareMessage("No pudimos copiar el enlace. Intenta de nuevo.");
-    }
-  }
+  const followVideo = useCallback((seconds: number) => {
+    const next = stepFromTime(steps, seconds);
+    if (next !== null) setIndex(next);
+  }, [steps]);
 
   function addStepTimer(seconds: number, running = false) {
     timers.add(`Paso ${index + 1} · ${formatDuration(seconds)}`, seconds, running);
   }
 
-  return (
-    <main aria-label="Modo cocina" className="relative isolate flex h-dvh min-h-0 shrink-0 flex-col overflow-hidden bg-canvas text-ink [--focus:var(--color-ink)] [&_:focus-visible]:outline-ink">
-      {!finished && coverUrl ? <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[210px] overflow-hidden">
-        <Image src={coverUrl} alt="" fill unoptimized sizes="(max-width: 576px) 100vw, 576px" className="scale-110 object-cover opacity-[0.18] blur-[3px]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-canvas/30 to-canvas" />
-      </div> : null}
+  function handleVideoError() {
+    setVideoFailed(true);
+    setShowVideo(false);
+  }
 
-      <header className="flex shrink-0 items-center justify-between px-5 pt-safe pb-3">
-        <Link href={recipeHref} aria-label="Salir del modo cocina" className="btn-outline flex size-10 items-center justify-center rounded-xl border border-line bg-canvas/80"><Icon name="close" size={21} /></Link>
-        {!finished && hasVideo ? <button type="button" onClick={() => setShowVideo(true)} className="btn-outline flex h-10 items-center gap-2 rounded-full border border-line bg-canvas/80 px-4 font-display text-[14px]"><Icon name="play" size={17} />Ver video</button> : null}
+  return (
+    <main ref={layout} aria-label="Modo cocina" data-portrait={platform !== "youtube"} className="cook-mode relative isolate flex h-dvh min-h-0 shrink-0 flex-col overflow-hidden bg-canvas text-ink [--focus:var(--color-ink)] [&_:focus-visible]:outline-ink">
+      {!finished ? <ViewTransition name={`recipe-media-${recipeId}`} share="recipe-media" default="none"><div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[210px] overflow-hidden">
+        {coverUrl ? <Image src={coverUrl} alt="" fill unoptimized sizes="(max-width: 576px) 100vw, 576px" className="scale-110 object-cover opacity-[0.18] blur-[3px]" /> : null}
+        <div className="absolute inset-0 bg-gradient-to-b from-canvas/30 to-canvas" />
+      </div></ViewTransition> : null}
+
+      <header inert={showVideo} aria-hidden={showVideo} className="flex shrink-0 items-center justify-between px-5 pt-safe pb-3">
+        <Link href={recipeHref} prefetch={true} transitionTypes={["cook-back"]} aria-label="Salir del modo cocina" className="btn-outline flex size-10 items-center justify-center rounded-xl border border-line bg-canvas/80"><Icon name="close" size={21} /></Link>
       </header>
 
-      <div ref={scrollArea} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-5 pb-8">
+      <ViewTransition enter={{ "cook-forward": "cook-content", "cook-back": "cook-content", default: "none" }} exit={{ "cook-forward": "cook-content", "cook-back": "cook-content", default: "none" }} default="none">
+      <div ref={scrollArea} inert={showVideo} aria-hidden={showVideo} className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain px-5 pb-8">
         {finished ? <div className="pb-8">
           <header className="flex flex-col gap-2 pt-5 pb-8">
             <h1 tabIndex={-1} ref={closingHeading} className="font-display text-[32px] leading-[1.15]">{title}</h1>
@@ -236,7 +239,7 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
             }}>{!marking ? <Icon name="check" size={20} /> : null}{marking ? "Guardando…" : cooked ? "Cocinada" : "Marcar como cocinada"}</Button>
             {error ? <p role="alert" className="text-sm text-ink-muted">{error}</p> : null}
             <Button block variant="secondary" className="border-line shadow-none" onPress={share}><Icon name="share" size={20} />Compartir</Button>
-            {shareMessage ? <p role="status" className="text-center text-xs text-ink-muted">{shareMessage}</p> : null}
+            <ShareConfirmation message={shareMessage} className="text-center text-ink-muted" />
             <Link href="/ask" className="btn-outline flex h-14 items-center justify-center gap-2 rounded-full border border-line font-display text-[17px]"><Icon name="chef-hat" size={21} />Pregúntale a Carmy</Link>
           </div>
           <div className="mt-9">{moreByAuthor}</div>
@@ -266,21 +269,28 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
         </div>}
       </div>
 
-      {!finished ? <nav aria-label="Pasos de la receta" className="flex shrink-0 flex-col items-center gap-2 bg-canvas px-5 py-3">
+      </ViewTransition>
+
+      {hasVideo && !videoHidden && !finished ? <div aria-hidden className="cook-video-space" /> : null}
+
+      {!finished ? <div ref={bottomControls} className="shrink-0">
+      <nav inert={showVideo} aria-hidden={showVideo} aria-label="Pasos de la receta" className="flex shrink-0 flex-col items-center gap-2 bg-canvas px-5 py-3">
         <div className="flex w-full items-center justify-center gap-5">
           {index > 0 ? <button type="button" onClick={() => navigate("previous")} className="link-text min-h-11 shrink-0 font-display text-xs text-ink-muted">Paso anterior</button> : null}
           {last ? <Button block className="bg-ink text-white shadow-none" onPress={() => navigate("next")}>Terminar</Button> : <button type="button" aria-label="Siguiente paso" onClick={() => navigate("next")} className="btn-outline flex size-11 shrink-0 items-center justify-center rounded-full border border-line"><Icon name="arrow-up" size={22} /></button>}
         </div>
         {index === 0 ? <p className="text-center text-[11.5px] text-ink-muted">Desliza hacia arriba para el siguiente paso</p> : null}
-      </nav> : null}
+      </nav>
 
-      {!finished ? <footer className="shrink-0 border-t border-line bg-canvas px-5 [padding-bottom:env(safe-area-inset-bottom)]">
+      <footer inert={showVideo} aria-hidden={showVideo} className="shrink-0 border-t border-line bg-canvas px-5 [padding-bottom:env(safe-area-inset-bottom)]">
         <div className="flex h-14 items-center gap-2">
           <button type="button" onClick={() => setShowIngredients(true)} className="btn-ghost flex h-11 shrink-0 items-center gap-2 font-display text-[13px]"><Icon name="list" size={19} />Ingredientes</button>
-          <TimerTray api={timers} />
+          {hasVideo && videoHidden ? <button type="button" onClick={() => setVideoHidden(false)} className="btn-ghost flex h-11 shrink-0 items-center gap-1.5 font-display text-[13px]"><Icon name="play" size={18} />Video</button> : null}
+          {!showVideo ? <TimerTray api={timers} /> : null}
           <button type="button" aria-label="Agregar temporizador" onClick={() => setNewTimer(true)} className="btn-outline ml-auto flex size-10 shrink-0 items-center justify-center rounded-full border border-line"><Icon name="add" size={19} /></button>
         </div>
-      </footer> : null}
+      </footer>
+      </div> : null}
 
       <Drawer.Backdrop isOpen={showIngredients} onOpenChange={setShowIngredients} variant="opaque" className="bg-ink/40 [--focus:var(--color-ink)]">
         <Drawer.Content placement="bottom">
@@ -297,16 +307,24 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
         </Drawer.Content>
       </Drawer.Backdrop>
       {newTimer ? <NewTimerSheet defaultLabel={finished ? title : `Paso ${index + 1}`} onCreate={timers.add} onClose={() => setNewTimer(false)} /> : null}
-      <Drawer.Backdrop isOpen={showVideo} onOpenChange={setShowVideo} className="[--focus:var(--color-ink)]">
-        <Drawer.Content placement="bottom">
-          <Drawer.Dialog className="mx-auto w-full max-w-xl bg-canvas px-5 pb-safe text-ink shadow-none [&_:focus-visible]:outline-ink">
-            <Drawer.Handle />
-            <Drawer.CloseTrigger aria-label="Cerrar video" className="btn-ghost text-ink shadow-none"><Icon name="close" size={20} /></Drawer.CloseTrigger>
-            <Drawer.Header><Drawer.Heading className="font-display text-xl">Video · paso {String(index + 1).padStart(2, "0")}</Drawer.Heading></Drawer.Header>
-            <Drawer.Body>{showVideo && videoId ? <div className="relative aspect-video overflow-hidden rounded-xl bg-ink"><StepVideo platform={platform} videoId={videoId} startSeconds={step.video_start_seconds} title={title} /></div> : null}</Drawer.Body>
-          </Drawer.Dialog>
-        </Drawer.Content>
-      </Drawer.Backdrop>
+      {hasVideo && videoId ? <CookVideo
+        platform={platform}
+        videoId={videoId}
+        title={title}
+        startSeconds={step.video_start_seconds}
+        segmentEnd={segmentEnd(steps, index)}
+        tokens={tokens}
+        expanded={showVideo}
+        hidden={videoHidden || finished}
+        playerRef={player}
+        timers={timers}
+        onExpandedChange={setShowVideo}
+        onHide={() => setVideoHidden(true)}
+        onError={handleVideoError}
+        onTime={followVideo}
+        onIngredients={() => setShowIngredients(true)}
+        onTimer={(seconds) => addStepTimer(seconds, true)}
+      /> : null}
     </main>
   );
 }

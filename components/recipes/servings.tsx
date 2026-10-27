@@ -47,7 +47,7 @@ export function RecipeBottomBar({ cookHref }: { cookHref: string | null }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-xl items-center justify-between gap-3 border-t border-line bg-canvas px-5 pt-3 pb-safe">
       <ServingsStepper />
-      {href ? <Button size="md" onPress={() => router.push(href)} className="h-[46px] flex-1 bg-ink text-white shadow-none">Cocinar</Button> : null}
+      {href ? <Button size="md" onPress={() => router.push(href, { transitionTypes: ["cook-forward"] })} className="h-[46px] flex-1 bg-ink text-white shadow-none">Cocinar</Button> : null}
     </div>
   );
 }

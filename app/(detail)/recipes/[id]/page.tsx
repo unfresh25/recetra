@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { Suspense } from "react";
+import { Suspense, ViewTransition } from "react";
 import { MoreByAuthor } from "@/components/recipes/more-by-author";
 import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { CoverEditor } from "@/components/recipes/cover-editor";
@@ -62,7 +62,11 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
       <RecipeVideoProvider>
         <ReactionProvider recipeId={recipe.id} mine={social.mine} likes={social.likes}>
           <div className="relative aspect-[16/10] w-full overflow-hidden bg-canvas">
-            <VideoEmbed platform={recipe.source_platform} videoId={recipe.source_video_id} coverUrl={recipeImageUrl(coverPath)} title={recipe.title} />
+            <ViewTransition name={`recipe-media-${recipe.id}`} share="recipe-media" default="none">
+              <div className="absolute inset-0">
+                <VideoEmbed platform={recipe.source_platform} videoId={recipe.source_video_id} coverUrl={recipeImageUrl(coverPath)} title={recipe.title} />
+              </div>
+            </ViewTransition>
             <div className="absolute inset-x-0 top-0 flex items-center justify-between px-3 pt-safe">
               <RecipeBackButton />
               <div className="flex items-center gap-2">
@@ -74,6 +78,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
             {hasVideo ? <div className="absolute bottom-3 left-3"><VideoPlayButton dark /></div> : null}
           </div>
 
+          <ViewTransition enter={{ "cook-back": "recipe-content", default: "none" }} exit={{ "cook-forward": "recipe-content", default: "none" }} default="none">
           <article className={`flex flex-1 flex-col gap-7 px-5 pt-6 ${isOwnDraft ? "pb-72" : "pb-36"}`}>
             <header className="flex flex-col gap-3">
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-muted">
@@ -146,6 +151,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
 
             <MoreByAuthor author={recipe.author_name} recipes={moreByAuthor} />
           </article>
+          </ViewTransition>
 
           {isOwnDraft ? (
             <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-xl border-t border-line bg-canvas px-5 pt-4 pb-safe">
