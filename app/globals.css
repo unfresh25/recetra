@@ -363,15 +363,39 @@
 }
 [data-expanded="true"] > .cook-video-overlay > * { pointer-events: auto; }
 [data-expanded="true"] .cook-video-caption { transform: translateY(0); transition-delay: 120ms; }
-/* TikTok owns playback: keep the native player full size and its controls reachable. */
-.cook-video-frame[data-platform="tiktok"][data-expanded="true"] > .cook-player-stage { height: 100%; }
-.cook-video-frame[data-platform="tiktok"] .cook-video-overlay > * { pointer-events: none; }
-.cook-video-frame[data-platform="tiktok"] .cook-video-caption {
-  bottom: calc(7rem + env(safe-area-inset-bottom));
-  padding-top: 2rem;
+/* TikTok owns playback. Reserve separate rows for our controls and contain its full player. */
+.cook-video-frame[data-platform="tiktok"] { overflow: visible; }
+.cook-tiktok-area { width: 100%; height: 100%; }
+.cook-tiktok-area > .cook-player-stage {
+  position: relative;
+  top: auto;
+  left: auto;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #000;
+  transform: none;
 }
-.cook-video-frame[data-platform="tiktok"] .cook-video-caption > p:not(.sr-only) { min-height: 0; overflow: hidden; }
-.cook-video-frame[data-platform="tiktok"] .cook-video-chips { pointer-events: auto; }
+.cook-video-frame[data-platform="tiktok"][data-expanded="true"] {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+.cook-tiktok-topbar { grid-row: 1; }
+.cook-video-frame[data-expanded="true"] > .cook-tiktok-area {
+  grid-row: 2;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+.cook-video-frame[data-expanded="true"] > .cook-tiktok-area > .cook-player-stage {
+  width: min(100cqw, 56.25cqh);
+  height: min(177.777778cqw, 100cqh);
+}
+.cook-tiktok-panel { grid-row: 3; min-width: 0; }
+.cook-tiktok-step { max-height: calc(4 * 18px * 1.32); }
+.cook-tiktok-step > p { font-size: 18px; }
 
 /* React 19.3 + Next 16.4 activate these on Link/router navigation; no experimental flag. */
 ::view-transition { pointer-events: none; }

@@ -316,6 +316,10 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
         startSeconds={step.video_start_seconds}
         segmentEnd={segmentEnd(steps, index)}
         tokens={tokens}
+        stepIndex={index}
+        stepCount={steps.length}
+        onPreviousStep={() => navigate("previous")}
+        onNextStep={() => navigate("next")}
         expanded={showVideo}
         hidden={videoHidden || finished}
         pipSlotRef={pipSlot}

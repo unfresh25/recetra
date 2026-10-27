@@ -64,6 +64,7 @@ type StepVideoProps = {
   onTime: (seconds: number) => void;
   onPlayingChange: (playing: boolean) => void;
   onNativeControlsChange: (nativeControls: boolean) => void;
+  frameRef?: Ref<HTMLDivElement>;
   ref: Ref<StepVideoHandle>;
 };
 
@@ -72,13 +73,13 @@ export function StepVideo(props: StepVideoProps) {
   return props.platform === "tiktok" ? <TikTokStepVideo {...props} /> : <ControlledStepVideo {...props} />;
 }
 
-function TikTokStepVideo({ videoId, title, onError, ref }: StepVideoProps) {
+function TikTokStepVideo({ videoId, title, onError, ref, frameRef }: StepVideoProps) {
   // TikTok exposes no working command/event transport. Navigation only changes our step text.
   useImperativeHandle(ref, () => ({ seek() {}, activate() {}, togglePlayback() {} }), []);
 
-  return <div className="cook-player-stage cook-player-portrait">
+  return <div className="cook-tiktok-area"><div ref={frameRef} className="cook-player-stage cook-player-portrait">
     <iframe src={tiktokPlayerUrl(videoId)} title={`Video: ${title}`} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen onError={onError} className="pointer-events-auto size-full border-0" />
-  </div>;
+  </div></div>;
 }
 
 function ControlledStepVideo({ platform, videoId, startSeconds, segmentStart, segmentEnd, title, expanded, hidden, onError, onTime, onPlayingChange, onNativeControlsChange, ref }: StepVideoProps) {

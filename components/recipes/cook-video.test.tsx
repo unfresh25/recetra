@@ -14,6 +14,10 @@ function renderVideo(overrides: Partial<ComponentProps<typeof CookVideo>> = {}) 
     startSeconds={15}
     segmentEnd={30}
     tokens={[{ kind: "text", text: "Mezcla la masa." }]}
+    stepIndex={2}
+    stepCount={6}
+    onPreviousStep={vi.fn()}
+    onNextStep={vi.fn()}
     expanded={false}
     hidden={false}
     pipSlotRef={createRef()}
@@ -63,6 +67,20 @@ describe("cook video native TikTok", () => {
     expect(openingTag(markup, "button", "Volver a los pasos")).not.toContain("invisible");
     expect(markup).toContain("Mezcla la masa.");
     expect(markup).toContain("Ingredientes");
+    expect(markup).toContain("cook-tiktok-topbar");
+    expect(markup).toContain("cook-tiktok-area");
+    expect(markup).toContain("cook-tiktok-panel bg-black");
+    expect(markup).toContain("Paso 03 de 06");
+    expect(markup).not.toContain("bg-gradient");
+    expect(markup).not.toContain("cook-video-overlay");
+    expect(openingTag(markup, "button", "Volver a los pasos")).not.toContain("absolute");
+    expect(openingTag(markup, "button", "Paso anterior")).not.toContain('disabled=""');
+    expect(openingTag(markup, "button", "Siguiente paso")).not.toContain('disabled=""');
+  });
+
+  it("disables navigation at the first and last steps", () => {
+    expect(openingTag(renderVideo({ expanded: true, stepIndex: 0 }), "button", "Paso anterior")).toContain("disabled=\"\"");
+    expect(openingTag(renderVideo({ expanded: true, stepIndex: 5 }), "button", "Siguiente paso")).toContain("disabled=\"\"");
   });
 
   it("keeps the same native URL across view and manual step changes", () => {
@@ -71,12 +89,18 @@ describe("cook video native TikTok", () => {
     expect(expanded.match(/<iframe[^>]*src="([^"]*)"/)?.[1]).toBe(pip.match(/<iframe[^>]*src="([^"]*)"/)?.[1]);
     expect(expanded).toContain("Forma las arepas.");
     expect(expanded).not.toContain("Mezcla la masa.");
+    expect(expanded.match(/<iframe/g)).toHaveLength(1);
   });
 
   it("keeps YouTube's controlled playback overlay and PiP expand target", () => {
     const pip = renderVideo({ platform: "youtube" });
     expect(pip).toContain('data-native-controls="false"');
     expect(openingTag(pip, "button", "Abrir modo video")).toContain("inset-0");
-    expect(renderVideo({ platform: "youtube", expanded: true })).toContain('aria-label="Reproducir video"');
+    const expanded = renderVideo({ platform: "youtube", expanded: true });
+    expect(expanded).toContain('aria-label="Reproducir video"');
+    expect(expanded).toContain("cook-video-overlay");
+    expect(expanded).toContain("bg-gradient-to-t");
+    expect(expanded).not.toContain("cook-tiktok-panel");
+    expect(expanded).not.toContain('aria-label="Pasos del video"');
   });
 });
