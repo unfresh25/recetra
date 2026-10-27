@@ -41,6 +41,9 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
   const suppressClick = useRef(false);
   const wasExpanded = useRef(false);
   const [playing, setPlaying] = useState(false);
+  const lastPlayback = useRef(false);
+  const [fallbackControls, setNativeControls] = useState(false);
+  const nativeControls = platform === "tiktok" || fallbackControls;
   const [feedback, setFeedback] = useState<{ icon: "play" | "pause"; visible: boolean }>({ icon: "play", visible: false });
   const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -49,9 +52,11 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
     setFeedback((previous) => ({ ...previous, visible: false }));
   }, [expanded, hidden]);
 
-  function togglePlayback() {
-    const next = playerRef.current?.togglePlayback();
-    if (next === undefined) return;
+  function reportPlayback(next: boolean) {
+    if (lastPlayback.current === next) return;
+    lastPlayback.current = next;
+    setPlaying(next);
+    if (!expanded) return;
     clearTimeout(feedbackTimeout.current);
     setFeedback({ icon: next ? "play" : "pause", visible: true });
     feedbackTimeout.current = setTimeout(() => {
@@ -142,7 +147,7 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }
 
-  return <div ref={frame} role={expanded ? "dialog" : undefined} aria-modal={expanded || undefined} aria-label={expanded ? "Modo video" : "Video en miniatura"} aria-hidden={hidden || undefined} inert={hidden} data-expanded={expanded} data-corner={corner.side} data-portrait={platform !== "youtube"} className={cn("cook-video-frame", hidden && "invisible pointer-events-none")} onKeyDown={(event) => {
+  return <div ref={frame} role={expanded ? "dialog" : undefined} aria-modal={expanded || undefined} aria-label={expanded ? "Modo video" : "Video en miniatura"} aria-hidden={hidden || undefined} inert={hidden} data-expanded={expanded} data-platform={platform} data-native-controls={nativeControls} data-corner={corner.side} data-portrait={platform !== "youtube"} className={cn("cook-video-frame", hidden && "invisible pointer-events-none")} onKeyDown={(event) => {
     // Drawer portals bubble through React too; leave their keyboard handling to HeroUI.
     if (!expanded || !frame.current?.contains(event.target as Node)) return;
     if (event.key === "Escape" && !event.defaultPrevented) {
@@ -150,34 +155,34 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
       changeView(false);
     }
     if (event.key === "Tab") {
-      const controls = Array.from(frame.current.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]')).filter((element) => element.tabIndex >= 0 && element.offsetParent !== null && !element.closest('[inert]'));
+      const controls = Array.from(frame.current.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], iframe')).filter((element) => element.tabIndex >= 0 && element.offsetParent !== null && !element.closest('[inert]'));
       const first = controls[0];
       const last = controls.at(-1);
       if (event.shiftKey && event.target === first) { event.preventDefault(); last?.focus(); }
       else if (!event.shiftKey && event.target === last) { event.preventDefault(); first?.focus(); }
     }
   }}>
-    <StepVideo ref={playerRef} platform={platform} videoId={videoId} title={title} startSeconds={startSeconds} segmentStart={startSeconds} segmentEnd={segmentEnd} expanded={expanded} hidden={hidden} onError={onError} onTime={onTime} onPlayingChange={setPlaying} />
-    <button ref={expandButton} type="button" aria-label="Abrir modo video" tabIndex={expanded ? -1 : 0} aria-hidden={expanded} className={cn("absolute inset-0 z-10 touch-none", expanded && "pointer-events-none invisible")} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={finishDrag} onPointerCancel={(event) => finishDrag(event, true)} onClick={() => {
+    <StepVideo ref={playerRef} platform={platform} videoId={videoId} title={title} startSeconds={startSeconds} segmentStart={startSeconds} segmentEnd={segmentEnd} expanded={expanded} hidden={hidden} onError={onError} onTime={onTime} onPlayingChange={reportPlayback} onNativeControlsChange={setNativeControls} />
+    <button ref={expandButton} type="button" aria-label="Abrir modo video" tabIndex={expanded ? -1 : 0} aria-hidden={expanded} className={cn("absolute z-10 touch-none", nativeControls ? "top-1 left-1 flex size-7 min-h-7 min-w-7 items-center justify-center rounded-full" : "inset-0", nativeControls && (platform === "tiktok" ? "btn-float text-ink" : "bg-black/65 text-white"), expanded && "pointer-events-none invisible")} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={finishDrag} onPointerCancel={(event) => finishDrag(event, true)} onClick={() => {
       if (suppressClick.current) { suppressClick.current = false; return; }
       changeView(true);
-    }} />
+    }}>{nativeControls ? <Icon name="arrow-up" className="rotate-45" size={15} /> : null}</button>
     {expanded ? <>
-      <button type="button" aria-label={playing ? "Pausar video" : "Reproducir video"} onClick={togglePlayback} className="absolute inset-0 z-10 flex items-center justify-center bg-transparent text-white focus-visible:outline-white">
+      {!nativeControls ? <button type="button" aria-label={playing ? "Pausar video" : "Reproducir video"} onClick={() => playerRef.current?.togglePlayback()} className="absolute inset-0 z-10 flex items-center justify-center bg-transparent text-white focus-visible:outline-white">
         <span aria-hidden className={cn("cook-video-feedback pointer-events-none flex size-14 items-center justify-center rounded-full bg-black/40 text-white", feedback.visible ? "opacity-100" : "opacity-0")}><Icon name={feedback.icon} size={28} /></span>
-      </button>
+      </button> : null}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-10 h-20 bg-gradient-to-b from-black via-black/90 to-transparent" />
     </> : null}
     {!expanded ? <button type="button" aria-label="Ocultar video" onClick={onHide} className="absolute top-1 right-1 z-30 flex size-7 min-h-7 min-w-7 items-center justify-center rounded-full bg-black/65 text-white"><Icon name="close" size={15} /></button> : null}
     <button ref={closeButton} type="button" aria-label="Volver a los pasos" aria-hidden={!expanded} inert={!expanded} onClick={() => changeView(false)} className={cn("absolute right-4 top-[max(env(safe-area-inset-top),0.75rem)] z-30 flex size-10 items-center justify-center rounded-full bg-white/12 text-white focus-visible:outline-white", !expanded && "invisible pointer-events-none")}><Icon name="close" size={22} /></button>
     <div aria-hidden={!expanded} inert={!expanded} className="cook-video-overlay absolute inset-0 z-20 text-white [&_:focus-visible]:outline-white">
-      <div className="absolute top-0 left-0 right-16 flex max-h-24 items-start overflow-x-auto px-4 pt-safe">
+      <div inert={platform === "tiktok"} className="absolute top-0 left-0 right-16 flex max-h-24 items-start overflow-x-auto px-4 pt-safe">
         <TimerTray api={timers} video />
       </div>
       <div className="cook-video-caption absolute inset-x-0 bottom-0 flex max-h-[60%] flex-col gap-5 overflow-y-auto bg-gradient-to-t from-black via-black/75 to-transparent px-5 pt-16 pb-safe">
         <p className="sr-only" aria-live="polite">{tokens.map((token) => token.text).join("")}</p>
         <StepText tokens={tokens} onTime={onTimer} video />
-        <div className="flex shrink-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="cook-video-chips flex shrink-0 gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {tokens.filter((token) => token.kind === "time").map((token, index) => <button key={index} type="button" onClick={() => onTimer(token.seconds)} className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-white px-4 font-display text-[13px] text-ink"><Icon name="timer" size={18} />{formatDuration(token.seconds)}</button>)}
           <button type="button" onClick={onIngredients} className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-white/12 px-4 font-display text-[13px] text-white"><Icon name="list" size={18} />Ingredientes</button>
           <Link href="/ask" className="flex min-h-11 shrink-0 items-center gap-2 rounded-full bg-white/12 px-4 font-display text-[13px] text-white"><Icon name="chef-hat" size={18} />Pregúntale a Carmy</Link>

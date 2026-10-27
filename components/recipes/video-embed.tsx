@@ -3,14 +3,15 @@
 import Image from "next/image";
 import { createContext, use, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Icon } from "@/components/ui/icon";
+import { tiktokPlayerUrl } from "@/lib/recipes/cook-video";
 import type { Enums } from "@/lib/supabase/database.types";
 
 function embedUrl(platform: Enums<"source_platform">, videoId: string, start: number) {
   switch (platform) {
     case "youtube":
-      return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&playsinline=1&start=${start}`;
+      return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=1&playsinline=1&start=${start}`;
     case "tiktok":
-      return `https://www.tiktok.com/player/v1/${videoId}?autoplay=1&rel=0`;
+      return tiktokPlayerUrl(videoId, { autoplay: true, loop: false });
     case "instagram":
       return `https://www.instagram.com/reel/${videoId}/embed`;
     default:

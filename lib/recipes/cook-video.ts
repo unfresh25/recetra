@@ -1,6 +1,106 @@
 type VideoStep = { video_start_seconds: number | null };
 export type PipCorner = "left" | "right";
 
+export type PlayerCommand = { type: "play" | "pause" | "mute" | "unMute" } | { type: "seekTo"; value: number };
+
+/** YouTube waits for navigation AND the player's handshake, in either order. */
+export class CookPlayerController {
+  private hasLoaded = false;
+  private hasPlayerReady = false;
+  private nativeControls = false;
+  private disposed = false;
+  private queue: PlayerCommand[] = [];
+  private readyTimeout: ReturnType<typeof setTimeout>;
+  private playTimeout: ReturnType<typeof setTimeout> | undefined;
+  playing = false;
+
+  constructor(private callbacks: {
+    send: (command: PlayerCommand) => void;
+    onPlayingChange: (playing: boolean) => void;
+    onFallback: () => void;
+  }, nativeControls = false) {
+    this.nativeControls = nativeControls;
+    this.readyTimeout = setTimeout(() => this.fallback(), 5_000);
+  }
+
+  get ready() { return !this.disposed && this.hasLoaded && this.hasPlayerReady; }
+
+  loaded() {
+    if (this.disposed) return;
+    this.hasLoaded = true;
+    this.flush();
+  }
+
+  playerReady() {
+    if (this.disposed) return;
+    this.hasPlayerReady = true;
+    this.flush();
+  }
+
+  command(command: PlayerCommand) {
+    if (this.disposed) return;
+    this.queue.push(command);
+    this.flush();
+  }
+
+  private flush() {
+    if (!this.ready) return;
+    clearTimeout(this.readyTimeout);
+    while (this.queue.length && this.ready) {
+      const command = this.queue.shift()!;
+      if (command.type === "pause") {
+        clearTimeout(this.playTimeout);
+        this.playTimeout = undefined;
+      } else if (command.type === "play" && !this.playing && !this.nativeControls && this.playTimeout === undefined) {
+        // Repeated play requests must not postpone the acknowledgement deadline.
+        this.playTimeout = setTimeout(() => this.fallback(), 2_000);
+      }
+      this.callbacks.send(command);
+    }
+  }
+
+  stateChanged(state: number) {
+    if (this.disposed) return;
+    // YouTube: 3 = buffering, 5 = cued.
+    this.playing = state === 1;
+    if (this.playing) {
+      clearTimeout(this.playTimeout);
+      this.playTimeout = undefined;
+    }
+    this.callbacks.onPlayingChange(this.playing);
+  }
+
+  fallback() {
+    if (this.disposed || this.nativeControls) return;
+    this.nativeControls = true;
+    clearTimeout(this.readyTimeout);
+    clearTimeout(this.playTimeout);
+    this.playTimeout = undefined;
+    this.hasLoaded = false;
+    this.hasPlayerReady = false;
+    this.queue = [];
+    this.playing = false;
+    this.callbacks.onPlayingChange(false);
+    this.callbacks.onFallback();
+  }
+
+  dispose() {
+    this.disposed = true;
+    clearTimeout(this.readyTimeout);
+    clearTimeout(this.playTimeout);
+    this.queue = [];
+  }
+}
+
+export function tiktokPlayerUrl(videoId: string, { autoplay = false, loop = true }: { autoplay?: boolean; loop?: boolean } = {}) {
+  const params = new URLSearchParams({
+    autoplay: autoplay ? "1" : "0", controls: "1", progress_bar: "1",
+    play_button: "1", volume_control: "1", fullscreen_button: "1",
+    timestamp: "1", music_info: "0", description: "0", loop: loop ? "1" : "0", rel: "0",
+  });
+  return `https://www.tiktok.com/player/v1/${videoId}?${params}`;
+}
+
 /** Null timestamps never displace a timed step; equal timestamps select the later step. */
 export function stepFromTime(steps: readonly VideoStep[], seconds: number): number | null {
   if (!Number.isFinite(seconds) || seconds < 0) return null;

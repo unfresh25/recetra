@@ -339,6 +339,12 @@
   width: max(100cqw, calc((100cqh + 160px) * 16 / 9));
   height: max(56.25cqw, calc(100cqh + 160px));
 }
+/* Native controls must fit inside the frame instead of being cropped by cover sizing. */
+.cook-video-frame[data-native-controls="true"] > .cook-player-stage { width: 100%; height: 100%; }
+.cook-video-frame[data-native-controls="true"][data-expanded="true"] > .cook-player-stage {
+  top: 0; left: 0; transform: none; height: 60%;
+}
+.cook-video-frame[data-native-controls="true"] .cook-video-caption { max-height: 40%; }
 .cook-video-feedback { transition: opacity 160ms var(--ease-out-soft); }
 .cook-video-overlay {
   opacity: 0;
@@ -357,6 +363,15 @@
 }
 [data-expanded="true"] > .cook-video-overlay > * { pointer-events: auto; }
 [data-expanded="true"] .cook-video-caption { transform: translateY(0); transition-delay: 120ms; }
+/* TikTok owns playback: keep the native player full size and its controls reachable. */
+.cook-video-frame[data-platform="tiktok"][data-expanded="true"] > .cook-player-stage { height: 100%; }
+.cook-video-frame[data-platform="tiktok"] .cook-video-overlay > * { pointer-events: none; }
+.cook-video-frame[data-platform="tiktok"] .cook-video-caption {
+  bottom: calc(7rem + env(safe-area-inset-bottom));
+  padding-top: 2rem;
+}
+.cook-video-frame[data-platform="tiktok"] .cook-video-caption > p:not(.sr-only) { min-height: 0; overflow: hidden; }
+.cook-video-frame[data-platform="tiktok"] .cook-video-chips { pointer-events: auto; }
 
 /* React 19.3 + Next 16.4 activate these on Link/router navigation; no experimental flag. */
 ::view-transition { pointer-events: none; }

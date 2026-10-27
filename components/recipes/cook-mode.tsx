@@ -74,10 +74,10 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
     else {
       const next = index + (direction === "next" ? 1 : -1);
       const seconds = steps[next]!.video_start_seconds;
-      if (seconds !== null) player.current?.seek(seconds);
+      if (platform === "youtube" && seconds !== null) player.current?.seek(seconds);
       setIndex(next);
     }
-  }, [finished, index, last, steps]);
+  }, [finished, index, last, steps, platform]);
 
   useLayoutEffect(() => {
     scrollArea.current?.scrollTo({ top: 0 });
@@ -184,9 +184,10 @@ export function CookMode({ recipeId, title, coverUrl, platform, videoId, steps, 
   }, [finished, navigate]);
 
   const followVideo = useCallback((seconds: number) => {
+    if (platform !== "youtube") return;
     const next = stepFromTime(steps, seconds);
     if (next !== null) setIndex(next);
-  }, [steps]);
+  }, [steps, platform]);
 
   function addStepTimer(seconds: number, running = false) {
     timers.add(`Paso ${index + 1} · ${formatDuration(seconds)}`, seconds, running);
