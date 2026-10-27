@@ -310,7 +310,6 @@
   --cook-dock-height: calc(var(--cook-chips-height) + 20px + env(safe-area-inset-bottom, 0px));
   --cook-card-height: calc(100dvh - var(--cook-dock-height) - 12px);
   --tiktok-zoom: 1.18;
-  --tiktok-bar-height: 0px;
   --youtube-zoom: 1;
   position: fixed;
   z-index: 40;
@@ -366,34 +365,6 @@
 .cook-video-frame[data-tiktok-sizing="pip"] .cook-player-tiktok > iframe {
   pointer-events: none;
 }
-.cook-video-gradient {
-  position: absolute;
-  inset: auto 0 0;
-  height: min(100%, max(45%, calc(var(--cook-caption-height, 83px) + 20px + 64px)));
-  z-index: 10;
-  background: linear-gradient(to bottom, transparent 0%, rgb(0 0 0 / 70%) 45%, rgb(0 0 0 / 90%) 100%);
-  pointer-events: none;
-  visibility: hidden;
-}
-.cook-video-frame[data-platform="tiktok"] .cook-video-gradient {
-  bottom: var(--tiktok-bar-height);
-  max-height: calc(100% - var(--tiktok-bar-height));
-}
-.cook-video-pause-hint {
-  position: absolute;
-  inset-inline: 20px;
-  bottom: calc(var(--tiktok-bar-height) + 8px);
-  z-index: 20;
-  pointer-events: none;
-  color: rgb(255 255 255 / 70%);
-  font-size: 12px;
-  opacity: 0;
-}
-.cook-video-pause-hint[data-visible="true"] {
-  opacity: 1;
-  animation: cook-hint-fade 200ms var(--ease-out-soft) 3s forwards;
-}
-@keyframes cook-hint-fade { to { opacity: 0; } }
 .cook-video-top-gradient {
   position: absolute;
   inset: 0 0 auto;
@@ -403,7 +374,6 @@
   pointer-events: none;
   visibility: hidden;
 }
-[data-expanded="true"] .cook-video-gradient,
 [data-expanded="true"] .cook-video-top-gradient { visibility: visible; }
 .cook-video-feedback { transition: opacity 160ms var(--ease-out-soft); }
 .cook-video-overlay {
@@ -417,27 +387,6 @@
   visibility: visible;
   transition-delay: 120ms, 0s;
 }
-.cook-video-caption {
-  position: absolute;
-  inset-inline: 0;
-  bottom: calc(var(--cook-dock-height) + 12px);
-  max-height: calc(var(--cook-card-height) - max(env(safe-area-inset-top, 0px), 12px) - 64px);
-  padding: 0 20px 20px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overflow-wrap: anywhere;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  touch-action: pan-y pinch-zoom;
-}
-/* Text and gradients don't intercept playback; this surface handles swipes and scrolling. */
-[data-expanded="true"] .cook-video-caption { pointer-events: auto; }
-.cook-video-frame[data-platform="tiktok"] .cook-video-caption {
-  /* Leave TikTok's auto-hiding bar visible and its full video surface interactive. */
-  bottom: calc(var(--cook-dock-height) + 12px + var(--tiktok-bar-height) + 24px);
-  max-height: calc(var(--cook-card-height) - max(env(safe-area-inset-top, 0px), 12px) - 64px - var(--tiktok-bar-height) - 24px);
-  pointer-events: none;
-}
 [data-expanded="true"] .cook-video-timers button { pointer-events: auto; }
 .cook-video-chips {
   position: absolute;
@@ -450,7 +399,6 @@
   padding: 0 20px calc(20px + env(safe-area-inset-bottom, 0px));
   scrollbar-width: none;
 }
-.cook-video-caption::-webkit-scrollbar,
 .cook-video-chips::-webkit-scrollbar { display: none; }
 [data-expanded="true"] .cook-video-chips { pointer-events: auto; }
 .cook-video-chip {
@@ -482,7 +430,6 @@
 @keyframes cook-step-in { from { opacity: 0; transform: translateY(16px); } }
 @keyframes cook-step-out { to { opacity: 0; transform: translateY(16px); } }
 @media (prefers-reduced-motion: reduce) {
-  .cook-video-pause-hint[data-visible="true"] { animation-duration: 1ms; }
   .cook-video-overlay, .cook-video-feedback, .share-confirmation > p { transition: none; }
   ::view-transition-old(*), ::view-transition-new(*), ::view-transition-group(*) {
     animation-duration: 0s !important;

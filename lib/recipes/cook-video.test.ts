@@ -1,22 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CookPlayerController, pipDragX, pipSnapCorner, segmentEnd, segmentProgress, stepFromTime, TIKTOK_FRAME, tiktokLayout, tiktokPlayerUrl, videoSwipeDirection, type PlayerCommand } from "./cook-video";
+import { CookPlayerController, pipDragX, pipSnapCorner, segmentEnd, stepFromTime, TIKTOK_FRAME, tiktokLayout, tiktokPlayerUrl, type PlayerCommand } from "./cook-video";
 
 afterEach(() => { vi.useRealTimers(); });
-
-describe("segmentProgress", () => {
-  it.each([
-    [10, 0], [15, 0], [20, 0.25], [25, 0.5], [35, 1], [40, 1],
-  ])("clamps playback at %ss within a 15–35s segment to %s", (seconds, fraction) => {
-    expect(segmentProgress(seconds, 15, 35)).toBe(fraction);
-  });
-
-  it.each([
-    [null, 15, 35], [20, null, 35], [20, 15, null], [20, 15, 15],
-    [20, 35, 15], [20, -1, 35], [NaN, 15, 35], [20, Infinity, 35], [20, 15, Infinity],
-  ])("does not invent progress for an unavailable or invalid segment (%s, %s, %s)", (seconds, start, end) => {
-    expect(segmentProgress(seconds, start, end)).toBe(0);
-  });
-});
 
 describe("tiktokLayout", () => {
   it.each([
@@ -39,8 +24,6 @@ describe("tiktokLayout", () => {
     expect(bar.bottom).toBeLessThanOrEqual(height);
     expect(layout.left).toBe(0);
     expect(layout.bottom).toBe(0);
-    expect(layout.barHeight).toBe(TIKTOK_FRAME.barHeight);
-    expect(height - layout.bottom - layout.barHeight).toBeGreaterThanOrEqual(0);
   });
 
   it.each([120, 132.6, 168])("also supplies cover geometry for a %spx PiP scaled from the logical frame", (width) => {
@@ -67,21 +50,6 @@ describe("tiktokLayout", () => {
     expect(base.height).toBeCloseTo(390 * 16 / 9);
     expect(cropped.width).toBeCloseTo(base.width * 1.25);
     expect(cropped.height).toBeCloseTo(base.height * 1.25);
-    expect(cropped.barHeight).toBe(base.barHeight);
-  });
-});
-
-describe("videoSwipeDirection", () => {
-  const start = { x: 100, y: 200 };
-  it("advances on left swipes and goes back on right swipes", () => {
-    expect(videoSwipeDirection(start, { x: 40, y: 205 })).toBe("next");
-    expect(videoSwipeDirection(start, { x: 160, y: 195 })).toBe("previous");
-  });
-
-  it.each([
-    [100, 200], [41, 200], [159, 200], [105, 60], [95, 340], [160, 250], [NaN, 200], [100, Infinity],
-  ])("ignores taps, short drags, vertical scrolls and ambiguous diagonals (%s, %s)", (x, y) => {
-    expect(videoSwipeDirection(start, { x, y })).toBeNull();
   });
 });
 

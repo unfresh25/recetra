@@ -1,13 +1,7 @@
 type VideoStep = { video_start_seconds: number | null };
 export type PipCorner = "left" | "right";
 
-/** Open, missing or invalid segments have no measurable playback progress. */
-export function segmentProgress(seconds: number | null, start: number | null, end: number | null): number {
-  if (seconds === null || start === null || end === null || ![seconds, start, end].every(Number.isFinite) || start < 0 || end <= start) return 0;
-  return Math.max(0, Math.min(1, (seconds - start) / (end - start)));
-}
-
-export const TIKTOK_FRAME = { width: 390, height: 390 * 16 / 9, barHeight: 70 } as const;
+export const TIKTOK_FRAME = { width: 390, height: 390 * 16 / 9 } as const;
 
 /** Cover, then zoom about the bottom-left corner to retain TikTok's pause/mute bar. */
 export function tiktokLayout(width: number, height: number, zoom = 1.18) {
@@ -17,17 +11,7 @@ export function tiktokLayout(width: number, height: number, zoom = 1.18) {
     height: frameWidth * 16 / 9,
     left: 0,
     bottom: 0,
-    // Real iframe sizing leaves native controls at their logical CSS size.
-    barHeight: TIKTOK_FRAME.barHeight,
   };
-}
-
-/** Horizontal gestures navigate; vertical gestures remain available for long text. */
-export function videoSwipeDirection(start: { x: number; y: number }, end: { x: number; y: number }): "next" | "previous" | null {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  if (!Number.isFinite(dx) || !Number.isFinite(dy) || Math.abs(dx) < 60 || Math.abs(dx) <= Math.abs(dy) * 1.25) return null;
-  return dx < 0 ? "next" : "previous";
 }
 
 export type PlayerCommand = { type: "play" | "pause" | "mute" | "unMute" } | { type: "seekTo"; value: number };

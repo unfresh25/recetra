@@ -3,25 +3,18 @@
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent, type RefObject } from "react";
 import { Icon } from "@/components/ui/icon";
-import { pipDragX, pipSnapCorner, segmentProgress, TIKTOK_FRAME, tiktokLayout, videoSwipeDirection, type PipCorner } from "@/lib/recipes/cook-video";
-import { formatDuration, type StepToken } from "@/lib/recipes/step-tokens";
+import { pipDragX, pipSnapCorner, TIKTOK_FRAME, tiktokLayout, type PipCorner } from "@/lib/recipes/cook-video";
 import type { Enums } from "@/lib/supabase/database.types";
 import { cn } from "@/lib/utils/cn";
-import { StepText } from "./step-text";
 import { StepVideo, type StepVideoHandle } from "./step-video";
 import { TimerTray, type TimersApi } from "./timers";
 
-export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, tokens, stepIndex, stepCount, onPreviousStep, onNextStep, expanded, hidden, pipSlotRef, corner, onCornerChange, playerRef, timers, onExpandedChange, onHide, onError, onTime, onIngredients, onTimer }: {
+export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, expanded, hidden, pipSlotRef, corner, onCornerChange, playerRef, timers, onExpandedChange, onHide, onError, onTime, onIngredients }: {
   platform: Enums<"source_platform">;
   videoId: string;
   title: string;
   startSeconds: number | null;
   segmentEnd: number | null;
-  tokens: StepToken[];
-  stepIndex: number;
-  stepCount: number;
-  onPreviousStep: () => void;
-  onNextStep: () => void;
   expanded: boolean;
   hidden: boolean;
   pipSlotRef: RefObject<HTMLDivElement | null>;
@@ -34,13 +27,9 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
   onError: () => void;
   onTime: (seconds: number) => void;
   onIngredients: () => void;
-  onTimer: (seconds: number) => void;
 }) {
   const frame = useRef<HTMLDivElement>(null);
   const videoFrame = useRef<HTMLDivElement>(null);
-  const caption = useRef<HTMLDivElement>(null);
-  const text = useRef<HTMLDivElement>(null);
-  const swipe = useRef<{ id: number; x: number; y: number } | null>(null);
   const expandButton = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const before = useRef<{ rect: DOMRect; radius: string } | null>(null);
@@ -49,7 +38,6 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
   const suppressClick = useRef(false);
   const wasExpanded = useRef(false);
   const [playing, setPlaying] = useState(false);
-  const [playback, setPlayback] = useState<{ step: number; seconds: number } | null>(null);
   const lastPlayback = useRef(false);
   const [fallbackControls, setNativeControls] = useState(false);
   const isTikTok = platform === "tiktok";
@@ -132,7 +120,6 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
       host.style.setProperty("--tiktok-left", `${layout.left}px`);
       host.style.setProperty("--tiktok-bottom", `${layout.bottom}px`);
       host.style.setProperty("--tiktok-scale", String(scale));
-      host.style.setProperty("--tiktok-bar-height", `${videoSizing ? layout.barHeight : layout.barHeight * scale}px`);
     };
     const setSizing = (video: boolean) => {
       if (!isTikTok) return;
@@ -166,40 +153,6 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
       }
     };
   }, [expanded, corner, hidden, isTikTok]);
-
-  // Size the bottom gradient to the text; long captions grow upward inside the card and can scroll.
-  useLayoutEffect(() => {
-    const element = text.current;
-    if (!element || !expanded || hidden) return;
-    caption.current?.scrollTo({ top: 0 });
-    const measure = () => frame.current?.style.setProperty("--cook-caption-height", `${element.offsetHeight}px`);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [expanded, hidden, stepIndex]);
-
-  const ringFraction = segmentProgress(playback?.step === stepIndex ? playback.seconds : null, startSeconds, segmentEnd);
-
-  function nextStep() {
-    if (stepIndex >= stepCount - 1) changeView(false);
-    onNextStep();
-  }
-
-  function finishSwipe(event: PointerEvent<HTMLDivElement>) {
-    const start = swipe.current;
-    if (!start || start.id !== event.pointerId) return;
-    swipe.current = null;
-    const direction = videoSwipeDirection(start, { x: event.clientX, y: event.clientY });
-    if (direction === "previous" && stepIndex > 0) onPreviousStep();
-    else if (direction === "next") nextStep();
-  }
-
-  function startSwipe(event: PointerEvent<HTMLDivElement>) {
-    if (!event.isPrimary || event.button !== 0) { swipe.current = null; return; }
-    swipe.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
 
   useEffect(() => {
     if (expanded) closeButton.current?.focus({ preventScroll: true });
@@ -237,11 +190,6 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
   return <div ref={frame} role={expanded ? "dialog" : undefined} aria-modal={expanded || undefined} aria-label={expanded ? "Modo video" : "Video en miniatura"} aria-hidden={hidden || undefined} inert={hidden} data-expanded={expanded} data-platform={platform} data-tiktok-sizing={isTikTok ? expanded ? "video" : "pip" : undefined} data-native-controls={nativeControls} data-corner={corner.side} data-portrait={platform !== "youtube"} className={cn("cook-video-frame", hidden && "invisible pointer-events-none")} onKeyDown={(event) => {
     // Drawer portals bubble through React too; leave their keyboard handling to HeroUI.
     if (!expanded || !frame.current?.contains(event.target as Node)) return;
-    if (!event.defaultPrevented && !event.repeat && !event.altKey && !event.ctrlKey && !event.metaKey && ["ArrowLeft", "ArrowRight"].includes(event.key)) {
-      event.preventDefault();
-      if (event.key === "ArrowLeft" && stepIndex > 0) onPreviousStep();
-      else if (event.key === "ArrowRight") nextStep();
-    }
     if (event.key === "Escape" && !event.defaultPrevented) {
       event.preventDefault();
       changeView(false);
@@ -255,16 +203,11 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
     }
   }}>
     <div ref={videoFrame} className="cook-video-card">
-      <StepVideo ref={playerRef} platform={platform} videoId={videoId} title={title} startSeconds={startSeconds} segmentStart={startSeconds} segmentEnd={segmentEnd} expanded={expanded} hidden={hidden} onError={onError} onTime={(seconds) => {
-        setPlayback({ step: stepIndex, seconds });
-        onTime(seconds);
-      }} onPlayingChange={reportPlayback} onNativeControlsChange={setNativeControls} />
+      <StepVideo ref={playerRef} platform={platform} videoId={videoId} title={title} startSeconds={startSeconds} segmentStart={startSeconds} segmentEnd={segmentEnd} expanded={expanded} hidden={hidden} onError={onError} onTime={onTime} onPlayingChange={reportPlayback} onNativeControlsChange={setNativeControls} />
       {expanded && !nativeControls ? <button type="button" aria-label={playing ? "Pausar video" : "Reproducir video"} onClick={() => playerRef.current?.togglePlayback()} className="absolute inset-0 z-10 flex items-center justify-center bg-transparent text-white focus-visible:outline-white">
         <span aria-hidden className={cn("cook-video-feedback pointer-events-none flex size-14 items-center justify-center rounded-full bg-black/40 text-white", feedback.visible ? "opacity-100" : "opacity-0")}><Icon name={feedback.icon} size={28} /></span>
       </button> : null}
       <div aria-hidden className="cook-video-top-gradient" />
-      <div aria-hidden className="cook-video-gradient" />
-      {isTikTok && expanded && !hidden ? <TikTokPauseHint /> : null}
     </div>
     <button ref={closeButton} type="button" aria-label="Volver a los pasos" aria-hidden={!expanded} inert={!expanded} onClick={() => changeView(false)} className={cn("absolute right-3 top-[max(env(safe-area-inset-top),0.75rem)] z-30 flex size-11 items-center justify-center bg-transparent text-white focus-visible:outline-white", !expanded && "invisible pointer-events-none")}><Icon name="close" size={24} /></button>
     <button ref={expandButton} type="button" aria-label="Abrir modo video" tabIndex={expanded ? -1 : 0} aria-hidden={expanded} className={cn("absolute z-10 touch-none", nativeControls && !isTikTok ? "top-1 left-1 flex size-7 min-h-7 min-w-7 items-center justify-center rounded-full bg-black/65 text-white" : "inset-0", expanded && "pointer-events-none invisible")} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={finishDrag} onPointerCancel={(event) => finishDrag(event, true)} onClick={() => {
@@ -276,43 +219,10 @@ export function CookVideo({ platform, videoId, title, startSeconds, segmentEnd, 
       <div className="cook-video-timers absolute top-0 left-0 right-16 flex max-h-24 items-start overflow-x-auto px-5 pt-safe">
         <TimerTray api={timers} video />
       </div>
-      <p className="sr-only" aria-live="polite">{tokens.map((token) => token.text).join("")}</p>
-      <div ref={caption} role="region" aria-label="Texto del paso" tabIndex={expanded ? 0 : -1} className="cook-video-caption" onPointerDown={startSwipe} onPointerUp={finishSwipe} onPointerCancel={() => { swipe.current = null; }}>
-        <div ref={text} className="pointer-events-none"><StepText tokens={tokens} onTime={onTimer} video /></div>
-      </div>
       <div className="cook-video-chips">
-        <button type="button" aria-label="Paso anterior" disabled={stepIndex === 0} onClick={onPreviousStep} className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-white/12 text-white disabled:opacity-40"><Icon name="arrow-left" size={24} /></button>
-        <button type="button" aria-label="Siguiente paso" disabled={stepIndex >= stepCount - 1} onClick={onNextStep} className="flex size-[52px] shrink-0 items-center justify-center rounded-full bg-white/12 text-white disabled:opacity-40"><Icon name="arrow-right" size={24} /></button>
-        {platform === "youtube" ? <button type="button" aria-label={playing ? "Pausar video" : "Reproducir video"} onClick={() => playerRef.current?.togglePlayback()} className="cook-video-progress relative flex size-[52px] shrink-0 items-center justify-center rounded-full bg-transparent text-white">
-          <svg aria-hidden viewBox="0 0 52 52" className="pointer-events-none absolute inset-0 size-full -rotate-90 fill-none" strokeWidth="2">
-            <circle cx="26" cy="26" r="24" className="stroke-white/25" />
-            <circle cx="26" cy="26" r="24" pathLength="1" strokeDasharray="1" strokeDashoffset={1 - ringFraction} strokeLinecap="round" className="stroke-white" />
-          </svg>
-          <Icon name={playing ? "pause" : "play"} size={18} />
-        </button> : null}
-        {tokens.filter((token) => token.kind === "time").map((token, index) => <button key={index} type="button" onClick={() => onTimer(token.seconds)} className="cook-video-chip bg-white text-ink"><Icon name="timer" size={20} />{formatDuration(token.seconds)}</button>)}
         <button type="button" onClick={onIngredients} className="cook-video-chip bg-[#1f1f22] text-white"><Icon name="list" size={20} />Ingredientes</button>
         <Link href="/ask" className="cook-video-chip bg-[#1f1f22] text-white"><Icon name="chef-hat" size={20} />Pregúntale a Carmy</Link>
       </div>
     </div>
   </div>;
 }
-
-function TikTokPauseHint() {
-  const hint = useRef<HTMLParagraphElement>(null);
-  useEffect(() => {
-    const key = "recetra:tiktok-pause-hint";
-    try {
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, "1");
-    } catch {
-      // The hint still works when browser storage is unavailable.
-      if (pauseHintShown) return;
-    }
-    pauseHintShown = true;
-    if (hint.current) hint.current.dataset.visible = "true";
-  }, []);
-  return <p ref={hint} aria-hidden className="cook-video-pause-hint">Toca el video para ver la pausa</p>;
-}
-
-let pauseHintShown = false;
