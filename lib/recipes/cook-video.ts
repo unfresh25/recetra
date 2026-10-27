@@ -1,6 +1,33 @@
 type VideoStep = { video_start_seconds: number | null };
 export type PipCorner = "left" | "right";
 
+/** Open, missing or invalid segments have no measurable playback progress. */
+export function segmentProgress(seconds: number | null, start: number | null, end: number | null): number {
+  if (seconds === null || start === null || end === null || ![seconds, start, end].every(Number.isFinite) || start < 0 || end <= start) return 0;
+  return Math.max(0, Math.min(1, (seconds - start) / (end - start)));
+}
+
+export function videoRingFraction({ platform, seconds, startSeconds, endSeconds, stepIndex, stepCount }: {
+  platform: string;
+  seconds: number | null;
+  startSeconds: number | null;
+  endSeconds: number | null;
+  stepIndex: number;
+  stepCount: number;
+}): number {
+  if (platform === "youtube") return segmentProgress(seconds, startSeconds, endSeconds);
+  if (!Number.isFinite(stepIndex) || !Number.isFinite(stepCount) || stepCount <= 0) return 0;
+  return Math.max(0, Math.min(1, (stepIndex + 1) / stepCount));
+}
+
+/** Horizontal gestures navigate; vertical gestures remain available for long text. */
+export function videoSwipeDirection(start: { x: number; y: number }, end: { x: number; y: number }): "next" | "previous" | null {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  if (!Number.isFinite(dx) || !Number.isFinite(dy) || Math.abs(dx) < 60 || Math.abs(dx) <= Math.abs(dy) * 1.25) return null;
+  return dx < 0 ? "next" : "previous";
+}
+
 export type PlayerCommand = { type: "play" | "pause" | "mute" | "unMute" } | { type: "seekTo"; value: number };
 
 /** YouTube waits for navigation AND the player's handshake, in either order. */
@@ -92,11 +119,12 @@ export class CookPlayerController {
   }
 }
 
-export function tiktokPlayerUrl(videoId: string, { autoplay = false, loop = true }: { autoplay?: boolean; loop?: boolean } = {}) {
+export function tiktokPlayerUrl(videoId: string, { autoplay = true, loop = true, controls = false }: { autoplay?: boolean; loop?: boolean; controls?: boolean } = {}) {
+  const chrome = controls ? "1" : "0";
   const params = new URLSearchParams({
-    autoplay: autoplay ? "1" : "0", controls: "1", progress_bar: "1",
-    play_button: "1", volume_control: "1", fullscreen_button: "1",
-    timestamp: "1", music_info: "0", description: "0", loop: loop ? "1" : "0", rel: "0",
+    autoplay: autoplay ? "1" : "0", controls: chrome, progress_bar: chrome,
+    play_button: "1", volume_control: chrome, fullscreen_button: chrome,
+    timestamp: chrome, music_info: "0", description: "0", loop: loop ? "1" : "0", rel: "0", closed_caption_button: "0",
   });
   return `https://www.tiktok.com/player/v1/${videoId}?${params}`;
 }

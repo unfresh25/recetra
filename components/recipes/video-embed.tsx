@@ -11,7 +11,7 @@ function embedUrl(platform: Enums<"source_platform">, videoId: string, start: nu
     case "youtube":
       return `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=1&playsinline=1&start=${start}`;
     case "tiktok":
-      return tiktokPlayerUrl(videoId, { autoplay: true, loop: false });
+      return tiktokPlayerUrl(videoId, { autoplay: true, loop: false, controls: true });
     case "instagram":
       return `https://www.instagram.com/reel/${videoId}/embed`;
     default:

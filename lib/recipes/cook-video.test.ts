@@ -1,7 +1,61 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CookPlayerController, pipDragX, pipSnapCorner, segmentEnd, stepFromTime, tiktokPlayerUrl, type PlayerCommand } from "./cook-video";
+import { CookPlayerController, pipDragX, pipSnapCorner, segmentEnd, segmentProgress, stepFromTime, tiktokPlayerUrl, videoRingFraction, videoSwipeDirection, type PlayerCommand } from "./cook-video";
 
 afterEach(() => { vi.useRealTimers(); });
+
+describe("segmentProgress", () => {
+  it.each([
+    [10, 0], [15, 0], [20, 0.25], [25, 0.5], [35, 1], [40, 1],
+  ])("clamps playback at %ss within a 15–35s segment to %s", (seconds, fraction) => {
+    expect(segmentProgress(seconds, 15, 35)).toBe(fraction);
+  });
+
+  it.each([
+    [null, 15, 35], [20, null, 35], [20, 15, null], [20, 15, 15],
+    [20, 35, 15], [20, -1, 35], [NaN, 15, 35], [20, Infinity, 35], [20, 15, Infinity],
+  ])("does not invent progress for an unavailable or invalid segment (%s, %s, %s)", (seconds, start, end) => {
+    expect(segmentProgress(seconds, start, end)).toBe(0);
+  });
+});
+
+describe("videoRingFraction", () => {
+  const input = { platform: "youtube", seconds: 20, startSeconds: 15, endSeconds: 35, stepIndex: 2, stepCount: 6 };
+
+  it("uses segment playback for YouTube, independently of step count", () => {
+    expect(videoRingFraction(input)).toBe(0.25);
+    expect(videoRingFraction({ ...input, stepIndex: 5 })).toBe(0.25);
+    expect(videoRingFraction({ ...input, seconds: null })).toBe(0);
+    expect(videoRingFraction({ ...input, endSeconds: null })).toBe(0);
+  });
+
+  it("uses step progress for TikTok without timestamps or player events", () => {
+    const tiktok = { ...input, platform: "tiktok", seconds: null, startSeconds: null, endSeconds: null };
+    expect(videoRingFraction({ ...tiktok, stepIndex: 0 })).toBeCloseTo(1 / 6);
+    expect(videoRingFraction(tiktok)).toBe(0.5);
+    expect(videoRingFraction({ ...tiktok, stepIndex: 5 })).toBe(1);
+    expect(videoRingFraction({ ...tiktok, stepIndex: 1 })).toBeCloseTo(2 / 6);
+  });
+
+  it.each([
+    [-2, 6, 0], [8, 6, 1], [0, 0, 0], [0, -1, 0], [NaN, 6, 0], [0, Infinity, 0],
+  ])("bounds step progress safely (%s / %s)", (stepIndex, stepCount, fraction) => {
+    expect(videoRingFraction({ ...input, platform: "tiktok", stepIndex, stepCount })).toBe(fraction);
+  });
+});
+
+describe("videoSwipeDirection", () => {
+  const start = { x: 100, y: 200 };
+  it("advances on left swipes and goes back on right swipes", () => {
+    expect(videoSwipeDirection(start, { x: 40, y: 205 })).toBe("next");
+    expect(videoSwipeDirection(start, { x: 160, y: 195 })).toBe("previous");
+  });
+
+  it.each([
+    [100, 200], [41, 200], [159, 200], [105, 60], [95, 340], [160, 250], [NaN, 200], [100, Infinity],
+  ])("ignores taps, short drags, vertical scrolls and ambiguous diagonals (%s, %s)", (x, y) => {
+    expect(videoSwipeDirection(start, { x, y })).toBeNull();
+  });
+});
 
 function playerHarness() {
   vi.useFakeTimers();
@@ -166,25 +220,23 @@ describe("CookPlayerController (YouTube)", () => {
 });
 
 describe("tiktokPlayerUrl", () => {
-  it("exposes native controls from the start of cook mode", () => {
+  it("hides chrome, retains center play and requests autoplay and looping in cook mode", () => {
     const url = new URL(tiktokPlayerUrl("123"));
     expect(url.origin + url.pathname).toBe("https://www.tiktok.com/player/v1/123");
-    expect(url.searchParams.get("autoplay")).toBe("0");
-    for (const key of ["controls", "play_button", "progress_bar", "volume_control", "fullscreen_button", "timestamp"]) {
-      expect(url.searchParams.get(key)).toBe("1");
-    }
-    for (const key of ["music_info", "description", "rel"]) {
-      expect(url.searchParams.get(key)).toBe("0");
-    }
-    expect(url.searchParams.has("muted")).toBe(false);
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      controls: "0", progress_bar: "0", volume_control: "0", fullscreen_button: "0",
+      timestamp: "0", music_info: "0", description: "0", rel: "0", closed_caption_button: "0",
+      play_button: "1", loop: "1", autoplay: "1",
+    });
   });
 
-  it("preserves native controls with the recipe hero's autoplay and loop options", () => {
-    const url = new URL(tiktokPlayerUrl("123", { autoplay: true, loop: false }));
+  it("preserves the recipe hero's full controls and non-looping playback", () => {
+    const url = new URL(tiktokPlayerUrl("123", { autoplay: true, loop: false, controls: true }));
     for (const key of ["controls", "play_button", "progress_bar", "volume_control", "fullscreen_button", "timestamp", "autoplay"]) {
       expect(url.searchParams.get(key)).toBe("1");
     }
     expect(url.searchParams.get("loop")).toBe("0");
+    expect(new URL(tiktokPlayerUrl("123", { autoplay: false })).searchParams.get("autoplay")).toBe("0");
   });
 });
 
