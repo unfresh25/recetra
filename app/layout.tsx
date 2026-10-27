@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import localFont from "next/font/local";
-import "drawably/style.css";
 import "./globals.css";
 
 const sans = Inter({

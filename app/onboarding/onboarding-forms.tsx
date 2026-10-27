@@ -86,7 +86,7 @@ function AboutStep({
         }
         action={<NextButton type="submit" isDisabled={!ready} />}
         secondaryAction={
-          <button type="button" onClick={onJoin} className="text-left font-sans text-[14px] text-ink-muted">
+          <button type="button" onClick={onJoin} className="link-text text-left font-sans text-[14px] text-ink-muted">
             ¿Te invitaron? <span className="text-ink underline underline-offset-2">Usa tu link</span>
           </button>
         }
@@ -159,7 +159,7 @@ function HouseholdStep({ profile, onBack }: { profile: Profile; onBack: () => vo
         <button
           type="button"
           onClick={() => setHousehold((current) => ideas[(ideas.indexOf(current) + 1) % ideas.length]!)}
-          className="mt-5 self-start font-sans text-[14px] text-ink underline underline-offset-2"
+          className="link-text mt-5 self-start font-sans text-[14px] text-ink"
         >
           Sugerir un nombre
         </button>

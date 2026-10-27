@@ -18,7 +18,7 @@ export function ScreenHeader({
   return (
     <header className="flex flex-col gap-2 px-5 pt-safe">
       {backHref ? (
-        <Link href={backHref} aria-label="Volver" className="-ml-2 mt-1 flex size-11 items-center justify-center text-ink">
+        <Link href={backHref} aria-label="Volver" className="btn-ghost -ml-2 mt-1 flex size-11 items-center justify-center text-ink">
           <Icon name="arrow-left" size={26} />
         </Link>
       ) : null}

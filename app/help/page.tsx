@@ -106,11 +106,11 @@ export default function HelpPage() {
         </p>
         <ContactButton email={legal.contactEmail} />
         <p className="mt-2 text-[14px] text-ink-muted">
-          <Link href="/legal/terms" className="underline underline-offset-2">
+          <Link href="/legal/terms" className="link-text">
             Condiciones de uso
           </Link>{" "}
           ·{" "}
-          <Link href="/legal/privacy" className="underline underline-offset-2">
+          <Link href="/legal/privacy" className="link-text">
             Aviso de privacidad
           </Link>
         </p>

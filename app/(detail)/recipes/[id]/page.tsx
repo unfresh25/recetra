@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { RecipeTile } from "@/components/discover/recipe-tile";
+import { MoreByAuthor } from "@/components/recipes/more-by-author";
 import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { CoverEditor } from "@/components/recipes/cover-editor";
 import { DraftReview } from "@/components/recipes/draft-review";
@@ -81,7 +81,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
                 {isOwnDraft ? <span>{recipe.meal_types.length ? " · " : ""}Por confirmar</span> : null}
               </p>
               <h1 className="font-display text-[30px] leading-[1.1]">{recipe.title}</h1>
-              {recipe.author_name ? <a href={recipe.source_url ?? recipe.author_url ?? "#"} target="_blank" rel="noopener noreferrer" className="flex w-fit flex-wrap items-center gap-1.5 text-[13px]">
+              {recipe.author_name ? <a href={recipe.source_url ?? recipe.author_url ?? "#"} target="_blank" rel="noopener noreferrer" className="link-text flex w-fit flex-wrap items-center gap-1.5 text-[13px]">
                 <PlatformIcon platform={recipe.source_platform} size={17} />
                 <span className="font-bold">{recipe.author_handle ?? recipe.author_name}</span>
                 <span className="text-ink-muted">en {PLATFORM_LABELS[recipe.source_platform]}</span>
@@ -144,12 +144,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
               </ol>
             </section>
 
-            {moreByAuthor.length ? <section className="flex flex-col gap-4">
-              <h2 className="font-display text-[22px]">Más de {recipe.author_name}</h2>
-              <ul className="-mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {moreByAuthor.map((other) => <li key={other.id} className="w-[148px] shrink-0 snap-start"><RecipeTile recipe={other} /></li>)}
-              </ul>
-            </section> : null}
+            <MoreByAuthor author={recipe.author_name} recipes={moreByAuthor} />
           </article>
 
           {isOwnDraft ? (

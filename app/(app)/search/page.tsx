@@ -39,15 +39,15 @@ async function SearchContent({ searchParams }: Pick<PageProps<"/search">, "searc
       <form action="/search" method="get" role="search" className="flex items-center gap-3">
         {[...recipeSearchParams({ ...search, q: "" })].map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
         <label htmlFor="recipe-search" className="sr-only">Nombre de receta</label>
-        <input key={search.q} id="recipe-search" type="search" name="q" defaultValue={search.q} placeholder="Nombre de receta" className="min-w-0 flex-1 rounded-none border-0 bg-transparent p-0 font-display text-[24px] leading-[30px] text-ink caret-ink shadow-none outline-none placeholder:text-ink-faint/70" />
-        <button type="submit" aria-label="Buscar recetas" className="flex size-11 shrink-0 items-center justify-center text-ink"><Icon name="search" size={24} /></button>
+        <input key={search.q} id="recipe-search" type="search" name="q" defaultValue={search.q} placeholder="Nombre de receta" className="min-w-0 flex-1 rounded-none border-0 bg-transparent p-0 font-display text-[24px] leading-[30px] text-ink caret-ink shadow-none outline-none placeholder:text-ink-faint/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink" />
+        <button type="submit" aria-label="Buscar recetas" className="btn-ghost flex size-11 shrink-0 items-center justify-center text-ink"><Icon name="search" size={24} /></button>
       </form>
       {filters.length ? (
         <ul className="flex flex-wrap gap-2" aria-label="Filtros activos">
           {filters.map(({ key, label }) => {
             const params = recipeSearchParams(search);
             params.delete(key);
-            return <li key={key}><Link href={`/search${params.size ? `?${params}` : ""}`} aria-label={`Quitar filtro: ${label}`} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-line px-3 font-display text-[12px] text-ink">{label}<Icon name="close" size={14} /></Link></li>;
+            return <li key={key}><Link href={`/search${params.size ? `?${params}` : ""}`} aria-label={`Quitar filtro: ${label}`} className="btn-outline inline-flex min-h-9 items-center gap-2 rounded-full border border-line px-3 font-display text-[12px] text-ink">{label}<Icon name="close" size={14} /></Link></li>;
           })}
         </ul>
       ) : null}

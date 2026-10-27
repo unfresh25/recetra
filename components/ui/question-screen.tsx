@@ -14,7 +14,7 @@ export function QuestionScreen({
   compact?: boolean;
   children: ReactNode;
 }) {
-  const className = "-ml-2 flex size-11 items-center justify-center text-ink";
+  const className = "btn-ghost -ml-2 flex size-11 items-center justify-center text-ink";
   return (
     <main className="flex flex-1 flex-col px-5 pt-safe">
       <div className="h-11">

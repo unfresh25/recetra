@@ -52,7 +52,7 @@ export function InviteButton({ householdName }: { householdName: string }) {
         <button
           type="button"
           onClick={() => copy(link)}
-          className="flex items-center gap-2 rounded-field bg-sunken px-4 py-3 text-left text-sm text-ink-muted"
+          className="btn-ghost flex items-center gap-2 rounded-field bg-sunken px-4 py-3 text-left text-sm text-ink-muted"
         >
           <span className="min-w-0 flex-1 truncate">{link}</span>
           <Icon name="copy" size={18} />

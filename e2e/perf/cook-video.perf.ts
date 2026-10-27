@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { adminDb } from "../db";
 import { createHousehold, householdSetup, personalSetup, signIn } from "../flows";
 
-test("cook mode keeps one YouTube player and seeks per step", async ({ page }) => {
+test("cook mode opens the video at the current step on demand", async ({ page }) => {
   const { rest: db } = adminDb();
   const { data: egg } = await db.from("ingredients").select("id").eq("slug", "huevo").single();
   await db.from("recipes").delete().eq("source_video_id", "y_TyEhcejbE");
@@ -27,14 +27,14 @@ test("cook mode keeps one YouTube player and seeks per step", async ({ page }) =
   await page.goto(`/recipes/${id}`);
   await page.getByRole("button", { name: "Cocinar", exact: true }).click();
   const iframe = page.locator("iframe");
+  await expect(iframe).toHaveCount(0);
+  await page.getByRole("button", { name: "Ver video", exact: true }).click();
   await expect(iframe).toHaveCount(1, { timeout: 20_000 });
-  const firstHandle = await iframe.elementHandle();
-  const src1 = await iframe.getAttribute("src");
-  await page.waitForTimeout(4000);
+  await expect(iframe).toHaveAttribute("src", /start=36/);
+  await page.getByRole("button", { name: "Cerrar video", exact: true }).click();
+  await expect(iframe).toHaveCount(0);
   await page.getByRole("button", { name: "Siguiente paso" }).click();
-  await page.waitForTimeout(2500);
-  const same = await page.evaluate((el) => el?.isConnected, firstHandle);
-  const time = await page.evaluate(() => (document.querySelector("iframe") as HTMLIFrameElement | null) && (window as unknown as { __t?: number }).__t);
-  console.log("SRC1", src1?.slice(0, 80), "| same iframe after step:", same, "| count:", await iframe.count(), time ?? "");
-  expect(same).toBe(true);
+  await page.getByRole("button", { name: "Ver video", exact: true }).click();
+  await expect(iframe).toHaveCount(1, { timeout: 20_000 });
+  await expect(iframe).toHaveAttribute("src", /start=69/);
 });

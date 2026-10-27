@@ -6,7 +6,7 @@ import { LegalSection } from "../legal-section";
 export const metadata: Metadata = { title: "Condiciones de uso" };
 
 export default function TermsPage() {
-  const email = <a href={`mailto:${legal.contactEmail}`}>{legal.contactEmail}</a>;
+  const email = <a className="link-text" href={`mailto:${legal.contactEmail}`}>{legal.contactEmail}</a>;
 
   return (
     <>
@@ -23,7 +23,7 @@ export default function TermsPage() {
       <LegalSection title="1. Aceptación" summary="al crear tu cuenta aceptas estas condiciones.">
         <p>
           Cuando inicias sesión por primera vez aceptas estas condiciones y el{" "}
-          <Link href="/legal/privacy">Aviso de privacidad</Link>. Si no estás de acuerdo, no uses Mise.
+          <Link className="link-text" href="/legal/privacy">Aviso de privacidad</Link>. Si no estás de acuerdo, no uses Mise.
         </p>
         <p>
           Debes ser mayor de 18 años o usar Mise con autorización de tus padres o acudientes. Cada persona que se une a
@@ -104,7 +104,7 @@ export default function TermsPage() {
         <p>
           <strong>No vendemos tus datos, no mostramos publicidad y no usamos tu información para entrenar modelos de
           inteligencia artificial.</strong>{" "}
-          El detalle de cómo la tratamos está en el <Link href="/legal/privacy">Aviso de privacidad</Link>.
+          El detalle de cómo la tratamos está en el <Link className="link-text" href="/legal/privacy">Aviso de privacidad</Link>.
         </p>
       </LegalSection>
 

@@ -64,7 +64,7 @@ export function ActionPills({ recipeId, mealTypes, weeks, today }: { recipeId: s
     <div className="flex flex-col gap-3">
       <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <AddToPlan recipeId={recipeId} mealTypes={mealTypes} weeks={weeks} today={today} onAdded={setAddedDay} />
-        <Link href="/ask" className="inline-flex h-[38px] shrink-0 items-center gap-2 rounded-full border border-line px-4 font-display text-[13.5px]">
+        <Link href="/ask" className="btn-outline inline-flex h-[38px] shrink-0 items-center gap-2 rounded-full border border-line px-4 font-display text-[13.5px]">
           <Icon name="chef-hat" size={18} /> Preguntar
         </Link>
         <Button size="sm" disabled={pending} aria-pressed={state.dislike} onPress={() => toggle("dislike")} variant={state.dislike ? "primary" : "secondary"} className={pillClass}>
@@ -74,7 +74,7 @@ export function ActionPills({ recipeId, mealTypes, weeks, today }: { recipeId: s
           <Icon name="ban" size={18} /> {state.veto ? "Vetada" : "Vetar"}
         </Button>
       </div>
-      {addedDay ? <p role="status" className="text-sm text-ink">Agregada al plan del {dayLabel(addedDay, "long").toLowerCase()} {dayOfMonth(addedDay)}. <Link href={`/plan?day=${addedDay}`} className="font-semibold underline underline-offset-4">Ver plan</Link></p> : null}
+      {addedDay ? <p role="status" className="text-sm text-ink">Agregada al plan del {dayLabel(addedDay, "long").toLowerCase()} {dayOfMonth(addedDay)}. <Link href={`/plan?day=${addedDay}`} className="link-text font-semibold">Ver plan</Link></p> : null}
     </div>
   );
 }

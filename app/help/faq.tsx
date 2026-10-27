@@ -15,7 +15,7 @@ export function Faq({ groups }: { groups: FaqGroup[] }) {
             {group.items.map((item) => (
               <Accordion.Item key={item.q}>
                 <Accordion.Heading>
-                  <Accordion.Trigger className="px-0 py-4 text-left font-display text-[18px] leading-snug text-ink">
+                  <Accordion.Trigger className="btn-ghost px-0 py-4 text-left font-display text-[18px] leading-snug text-ink">
                     {item.q}
                     <Accordion.Indicator className="text-ink-muted" />
                   </Accordion.Trigger>

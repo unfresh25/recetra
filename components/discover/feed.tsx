@@ -16,7 +16,7 @@ function Section({ title, href, children }: { title: string; href?: string; chil
     <section className="flex flex-col gap-4" aria-label={title}>
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-display text-[20px] font-semibold leading-tight">{title}</h2>
-        {href ? <Link href={href} className="shrink-0 text-[13px] underline underline-offset-4">Ver todas</Link> : null}
+        {href ? <Link href={href} className="link-text shrink-0 text-[13px]">Ver todas</Link> : null}
       </div>
       {children}
     </section>
@@ -45,7 +45,7 @@ function DiscoverChips() {
       {chips.map((chip) => {
         const option = STYLE_OPTIONS.find((style) => style.value === chip.value)!;
         return (
-          <Link key={chip.value} href={chip.href ?? `/search?style=${chip.value}`} className="flex h-9 shrink-0 items-center gap-2 rounded-full border border-line pr-3 pl-1 font-display text-[12px] font-medium">
+          <Link key={chip.value} href={chip.href ?? `/search?style=${chip.value}`} className="btn-outline flex h-9 shrink-0 items-center gap-2 rounded-full border border-line pr-3 pl-1 font-display text-[12px] font-medium">
             <Image src={option.image} alt="" width={26} height={26} sizes="26px" className="size-[26px] rounded-full object-cover" />
             {chip.label ?? option.label}
           </Link>
@@ -60,7 +60,7 @@ function TodayPlan({ meals }: { meals: DiscoverData["todayPlan"] }) {
     <section className="flex flex-col gap-4" aria-label="Hoy en tu plan">
       <div className="flex items-baseline justify-between">
         <h2 className="font-display text-[20px] font-semibold">Hoy en tu plan</h2>
-        <Link href="/plan" className="text-[13px] underline underline-offset-4">Ver plan</Link>
+        <Link href="/plan" className="link-text text-[13px]">Ver plan</Link>
       </div>
       {meals ? (
         <ul className="grid grid-cols-3 gap-3">
@@ -70,13 +70,13 @@ function TodayPlan({ meals }: { meals: DiscoverData["todayPlan"] }) {
               <p className="mt-2 text-[10px] font-medium uppercase tracking-wide text-ink-muted">{MEAL_TYPE_LABELS[mealType]}</p>
               <p className="mt-1 line-clamp-2 font-display text-[13px] font-medium leading-snug">{recipe?.title ?? "Sin receta"}</p>
             </>;
-            return <li key={mealType}>{recipe ? <Link href={`/recipes/${recipe.id}`}>{content}</Link> : <div>{content}</div>}</li>;
+            return <li key={mealType}>{recipe ? <Link className="link-tile block" href={`/recipes/${recipe.id}`}>{content}</Link> : <div>{content}</div>}</li>;
           })}
         </ul>
       ) : (
         <div className="flex flex-wrap items-baseline justify-between gap-2 text-[13px]">
           <p className="text-ink-muted">Aún no tienes plan esta semana</p>
-          <Link href="/plan" className="underline underline-offset-4">Armar mi semana</Link>
+          <Link href="/plan" className="link-text">Armar mi semana</Link>
         </div>
       )}
     </section>
@@ -89,7 +89,7 @@ export function DiscoverFeed({ data, styles }: { data: DiscoverData; styles: Rec
     <div className="flex flex-col gap-8 px-5 pt-6 pb-8">
       {daily ? (
         <article className="relative">
-          <Link href={`/recipes/${daily.id}`} className="block">
+          <Link href={`/recipes/${daily.id}`} className="link-tile block">
             <RecipePhoto path={daily.coverPath} sizes="(max-width: 576px) calc(100vw - 40px), 536px" className="aspect-[16/10] rounded-[22px]" hero />
             <p className="mt-4 text-[11px] font-bold tracking-[0.14em] text-[#4f9a34]">RECETA DEL DÍA</p>
             <h2 className="mt-2 font-display text-[25px] font-semibold leading-[1.15]">{daily.title}</h2>

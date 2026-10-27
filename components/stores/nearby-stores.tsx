@@ -119,7 +119,7 @@ export function NearbyStores({ stores, branches }: { stores: NearbyStore[]; bran
                 }}
                 target="_blank"
                 rel="noopener"
-                className="flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3 font-display text-sm font-bold text-brand"
+                className="btn-ghost flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3 font-display text-sm font-bold text-brand"
               >
                 <Icon name="route" size={18} /> Ruta
               </a>
@@ -132,7 +132,7 @@ export function NearbyStores({ stores, branches }: { stores: NearbyStore[]; bran
         <section className="flex flex-col gap-2">
           <h2 className="text-xs font-bold uppercase tracking-[0.14em] text-ink-muted">Sin sucursales en el mapa</h2>
           {missing.map((s) => (
-            <a key={s.id} href={searchUrl(s.name, here ?? undefined)} target="_blank" rel="noopener" className="flex items-center gap-3 py-2 font-semibold">
+            <a key={s.id} href={searchUrl(s.name, here ?? undefined)} target="_blank" rel="noopener" className="btn-ghost flex items-center gap-3 py-2 font-semibold">
               <StoreLogo store={s} size={28} />
               Buscar {s.name} en Google Maps
               <Icon name="arrow-right" size={16} className="ml-auto text-ink-faint" />
@@ -154,7 +154,7 @@ function RemoveBranch({ id }: { id: string }) {
       aria-label="Quitar sucursal"
       disabled={pending}
       onClick={() => startTransition(async () => void (await removeBranch(id)))}
-      className="flex size-10 items-center justify-center text-ink-faint"
+      className="btn-ghost flex size-10 items-center justify-center text-ink-faint"
     >
       <Icon name="delete" size={18} />
     </button>
@@ -169,7 +169,7 @@ function AddBranch({ stores, here, onLocate }: { stores: NearbyStore[]; here: Po
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="flex items-center gap-2 self-start pb-4 font-semibold text-brand">
+      <button type="button" onClick={() => setOpen(true)} className="btn-ghost flex items-center gap-2 self-start pb-4 font-semibold text-brand">
         <Icon name="add" size={18} /> Agregar mi sucursal
       </button>
     );

@@ -6,7 +6,7 @@ import { LegalSection } from "../legal-section";
 export const metadata: Metadata = { title: "Aviso de privacidad" };
 
 export default function PrivacyPage() {
-  const email = <a href={`mailto:${legal.contactEmail}`}>{legal.contactEmail}</a>;
+  const email = <a className="link-text" href={`mailto:${legal.contactEmail}`}>{legal.contactEmail}</a>;
 
   return (
     <>
@@ -16,7 +16,7 @@ export default function PrivacyPage() {
         <p>
           Este aviso explica qué datos personales recoge Mise, para qué los usa, con quién los comparte y cómo puedes
           ejercer tus derechos, de acuerdo con la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia. Complementa
-          las <Link href="/legal/terms">Condiciones de uso</Link>.
+          las <Link className="link-text" href="/legal/terms">Condiciones de uso</Link>.
         </p>
       </header>
 

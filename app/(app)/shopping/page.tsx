@@ -48,7 +48,7 @@ async function ShoppingContent() {
             ? `${plan.unpricedStores.join(" y ")} no publica precios en línea. Agrega Éxito, Carulla, Olímpica, D1 o MegaTiendas para comparar.`
             : "Compararemos precios entre las tiendas donde compras."
         }
-        action={<Link href="/profile/preferences" className="font-semibold text-brand">Elegir tiendas</Link>}
+        action={<Link href="/profile/preferences" className="link-text font-semibold text-brand">Elegir tiendas</Link>}
       />
     );
   }

@@ -98,7 +98,7 @@ export function ShoppingList({ plan, budgetCop }: { plan: Plan; budgetCop: numbe
       </section>
 
       {plan.pending.length ? (
-        <Link href="/shopping/review" className="flex items-center justify-between border-y border-line py-3 text-[15px] font-semibold">
+        <Link href="/shopping/review" className="btn-outline flex items-center justify-between border-y border-line py-3 text-[15px] font-semibold">
           <span>Revisar {plan.pending.length} {plan.pending.length === 1 ? "producto dudoso" : "productos dudosos"}</span>
           <Icon name="arrow-right" size={16} className="text-ink-faint" />
         </Link>
@@ -137,7 +137,7 @@ export function ShoppingList({ plan, budgetCop }: { plan: Plan; budgetCop: numbe
             type="button"
             aria-pressed={view === value}
             onClick={() => setView(value)}
-            className={cn("h-11 text-[15px] font-semibold", view === value ? "text-brand underline decoration-2 underline-offset-8" : "text-ink-muted")}
+            className={cn("btn-ghost h-11 text-[15px] font-semibold", view === value ? "text-brand underline decoration-2 underline-offset-8" : "text-ink-muted")}
           >
             {label}
           </button>
@@ -195,7 +195,7 @@ function ModeOption({
       role="radio"
       aria-checked={selected}
       onClick={onSelect}
-      className={cn("flex shrink-0 flex-col items-start gap-1 rounded-2xl px-4 py-3 text-left", selected ? "bg-surface" : "text-ink-muted")}
+      className={cn("btn-ghost flex shrink-0 flex-col items-start gap-1 rounded-2xl px-4 py-3 text-left", selected ? "bg-surface" : "text-ink-muted")}
     >
       <span className="flex items-center gap-2 text-[15px] text-ink">{children}</span>
       <span className="text-sm tabular">
@@ -225,12 +225,13 @@ function Row({
     <li className="flex flex-col">
       <div className="flex min-h-14 items-center gap-3 py-2">
         <DrawablyCheckbox
+          className="btn-ghost"
           checked={checked}
           onChange={onToggle}
           aria-label={`${item.name} comprado`}
           stroke={checked ? "var(--color-brand)" : "var(--color-ink-faint)"}
         />
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="btn-ghost flex min-w-0 flex-1 items-center gap-3 text-left">
           <span className="min-w-0 flex-1">
             <span className={cn("block truncate font-semibold", checked && "text-ink-faint line-through")}>{item.name}</span>
             <span className="block truncate text-sm text-ink-muted">
@@ -279,7 +280,7 @@ function StoreBreakdown({ item, stores }: { item: ShoppingItem; stores: Shopping
           type="button"
           disabled={pending}
           onClick={() => startTransition(async () => void (await pinBrand(item.ingredientId, item.pinnedBrand ? null : cheapest!.offer.brand)))}
-          className="self-start pt-1 text-sm font-semibold text-brand disabled:text-ink-faint"
+          className="link-text self-start pt-1 text-sm font-semibold text-brand disabled:text-ink-faint"
         >
           {item.pinnedBrand ? `Quitar marca fija (${item.pinnedBrand})` : `Comprar siempre ${cheapest!.offer.brand}`}
         </button>

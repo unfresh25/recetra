@@ -22,7 +22,7 @@ export default function ProfilePage() {
         <Suspense fallback={<PanLoaderScreen />}>
           <HouseholdCard />
         </Suspense>
-        <Link href="/recipes" className="flex items-center gap-4 py-4">
+        <Link href="/recipes" className="btn-ghost flex items-center gap-4 py-4">
           <span aria-hidden className="flex size-11 items-center justify-center text-ink"><Icon name="bookmark" size={24} /></span>
           <span className="flex-1">
             <span className="block font-display font-bold">Guardados</span>
@@ -30,7 +30,7 @@ export default function ProfilePage() {
           </span>
           <Icon name="arrow-right" size={18} className="text-ink-faint" />
         </Link>
-        <Link href="/calories" className="flex items-center gap-4 py-4">
+        <Link href="/calories" className="btn-ghost flex items-center gap-4 py-4">
           <span aria-hidden className="flex size-11 items-center justify-center text-ink"><Icon name="fire" size={24} /></span>
           <span className="flex-1">
             <span className="block font-display font-bold">Calorías</span>
@@ -38,7 +38,7 @@ export default function ProfilePage() {
           </span>
           <Icon name="arrow-right" size={18} className="text-ink-faint" />
         </Link>
-        <Link href="/profile/preferences" className="flex items-center gap-4 py-4">
+        <Link href="/profile/preferences" className="btn-ghost flex items-center gap-4 py-4">
           <span aria-hidden className="flex size-11 items-center justify-center text-brand"><Icon name="settings" size={24} /></span>
           <span className="flex-1">
             <span className="block font-display font-bold">Mis preferencias</span>

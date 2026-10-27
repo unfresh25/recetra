@@ -110,7 +110,7 @@ function Section({ title, items }: { title: string; items: { step: SetupStep; la
           <Link
             key={item.step}
             href={`/setup/${item.step}?edit=1`}
-            className="flex items-center gap-3 px-5 py-4 transition-colors first:rounded-t-card last:rounded-b-card hover:bg-sunken/60"
+            className="btn-ghost flex items-center gap-3 px-5 py-4 first:rounded-t-card last:rounded-b-card"
           >
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">{item.label}</span>

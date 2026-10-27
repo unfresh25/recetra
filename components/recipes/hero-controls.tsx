@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Icon } from "@/components/ui/icon";
 
-const controlClass = "flex size-[38px] items-center justify-center rounded-full bg-canvas/90 text-ink";
+const controlClass = "btn-float flex size-[38px] items-center justify-center rounded-full bg-canvas/90 text-ink";
 
 export function RecipeBackButton() {
   const router = useRouter();

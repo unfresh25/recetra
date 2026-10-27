@@ -38,8 +38,7 @@ function loadYouTubeApi() {
 }
 
 /**
- * The creator's video for cook mode. Created once and never reloaded: on YouTube each step
- * seeks to its second; other platforms keep playing where they are.
+ * Mounted on demand in the video drawer. YouTube starts at the current step's timestamp.
  */
 export function StepVideo({
   platform,
@@ -63,26 +62,31 @@ export function StepVideo({
   useEffect(() => {
     if (platform !== "youtube" || !mount.current) return;
     let cancelled = false;
+    let muteCheck: ReturnType<typeof setTimeout> | undefined;
     loadYouTubeApi().then((YT) => {
       if (cancelled || !mount.current) return;
-      player.current = new YT.Player(mount.current, {
+      const target = document.createElement("div");
+      mount.current.replaceChildren(target);
+      player.current = new YT.Player(target, {
         videoId,
         playerVars: { autoplay: 1, playsinline: 1, rel: 0, modestbranding: 1, start: firstStart.current },
         events: {
           onReady: ({ target }) => {
+            if (cancelled) return;
             ready.current = true;
             if (pendingSeek.current !== null) target.seekTo(pendingSeek.current, true);
             target.unMute();
             target.playVideo();
             // Browsers may still force mute when autoplay lacks a recent tap.
-            setTimeout(() => setMuted(target.isMuted()), 600);
+            muteCheck = setTimeout(() => { if (!cancelled) setMuted(target.isMuted()); }, 600);
           },
         },
       });
     });
     return () => {
       cancelled = true;
-      if (ready.current) player.current?.destroy();
+      clearTimeout(muteCheck);
+      player.current?.destroy?.();
       player.current = null;
       ready.current = false;
     };
@@ -107,7 +111,7 @@ export function StepVideo({
               player.current?.playVideo();
               setMuted(false);
             }}
-            className="absolute bottom-3 right-3 flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-ink"
+            className="btn-float absolute bottom-3 right-3 flex h-10 items-center gap-2 rounded-full bg-canvas px-4 font-display text-sm text-ink"
           >
             <Icon name="play" size={16} /> Activar sonido
           </button>

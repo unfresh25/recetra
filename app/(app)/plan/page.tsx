@@ -25,7 +25,7 @@ export default function PlanPage({ searchParams }: PageProps<"/plan">) {
       <ScreenHeader
         title="Plan"
         action={
-          <Link href="/shopping" aria-label="Lista de compras" className="flex size-11 items-center justify-center text-ink">
+          <Link href="/shopping" aria-label="Lista de compras" className="btn-ghost flex size-11 items-center justify-center text-ink">
             <Icon name="basket" size={24} />
           </Link>
         }
@@ -50,7 +50,7 @@ async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams
     <>
       <WeekNav weekStart={weekStart} today={today} />
       {weekStart !== thisWeek ? (
-        <Link href="/plan" scroll={false} className="-mt-3 self-center text-sm font-semibold text-brand">
+        <Link href="/plan" scroll={false} className="link-text -mt-3 self-center text-sm font-semibold text-brand">
           Volver a esta semana
         </Link>
       ) : null}
@@ -98,7 +98,7 @@ async function WeekPlan({ searchParams }: Pick<PageProps<"/plan">, "searchParams
             <WeekCost householdId={household.id} budgetCop={household.weekly_budget_cop} />
           </Suspense>
         ) : null}
-        <Link href="/shopping" className="flex items-center justify-between border-t border-line pt-3 text-sm font-semibold">
+        <Link href="/shopping" className="btn-outline flex items-center justify-between border-t border-line pt-3 text-sm font-semibold">
           <span className="flex items-center gap-2"><Icon name="basket" size={18} /> Lista de compras y precios</span>
           <Icon name="arrow-right" size={16} className="text-ink-faint" />
         </Link>

@@ -126,7 +126,7 @@ function BudgetRuler({ value, onChange }: { value: number; onChange: (value: num
       aria-valuenow={value}
       aria-valuetext={`${formatCop(value)} por semana`}
       onKeyDown={onKeyDown}
-      className="relative mt-8 w-full rounded-lg outline-none select-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-4 focus-visible:ring-offset-canvas"
+      className="btn-ghost relative mt-8 w-full rounded-lg outline-none select-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-4 focus-visible:ring-offset-canvas"
     >
       <div
         ref={strip}
@@ -195,7 +195,7 @@ export function BudgetStep({
           variant="ghost"
           isDisabled={pending}
           onPress={() => save(() => saveBudget(null))}
-          className="h-auto rounded-none bg-transparent p-0 font-sans text-[14px] font-normal whitespace-normal text-ink underline underline-offset-4 hover:bg-transparent data-[hovered=true]:bg-transparent data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-brand data-[focus-visible=true]:outline-offset-4"
+          className="link-text h-auto rounded-none bg-transparent p-0 font-sans text-[14px] font-normal whitespace-normal text-ink data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-brand data-[focus-visible=true]:outline-offset-4"
         >
           No tengo un presupuesto fijo
         </Button>

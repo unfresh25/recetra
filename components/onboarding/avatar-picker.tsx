@@ -70,7 +70,8 @@ export function AvatarPicker({
         aria-label={preview ? "Cambiar foto" : "Agregar foto"}
         disabled={uploading}
         className={cn(
-          "relative flex size-15 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink transition-transform duration-150 ease-out-soft active:scale-95",
+          "relative flex size-15 shrink-0 items-center justify-center overflow-hidden rounded-full bg-ink",
+          preview ? "link-tile" : "btn-ink",
         )}
       >
         {preview ? (

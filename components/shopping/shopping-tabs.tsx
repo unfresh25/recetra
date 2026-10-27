@@ -16,7 +16,7 @@ export function ShoppingTabs({ current }: { current: "list" | "stores" }) {
           href={href}
           aria-current={current === value ? "page" : undefined}
           className={cn(
-            "flex h-11 items-center justify-center text-[15px] font-semibold",
+            "btn-ghost flex h-11 items-center justify-center text-[15px] font-semibold",
             current === value ? "text-brand underline decoration-2 underline-offset-8" : "text-ink-muted",
           )}
         >

@@ -43,7 +43,12 @@ export function Button({
       isDisabled={disabled}
       isPending={loading}
       aria-busy={loading || undefined}
-      className={cn("rounded-full font-display", sizes[size], className)}
+      className={cn(
+        "rounded-full font-display",
+        variant === "primary" ? "btn-ink" : variant === "secondary" ? "btn-outline" : "btn-ghost",
+        sizes[size],
+        className,
+      )}
     >
       {(state) => (
         <>

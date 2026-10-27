@@ -38,7 +38,7 @@ export function TabBar({ avatarUrl }: { avatarUrl?: string | null }) {
                 prefetch
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-14 flex-col items-center justify-center gap-0.5 font-display text-[11px] font-semibold transition-colors duration-200",
+                  "btn-ghost flex h-14 flex-col items-center justify-center gap-0.5 font-display text-[11px] font-semibold",
                   active ? "text-ink" : "text-ink-muted",
                 )}
               >

@@ -29,7 +29,7 @@ export function RegenerateButton({ day }: { day: string }) {
             });
           }
         }}
-        className="flex items-center gap-1.5 text-sm font-semibold text-brand disabled:opacity-50"
+        className="link-text flex items-center gap-1.5 text-sm font-semibold text-brand disabled:opacity-50"
       >
         <Icon name="refresh" size={16} className={pending ? "animate-spin" : undefined} />
         {pending ? "Armando…" : "Rehacer semana"}

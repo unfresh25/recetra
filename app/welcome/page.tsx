@@ -38,11 +38,11 @@ export default function WelcomePage() {
         <p className="mt-[min(1.75rem,3dvh)] text-center font-sans text-xs leading-[18px] text-[#a9a9a9]">
           Al continuar, aceptas nuestras
           <br />
-          <Link href="/legal/terms" className="text-white underline underline-offset-2">
+          <Link href="/legal/terms" className="link-text text-white">
             Condiciones de uso
           </Link>{" "}
           y{" "}
-          <Link href="/legal/privacy" className="text-white underline underline-offset-2">
+          <Link href="/legal/privacy" className="link-text text-white">
             Aviso de privacidad
           </Link>
         </p>

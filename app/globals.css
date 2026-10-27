@@ -1,6 +1,7 @@
 @import "tailwindcss";
 /* HeroUI v3: must come after Tailwind. */
 @import "@heroui/styles";
+@import "drawably/style.css" layer(components);
 
 /* Recetra design tokens. See docs/plans/2026-10-16-recetra-design.md §7. */
 @theme {
@@ -119,9 +120,140 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  summary,
+  label[for],
+  input:is([type="checkbox"], [type="radio"], [type="range"]):not(:disabled),
+  select {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
+  }
+}
+
+/* Shared feedback for custom controls. Keep disabled/pending controls still. */
+@utility control-feedback {
+  cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out,
+    color 150ms ease-out, opacity 150ms ease-out, transform 150ms ease-out,
+    scale 150ms ease-out;
+
+  &:is(:disabled, [aria-disabled="true"], [data-disabled="true"]) {
+    cursor: not-allowed;
+  }
+
+  /* Library controls share one press scale; legacy chips must not lift on hover. */
+  &.button:is(:active, [data-pressed="true"]) {
+    transform: none;
+  }
+
+  &.drawably-button {
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    &:not(:disabled, [aria-disabled="true"], [data-disabled="true"], [data-pending="true"]):is(:active, [data-pressed="true"]) {
+      scale: 0.97;
+    }
+  }
+}
+
+@utility btn-float {
+  @apply control-feedback;
+  background-color: color-mix(in srgb, var(--color-canvas) 90%, transparent);
+
+  @media (hover: hover) {
+    &:not(:disabled, [aria-disabled="true"], [data-disabled="true"], [data-pending="true"]):hover {
+      background-color: var(--color-canvas);
+
+      &:not(:focus-visible) {
+        outline: 1px solid var(--color-line);
+        outline-offset: 0;
+      }
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+}
+
+@utility btn-ghost {
+  @apply control-feedback;
+
+  @media (hover: hover) {
+    &:not(:disabled, [aria-disabled="true"], [data-disabled="true"], [data-pending="true"]):hover {
+      background-color: color-mix(in srgb, var(--color-ink) 5%, transparent);
+    }
+  }
+}
+
+@utility btn-outline {
+  @apply control-feedback;
+
+  @media (hover: hover) {
+    &:not(:disabled, [aria-disabled="true"], [data-disabled="true"], [data-pending="true"]):hover {
+      background-color: color-mix(in srgb, var(--color-ink) 4%, transparent);
+      border-color: color-mix(in srgb, var(--color-ink) 25%, transparent);
+    }
+
+    &.drawably-button:not(:disabled):hover .drawably-outline {
+      fill: color-mix(in srgb, var(--color-ink) 4%, transparent);
+      stroke: color-mix(in srgb, var(--color-ink) 25%, transparent);
+    }
+  }
+}
+
+@utility btn-ink {
+  @apply control-feedback;
+
+  @media (hover: hover) {
+    &:not(:disabled, [aria-disabled="true"], [data-disabled="true"], [data-pending="true"]):hover {
+      background-color: #2b2b30;
+    }
+  }
+}
+
+@utility link-text {
+  @apply control-feedback;
+  text-underline-offset: 3px;
+
+  @media (hover: hover) {
+    &:not(:disabled, [aria-disabled="true"]):hover {
+      text-decoration-line: underline;
+      text-decoration-style: solid;
+      opacity: 0.8;
+    }
+  }
+
+  &:not(:disabled, [aria-disabled="true"]):active {
+    opacity: 0.75;
+  }
+}
+
+@utility link-tile {
+  @apply control-feedback;
+
+  @media (hover: hover) {
+    &:hover {
+      opacity: 0.92;
+    }
+    &:hover :is(h2, h3) {
+      text-decoration-line: underline;
+      text-underline-offset: 3px;
+    }
   }
 }
 

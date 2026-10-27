@@ -26,7 +26,7 @@ export function LikePill({ liked, likes, pending, onClick, className, recipeTitl
       aria-pressed={liked}
       disabled={pending}
       onClick={handleClick}
-      className={cn("inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-full bg-canvas/90 px-2.5 text-[12px] font-medium text-ink tabular-nums backdrop-blur-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink", className)}
+      className={cn("btn-float inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-full bg-canvas/90 px-2.5 text-[12px] font-medium text-ink tabular-nums backdrop-blur-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink", className)}
     >
       <Icon name="heart" size={18} className={liked ? "[&_path]:fill-current" : undefined} />
       {likes > 0 ? <span>{formatLikeCount(likes)}</span> : null}

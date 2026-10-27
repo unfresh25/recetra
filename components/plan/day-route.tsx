@@ -66,7 +66,7 @@ export function DayRoute({
             <div className={cn("min-w-0", last ? "pb-2" : "pb-8")}>
               {meal.recipe ? (
                 <div className="flex items-start gap-3 pt-2">
-                  <Link href={`/recipes/${meal.recipe.id}?meal=${meal.id}`} prefetch className="flex min-w-0 flex-1 gap-3">
+                  <Link href={`/recipes/${meal.recipe.id}?meal=${meal.id}`} prefetch className="link-tile flex min-w-0 flex-1 gap-3">
                     <RecipeThumb path={meal.recipe.coverPath} size={64} />
                     <span className="min-w-0 flex-1">
                       <span className="line-clamp-2 text-[17px] font-semibold leading-snug">{meal.recipe.title}</span>
@@ -98,7 +98,7 @@ export function DayRoute({
                 <div className="flex flex-col gap-1 pt-2">
                   <p className="font-semibold">Sin opciones</p>
                   <p className="text-sm text-ink-muted">{meal.emptyReason ?? "Aún no hay recetas para este momento."}</p>
-                  <Link href="/recipes/import" className="text-sm font-semibold text-brand">
+                  <Link href="/recipes/import" className="link-text text-sm font-semibold text-brand">
                     Importar una receta
                   </Link>
                 </div>
