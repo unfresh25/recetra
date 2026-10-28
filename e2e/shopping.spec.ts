@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { mondayOf, todayInBogota, weekDays } from "../lib/plan/week";
 import { seedBranch, seedCatalog, seedStorePrices } from "./db";
-import { createHousehold, hideDevOverlay, householdSetup, personalSetup, signIn } from "./flows";
+import { completePlanWeek, createHousehold, hideDevOverlay, householdSetup, personalSetup, signIn } from "./flows";
 
 test("the shopping list prices the week and suggests where to buy", async ({ page, context }) => {
   await hideDevOverlay(page);
@@ -18,7 +19,9 @@ test("the shopping list prices the week and suggests where to buy", async ({ pag
   await createHousehold(page, "Jorge", "Casa Compras");
   await householdSetup(page);
   await personalSetup(page, {});
-  await expect(page.getByRole("heading", { name: /Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo/ })).toBeVisible({ timeout: 20_000 });
+  const today = todayInBogota();
+  const expectedPlanned = weekDays(mondayOf(today)).filter((day) => day >= today).length * 3;
+  await completePlanWeek(page, expectedPlanned);
 
   await page.getByRole("link", { name: "Lista de compras", exact: true }).click();
   await expect(page.getByRole("radio", { name: /Combinar/ })).toHaveAttribute("aria-checked", "true");
