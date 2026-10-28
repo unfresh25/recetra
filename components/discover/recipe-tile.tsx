@@ -13,7 +13,7 @@ export function RecipeTile({ recipe, layout = "rail", styles = [] }: { recipe: D
   return (
     <article>
       <div className="relative">
-        <Link href={`/recipes/${recipe.id}`} aria-label={recipe.title} className="block">
+        <Link href={`/recipes/${recipe.id}`} aria-label={recipe.title} className="link-tile block">
           <RecipePhoto path={recipe.coverPath} sizes={grid ? "(max-width: 576px) calc((100vw - 56px) / 2), 260px" : "148px"} className={`${grid ? "h-[200px]" : layout === "quick" ? "h-[150px]" : "h-[186px]"} rounded-[18px]`} />
         </Link>
         {style ? <span className="pointer-events-none absolute top-2 left-2 max-w-[calc(100%-16px)] rounded-full bg-canvas/90 px-2 py-1 font-display text-[10px] leading-tight text-ink">{style.label}</span> : null}
@@ -24,7 +24,7 @@ export function RecipeTile({ recipe, layout = "rail", styles = [] }: { recipe: D
         ) : null}
         <div className={`absolute right-2 ${grid ? "top-2" : "bottom-2"}`}><LikeButton recipeId={recipe.id} recipeTitle={recipe.title} likes={recipe.likes} likedByMe={recipe.likedByMe} /></div>
       </div>
-      <Link href={`/recipes/${recipe.id}`} className="mt-2.5 block">
+      <Link href={`/recipes/${recipe.id}`} className="link-text mt-2.5 block">
         <h3 className="line-clamp-2 font-display text-[14.5px] font-semibold leading-[1.3] text-ink">{recipe.title}</h3>
       </Link>
       <p className="mt-1 text-[11px] leading-relaxed text-ink-muted">{meta}</p>

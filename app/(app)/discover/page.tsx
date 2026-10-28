@@ -23,7 +23,7 @@ async function DiscoverContent() {
         title="Descubre"
         titleClassName="font-display text-[32px] font-semibold leading-tight tracking-tight"
         subtitle={`Hola, ${membership.member.display_name}. ¿Qué cocinamos hoy?`}
-        action={<Link href="/ask" aria-label="Preguntar a Carmy" className="flex size-11 items-center justify-center text-ink"><Icon name="chef-hat" size={24} /></Link>}
+        action={<Link href="/ask" aria-label="Preguntar a Carmy" className="btn-ghost flex size-11 items-center justify-center text-ink"><Icon name="chef-hat" size={24} /></Link>}
       />
       <DiscoverFeed data={data} styles={membership.household.styles} />
     </div>

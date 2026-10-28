@@ -20,7 +20,7 @@ export function WeekNav({ weekStart, today, basePath = "/plan", maxAhead = MAX_W
   const current = mondayOf(today);
   const offset = Math.round((Date.parse(weekStart) - Date.parse(current)) / (7 * 86_400_000));
   const label = offset === 0 ? "Esta semana" : offset === -1 ? "Semana pasada" : offset === 1 ? "Próxima semana" : offset < 0 ? `Hace ${-offset} semanas` : `En ${offset} semanas`;
-  const arrow = "flex size-11 items-center justify-center text-ink";
+  const arrow = "btn-ghost flex size-11 items-center justify-center text-ink";
   return (
     <nav aria-label="Semanas" className="-mx-2 flex items-center justify-between">
       <Link href={`${basePath}?day=${addDays(weekStart, -7)}`} scroll={false} aria-label="Semana anterior" className={arrow}>

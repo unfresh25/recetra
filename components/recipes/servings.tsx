@@ -4,6 +4,7 @@ import { createContext, use, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { withServings } from "@/lib/recipes/servings";
 
 const ServingsContext = createContext<{
   servings: number;
@@ -25,11 +26,11 @@ export function ServingsStepper() {
   const { servings, setServings } = useServings();
   return (
     <div role="group" aria-label="Porciones" className="flex h-[46px] items-center rounded-full border border-line">
-      <button type="button" aria-label="Menos porciones" disabled={servings <= 1} onClick={() => setServings(servings - 1)} className="flex size-11 items-center justify-center disabled:text-ink-faint">
+      <button type="button" aria-label="Menos porciones" disabled={servings <= 1} onClick={() => setServings(servings - 1)} className="btn-ghost flex size-11 rounded-full items-center justify-center disabled:text-ink-faint">
         <Icon name="minus" size={17} />
       </button>
       <span aria-live="polite" className="min-w-16 text-center font-display text-[14px] tabular">Para {servings}</span>
-      <button type="button" aria-label="Más porciones" disabled={servings >= 20} onClick={() => setServings(servings + 1)} className="flex size-11 items-center justify-center disabled:text-ink-faint">
+      <button type="button" aria-label="Más porciones" disabled={servings >= 20} onClick={() => setServings(servings + 1)} className="btn-ghost flex size-11 rounded-full items-center justify-center disabled:text-ink-faint">
         <Icon name="add" size={17} />
       </button>
     </div>
@@ -38,13 +39,15 @@ export function ServingsStepper() {
 
 export function RecipeBottomBar({ cookHref }: { cookHref: string | null }) {
   const router = useRouter();
+  const { servings } = useServings();
+  const href = cookHref ? withServings(cookHref, servings) : null;
   useEffect(() => {
-    if (cookHref) router.prefetch(cookHref);
-  }, [cookHref, router]);
+    if (href) router.prefetch(href);
+  }, [href, router]);
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex w-full max-w-xl items-center justify-between gap-3 border-t border-line bg-canvas px-5 pt-3 pb-safe">
       <ServingsStepper />
-      {cookHref ? <Button size="md" onPress={() => router.push(cookHref)} className="h-[46px] flex-1 bg-ink text-white shadow-none">Cocinar</Button> : null}
+      {href ? <Button size="md" onPress={() => router.push(href, { transitionTypes: ["cook-forward"] })} className="h-[46px] flex-1 bg-ink text-white shadow-none">Cocinar</Button> : null}
     </div>
   );
 }

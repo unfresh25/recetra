@@ -22,7 +22,7 @@ export function NextButton({
       isIconOnly
       isPending={loading}
       aria-label={props["aria-label"] ?? (done ? "Terminar" : "Continuar")}
-      className={cn("size-15 rounded-full bg-ink text-white data-[disabled=true]:opacity-30", className)}
+      className={cn("btn-ink size-15 rounded-full bg-ink text-white data-[disabled=true]:opacity-30", className)}
     >
       {loading ? (
         <Spinner color="current" size="sm" />

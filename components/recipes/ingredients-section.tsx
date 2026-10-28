@@ -1,5 +1,6 @@
 "use client";
 
+import { scaleQuantity } from "@/lib/recipes/servings";
 import { formatQuantity } from "@/lib/recipes/labels";
 import { cn } from "@/lib/utils/cn";
 import { IngredientRoleToggle } from "./ingredient-role-toggle";
@@ -15,12 +16,6 @@ export type IngredientLine = {
   /** Removed for this household's plan (dislike or diet). */
   removed: boolean;
 };
-
-function scale(quantity: number | null, factor: number) {
-  if (quantity === null) return null;
-  const v = quantity * factor;
-  return v >= 10 ? Math.round(v) : Math.round(v * 4) / 4;
-}
 
 /** Quantities and the heading use the servings selected in the bottom bar. */
 export function IngredientsSection({
@@ -61,7 +56,7 @@ export function IngredientsSection({
                     ) : null}
                   </div>
                   <span className={cn("shrink-0 text-right text-[14px] font-semibold tabular", item.removed && "text-ink-faint line-through")}>
-                    {formatQuantity(scale(item.quantity, factor), item.unit)}
+                    {formatQuantity(scaleQuantity(item.quantity, factor), item.unit)}
                   </span>
                 </li>
               ))}

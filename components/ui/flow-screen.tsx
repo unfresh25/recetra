@@ -35,7 +35,7 @@ export function FlowScreen({
   /** Quiet link on the left of the bottom bar. */
   secondaryAction?: ReactNode;
 }) {
-  const backClass = "-ml-2 flex size-11 shrink-0 items-center justify-center";
+  const backClass = "btn-ghost -ml-2 flex size-11 shrink-0 items-center justify-center";
   const backIcon = <Image src="/icons/Frame.svg" alt="" width={22} height={22} />;
   const backControl =
     typeof back === "string" ? (
@@ -53,7 +53,7 @@ export function FlowScreen({
       <header className="flex h-14 items-center justify-between gap-4">
         {backControl ?? (progress === undefined ? <span /> : null)}
         {progress === undefined ? (
-          <Link href="/help" className="font-display text-[16px] text-ink">
+          <Link href="/help" className="link-text font-display text-[16px] text-ink">
             Ayuda
           </Link>
         ) : (

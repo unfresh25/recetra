@@ -49,7 +49,7 @@ test("recipe detail look", async ({ page }) => {
   await page.waitForTimeout(800);
   await page.screenshot({ path: "e2e/__screens__/40-recipe-look.png", fullPage: true });
   await page.getByRole("button", { name: "Cocinar", exact: true }).click();
-  await expect(page.getByText("Paso 1")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Paso 01 de 03" })).toBeVisible();
   await page.getByRole("button", { name: "Siguiente paso" }).click();
   await page.getByRole("button", { name: "Siguiente paso" }).click();
   await page.getByRole("button", { name: /Crear temporizador de 20 minutos/ }).click();

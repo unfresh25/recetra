@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import { Suspense } from "react";
-import { RecipeTile } from "@/components/discover/recipe-tile";
+import { Suspense, ViewTransition } from "react";
+import { MoreByAuthor } from "@/components/recipes/more-by-author";
 import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { CoverEditor } from "@/components/recipes/cover-editor";
 import { DraftReview } from "@/components/recipes/draft-review";
@@ -62,7 +62,11 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
       <RecipeVideoProvider>
         <ReactionProvider recipeId={recipe.id} mine={social.mine} likes={social.likes}>
           <div className="relative aspect-[16/10] w-full overflow-hidden bg-canvas">
-            <VideoEmbed platform={recipe.source_platform} videoId={recipe.source_video_id} coverUrl={recipeImageUrl(coverPath)} title={recipe.title} />
+            <ViewTransition name={`recipe-media-${recipe.id}`} share="recipe-media" default="none">
+              <div className="absolute inset-0">
+                <VideoEmbed platform={recipe.source_platform} videoId={recipe.source_video_id} coverUrl={recipeImageUrl(coverPath)} title={recipe.title} />
+              </div>
+            </ViewTransition>
             <div className="absolute inset-x-0 top-0 flex items-center justify-between px-3 pt-safe">
               <RecipeBackButton />
               <div className="flex items-center gap-2">
@@ -74,6 +78,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
             {hasVideo ? <div className="absolute bottom-3 left-3"><VideoPlayButton dark /></div> : null}
           </div>
 
+          <ViewTransition enter={{ "cook-back": "recipe-content", default: "none" }} exit={{ "cook-forward": "recipe-content", default: "none" }} default="none">
           <article className={`flex flex-1 flex-col gap-7 px-5 pt-6 ${isOwnDraft ? "pb-72" : "pb-36"}`}>
             <header className="flex flex-col gap-3">
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-ink-muted">
@@ -81,7 +86,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
                 {isOwnDraft ? <span>{recipe.meal_types.length ? " · " : ""}Por confirmar</span> : null}
               </p>
               <h1 className="font-display text-[30px] leading-[1.1]">{recipe.title}</h1>
-              {recipe.author_name ? <a href={recipe.source_url ?? recipe.author_url ?? "#"} target="_blank" rel="noopener noreferrer" className="flex w-fit flex-wrap items-center gap-1.5 text-[13px]">
+              {recipe.author_name ? <a href={recipe.source_url ?? recipe.author_url ?? "#"} target="_blank" rel="noopener noreferrer" className="link-text flex w-fit flex-wrap items-center gap-1.5 text-[13px]">
                 <PlatformIcon platform={recipe.source_platform} size={17} />
                 <span className="font-bold">{recipe.author_handle ?? recipe.author_name}</span>
                 <span className="text-ink-muted">en {PLATFORM_LABELS[recipe.source_platform]}</span>
@@ -144,13 +149,9 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
               </ol>
             </section>
 
-            {moreByAuthor.length ? <section className="flex flex-col gap-4">
-              <h2 className="font-display text-[22px]">Más de {recipe.author_name}</h2>
-              <ul className="-mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {moreByAuthor.map((other) => <li key={other.id} className="w-[148px] shrink-0 snap-start"><RecipeTile recipe={other} /></li>)}
-              </ul>
-            </section> : null}
+            <MoreByAuthor author={recipe.author_name} recipes={moreByAuthor} />
           </article>
+          </ViewTransition>
 
           {isOwnDraft ? (
             <div className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-xl border-t border-line bg-canvas px-5 pt-4 pb-safe">

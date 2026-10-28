@@ -22,7 +22,7 @@ export function ReplaceButton({ planMealId, title }: { planMealId: string; title
         type="button"
         onClick={() => setOpen(true)}
         aria-label={`Reemplazar ${title}`}
-        className="flex size-9 shrink-0 items-center justify-center text-ink-muted transition-colors hover:text-brand"
+        className="btn-ghost flex size-9 shrink-0 items-center justify-center text-ink-muted"
       >
         <Icon name="refresh" size={18} />
       </button>
@@ -88,7 +88,7 @@ function ReplaceSheet({ planMealId, title, onClose }: { planMealId: string; titl
                     type="button"
                     disabled={saving}
                     onClick={() => choose(o.recipeId)}
-                    className="flex w-full items-center gap-3 border-b border-line py-4 text-left disabled:opacity-60"
+                    className="btn-outline flex w-full items-center gap-3 border-b border-line py-4 text-left disabled:opacity-60"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{o.title}</span>
@@ -107,7 +107,7 @@ function ReplaceSheet({ planMealId, title, onClose }: { planMealId: string; titl
           )
         ) : null}
         {error ? <p role="alert" className="mt-3 text-sm text-brand">{error}</p> : null}
-        <button type="button" onClick={onClose} className="mt-3 h-12 w-full font-semibold text-ink-muted">
+        <button type="button" onClick={onClose} className="btn-ghost mt-3 h-12 w-full font-semibold text-ink-muted">
           Cancelar
         </button>
       </div>

@@ -51,7 +51,7 @@ export function AddToPlan({ recipeId, mealTypes, weeks, today, onAdded }: {
         <Drawer.Content placement="bottom">
           <Drawer.Dialog className="mx-auto w-full max-w-xl border-t border-line bg-canvas px-5 pb-safe text-ink shadow-none [--focus:var(--color-ink)] [&_button:focus-visible]:outline-ink [&_a:focus-visible]:outline-ink">
             <Drawer.Handle />
-            {!pending ? <Drawer.CloseTrigger aria-label="Cerrar"><Icon name="close" size={20} /></Drawer.CloseTrigger> : null}
+            {!pending ? <Drawer.CloseTrigger className="btn-ghost" aria-label="Cerrar"><Icon name="close" size={20} /></Drawer.CloseTrigger> : null}
             <Drawer.Header><Drawer.Heading className="font-display text-[24px]">Agregar al plan</Drawer.Heading></Drawer.Header>
             <Drawer.Body className="flex flex-col gap-5">
               {week ? <>
@@ -65,7 +65,7 @@ export function AddToPlan({ recipeId, mealTypes, weeks, today, onAdded }: {
                   </Button>)}
                 </div>
                 <div role="group" aria-label="Día" className="grid grid-cols-7 gap-1">
-                  {placementDays(week.weekStart, today).map((entry) => <button key={entry.day} type="button" disabled={pending || entry.disabled} aria-pressed={selection.day === entry.day} onClick={() => { setSelection({ ...selection, day: entry.day }); setError(undefined); }} className={`flex min-h-14 flex-col items-center justify-center rounded-full border font-display text-xs disabled:opacity-35 ${selection.day === entry.day ? "border-ink bg-ink text-canvas" : "border-line"}`}>
+                  {placementDays(week.weekStart, today).map((entry) => <button key={entry.day} type="button" disabled={pending || entry.disabled} aria-pressed={selection.day === entry.day} onClick={() => { setSelection({ ...selection, day: entry.day }); setError(undefined); }} className={`flex min-h-14 flex-col items-center justify-center rounded-full border font-display text-xs disabled:opacity-35 ${selection.day === entry.day ? "btn-ink border-ink bg-ink text-canvas" : "btn-outline border-line"}`}>
                     <span>{entry.label.split(" ")[0]}</span><span className="mt-1 text-sm tabular">{entry.label.split(" ")[1]}</span>
                   </button>)}
                 </div>
@@ -77,7 +77,7 @@ export function AddToPlan({ recipeId, mealTypes, weeks, today, onAdded }: {
                 </p>
               </> : <div className="flex flex-col gap-3 py-3">
                 <p className="text-sm text-ink-muted">Aún no tienes plan esta semana</p>
-                <Link href="/plan" className="font-display underline underline-offset-4">Armar mi semana</Link>
+                <Link href="/plan" className="link-text font-display">Armar mi semana</Link>
               </div>}
               {error ? <p role="alert" className="text-sm text-ink">{error}</p> : null}
             </Drawer.Body>

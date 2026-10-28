@@ -19,7 +19,7 @@ export function EatenToggle({ planMealId, eaten }: { planMealId: string; eaten: 
           await setEaten(planMealId, !optimistic);
         })
       }
-      className={cn("mt-2 flex items-center gap-1.5 text-sm font-semibold", optimistic ? "text-savings" : "text-brand")}
+      className={cn("link-text mt-2 flex items-center gap-1.5 text-sm font-semibold", optimistic ? "text-savings" : "text-brand")}
     >
       <Icon name="check" size={16} />
       {optimistic ? "La comimos · deshacer" : "La comimos"}

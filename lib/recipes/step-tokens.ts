@@ -31,7 +31,7 @@ const TOOLS: [string[], IconName][] = [
 
 const strip = (s: string) => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
-const TIME = /(\d+(?:[.,]\d+)?)(?:\s*(?:a|-|o)\s*(\d+(?:[.,]\d+)?))?\s*(minutos?|min\b\.?|horas?|hrs?\b|segundos?|seg\b\.?)/gi;
+const TIME = /(\d+(?:[.,]\d+)?)(?:\s*(?:a|-|–|o)\s*(\d+(?:[.,]\d+)?))?\s*(minutos?|min\b\.?|horas?|hrs?\b|segundos?|seg\b\.?)/gi;
 const TEMPERATURE = /\d{2,3}\s*(?:°|º|grados)\s*(?:c\b|f\b|centígrados|celsius)?/gi;
 const HEAT = /fuego (?:muy )?(?:alto|medio[- ]alto|medio[- ]bajo|medio|bajo|lento|fuerte|suave)/gi;
 
@@ -60,7 +60,7 @@ export function tokenizeStep(text: string, ingredientNames: string[][]): StepTok
 
   for (const m of text.matchAll(TIME)) {
     // For ranges ("10 a 15 minutos") the timer uses the upper value.
-    push(m.index!, m.index! + m[0].length, { kind: "time", text: m[0], seconds: toSeconds(m[2] ?? m[1]!, m[3]!) });
+    push(m.index!, m.index! + m[0].length, { kind: "time", text: m[0], seconds: Math.max(toSeconds(m[1]!, m[3]!), toSeconds(m[2] ?? m[1]!, m[3]!)) });
   }
   for (const m of text.matchAll(TEMPERATURE)) push(m.index!, m.index! + m[0].length, { kind: "temperature", text: m[0] });
   for (const m of text.matchAll(HEAT)) push(m.index!, m.index! + m[0].length, { kind: "heat", text: m[0] });
@@ -100,4 +100,19 @@ export function formatDuration(seconds: number) {
   if (seconds >= 3600) return `${Math.floor(seconds / 3600)} h ${Math.round((seconds % 3600) / 60)} min`;
   if (seconds >= 60) return `${Math.round(seconds / 60)} min`;
   return `${seconds} s`;
+}
+
+/** Ingredients stay plain in the step text; their matches still power the cards. */
+export function stepTokenIcon(token: StepToken): IconName | null {
+  switch (token.kind) {
+    case "tool": return token.icon;
+    case "time": return "timer";
+    case "temperature": return "thermometer";
+    case "heat": return "fire";
+    default: return null;
+  }
+}
+
+export function stepIngredientIndexes(tokens: StepToken[]) {
+  return [...new Set(tokens.flatMap((token) => token.kind === "ingredient" ? [token.index] : []))];
 }

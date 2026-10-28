@@ -19,7 +19,7 @@ export function Chip({
       {...props}
       variant={selected ? "solid" : "outline"}
       tone={selected ? undefined : "neutral"}
-      className={cn("inline-flex h-10 items-center gap-1.5 px-4 text-[15px] font-medium", className)}
+      className={cn("btn-outline inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[15px] font-medium", className)}
     >
       <span className="inline-flex items-center gap-1.5">
         {leading}

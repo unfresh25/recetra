@@ -50,7 +50,7 @@ export function ImportForm({ initialUrl }: { initialUrl?: string }) {
           required
           error={error}
         />
-        <button type="button" onClick={paste} className="flex items-center gap-1.5 self-start text-sm font-semibold text-brand">
+        <button type="button" onClick={paste} className="link-text flex items-center gap-1.5 self-start text-sm font-semibold text-brand">
           <Icon name="copy" size={16} /> Pegar del portapapeles
         </button>
       </div>
@@ -66,7 +66,7 @@ export function ImportForm({ initialUrl }: { initialUrl?: string }) {
           <label
             key={value}
             className={cn(
-              "flex cursor-pointer items-start gap-3 py-3",
+              "btn-ghost flex cursor-pointer items-start gap-3 py-3",
             )}
           >
             <input

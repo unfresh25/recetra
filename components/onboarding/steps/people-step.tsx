@@ -77,7 +77,7 @@ function AdultsPicker({ value, onChange }: { value: number; onChange: (value: nu
         onPointerUp={onPointerUp}
         onPointerCancel={() => { gesture.current = null; }}
         onLostPointerCapture={() => { gesture.current = null; }}
-        className="relative mt-3 h-[252px] touch-pan-y touch-pinch-zoom cursor-grab overflow-hidden rounded-3xl outline-none select-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-4 focus-visible:ring-offset-canvas active:cursor-grabbing"
+        className="btn-ghost relative mt-3 h-[252px] touch-pan-y touch-pinch-zoom cursor-grab overflow-hidden rounded-3xl outline-none select-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-4 focus-visible:ring-offset-canvas active:cursor-grabbing"
       >
         {Array.from({ length: 12 }, (_, index) => {
           const number = index + 1;
@@ -103,7 +103,7 @@ function AdultsPicker({ value, onChange }: { value: number; onChange: (value: nu
   );
 }
 
-const kidsButtonClass = "flex size-9 shrink-0 items-center justify-center rounded-full border border-[#a9a9a9] bg-transparent p-0 font-display text-[22px] font-normal text-ink outline-none data-[disabled=true]:opacity-40 data-[focus-visible=true]:outline-solid data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-brand data-[focus-visible=true]:outline-offset-2";
+const kidsButtonClass = "btn-outline flex size-9 shrink-0 items-center justify-center rounded-full border border-[#a9a9a9] bg-transparent p-0 font-display text-[22px] font-normal text-ink outline-none data-[disabled=true]:opacity-40 data-[focus-visible=true]:outline-solid data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-brand data-[focus-visible=true]:outline-offset-2";
 
 export function PeopleStep({
   adults: initialAdults,

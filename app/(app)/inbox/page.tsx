@@ -63,7 +63,7 @@ async function Inbox() {
         title="Todo al día"
         description="Cuando importes una receta, aparecerá aquí para que la revises."
         action={
-          <Link href="/recipes/import" className="mt-2 font-semibold text-brand">
+          <Link href="/recipes/import" className="link-text mt-2 font-semibold text-brand">
             Importar una receta
           </Link>
         }
@@ -101,7 +101,7 @@ async function Inbox() {
       })}
       {drafts.map((draft) => (
         <Card key={draft.id} className="flex flex-col gap-4">
-          <Link href={`/recipes/${draft.id}`} className="flex items-center gap-3">
+          <Link href={`/recipes/${draft.id}`} className="link-tile flex items-center gap-3">
             <RecipeThumb path={draft.source_image_path} size={64} />
             <span className="min-w-0 flex-1">
               <span className="line-clamp-2 font-display font-bold leading-snug">{draft.title}</span>

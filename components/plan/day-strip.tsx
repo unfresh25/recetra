@@ -15,7 +15,7 @@ export function DayStrip({ days, selected, today, basePath = "/plan" }: { days: 
                 href={`${basePath}?day=${day}`}
                 scroll={false}
                 aria-current={active ? "date" : undefined}
-                className="flex h-20 w-12 flex-col items-center justify-center gap-1.5"
+                className="btn-ghost flex h-20 w-12 flex-col items-center justify-center gap-1.5"
               >
                 <span className={cn("text-xs font-semibold", active ? "text-brand" : "text-ink-muted")}>{dayLabel(day)}</span>
                 {active ? (

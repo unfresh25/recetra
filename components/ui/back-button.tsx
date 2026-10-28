@@ -12,7 +12,7 @@ export function BackButton({ fallback, className }: { fallback: string; classNam
       type="button"
       aria-label="Volver"
       onClick={() => (window.history.length > 1 ? router.back() : router.push(fallback))}
-      className={cn("flex size-11 items-center justify-center", className)}
+      className={cn("btn-ghost flex size-11 items-center justify-center", className)}
     >
       <Image src="/icons/Frame.svg" alt="" width={22} height={22} />
     </button>

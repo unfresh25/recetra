@@ -1,6 +1,7 @@
 @import "tailwindcss";
 /* HeroUI v3: must come after Tailwind. */
 @import "@heroui/styles";
+@import "drawably/style.css" layer(components);
 
 /* Recetra design tokens. See docs/plans/2026-10-16-recetra-design.md §7. */
 @theme {
@@ -119,9 +120,140 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a[href],
+  summary,
+  label[for],
+  input:is([type="checkbox"], [type="radio"], [type="range"]):not(:disabled),
+  select {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  input:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
+  }
+}
+
+/* Shared feedback for custom controls. Keep disabled/pending controls still. */
+@utility control-feedback {
+  cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out,
+    color 150ms ease-out, opacity 150ms ease-out, transform 150ms ease-out,
+    scale 150ms ease-out;
+
+  &:is(:disabled, [aria-disabled="true"], [data-disabled="true"]) {
+    cursor: not-allowed;
+  }
+
+  /* Library controls share one press scale; legacy chips must not lift on hover. */
+  &.button:is(:active, [data-pressed="true"]) {
+    transform: none;
+  }
+
+  &.drawably-button {
+    transform: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    &:not(:disabled, [aria-disabled="true"], [data-disabled="true"], [data-pending="true"]):is(:active, [data-pressed="true"]) {
+      scale: 0.97;
+    }
+  }
+}
+
+@utility btn-float {
+  @apply control-feedback;
+  background-color: color-mix(in srgb, var(--color-canvas) 90%, transparent);
+
+  @media (hover: hover) {
+    &:not(:disabled, [aria-disabled="true"], [data-disabled="true"], [data-pending="true"]):hover {
+      background-color: var(--color-canvas);
+
+      &:not(:focus-visible) {
+        outline: 1px solid var(--color-line);
+        outline-offset: 0;
+      }
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+}
+
+@utility btn-ghost {
+  @apply control-feedback;
+
+  @media (hover: hover) {
+    &:not(:disabled, [aria-disabled="true"], [data-disabled="true"], [data-pending="true"]):hover {
+      background-color: color-mix(in srgb, var(--color-ink) 5%, transparent);
+    }
+  }
+}
+
+@utility btn-outline {
+  @apply control-feedback;
+
+  @media (hover: hover) {
+    &:not(:disabled, [aria-disabled="true"], [data-disabled="true"], [data-pending="true"]):hover {
+      background-color: color-mix(in srgb, var(--color-ink) 4%, transparent);
+      border-color: color-mix(in srgb, var(--color-ink) 25%, transparent);
+    }
+
+    &.drawably-button:not(:disabled):hover .drawably-outline {
+      fill: color-mix(in srgb, var(--color-ink) 4%, transparent);
+      stroke: color-mix(in srgb, var(--color-ink) 25%, transparent);
+    }
+  }
+}
+
+@utility btn-ink {
+  @apply control-feedback;
+
+  @media (hover: hover) {
+    &:not(:disabled, [aria-disabled="true"], [data-disabled="true"], [data-pending="true"]):hover {
+      background-color: #2b2b30;
+    }
+  }
+}
+
+@utility link-text {
+  @apply control-feedback;
+  text-underline-offset: 3px;
+
+  @media (hover: hover) {
+    &:not(:disabled, [aria-disabled="true"]):hover {
+      text-decoration-line: underline;
+      text-decoration-style: solid;
+      opacity: 0.8;
+    }
+  }
+
+  &:not(:disabled, [aria-disabled="true"]):active {
+    opacity: 0.75;
+  }
+}
+
+@utility link-tile {
+  @apply control-feedback;
+
+  @media (hover: hover) {
+    &:hover {
+      opacity: 0.92;
+    }
+    &:hover :is(h2, h3) {
+      text-decoration-line: underline;
+      text-underline-offset: 3px;
+    }
   }
 }
 
@@ -150,5 +282,157 @@
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* The live region stays mounted so screen readers announce each fresh confirmation. */
+.share-confirmation > p {
+  opacity: 1;
+  transition: opacity 160ms var(--ease-out-soft);
+  @starting-style { opacity: 0; }
+}
+
+/* Cook player: fixed in one DOM slot for its entire lifetime, including when hidden. */
+.cook-mode {
+  --cook-pip-width: clamp(200px, 58vw, 280px);
+  --cook-pip-height: calc(var(--cook-pip-width) * 9 / 16);
+}
+.cook-mode[data-portrait="true"] {
+  --cook-pip-width: clamp(120px, 34vw, 168px);
+  --cook-pip-height: calc(var(--cook-pip-width) * 16 / 9);
+}
+.cook-video-slot {
+  width: var(--cook-pip-width);
+  height: var(--cook-pip-height);
+}
+.cook-video-frame {
+  --cook-chips-height: 52px;
+  --cook-dock-height: calc(var(--cook-chips-height) + 20px + env(safe-area-inset-bottom, 0px));
+  --cook-card-height: calc(100dvh - var(--cook-dock-height) - 12px);
+  --tiktok-zoom: 1.18;
+  --youtube-zoom: 1;
+  position: fixed;
+  z-index: 40;
+  top: var(--cook-pip-top, 100dvh);
+  left: var(--cook-pip-left, 100vw);
+  width: var(--cook-pip-width);
+  height: var(--cook-pip-height);
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  background: #000;
+}
+.cook-video-frame[data-expanded="true"] {
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+}
+.cook-video-card {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background: #000;
+  container-type: size;
+}
+.cook-video-frame[data-expanded="true"] > .cook-video-card {
+  bottom: auto;
+  height: var(--cook-card-height);
+  border-radius: 0 0 28px 28px;
+}
+.cook-player-stage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(var(--youtube-zoom));
+}
+/* Cover the card at the source aspect ratio, then crop around its center. */
+.cook-player-landscape { width: max(100cqw, 177.777778cqh); height: max(56.25cqw, 100cqh); }
+.cook-player-portrait { width: max(100cqw, 56.25cqh); height: max(177.777778cqw, 100cqh); }
+.cook-player-tiktok {
+  top: auto;
+  bottom: var(--tiktok-bottom, 0px);
+  left: var(--tiktok-left, 0px);
+  transform-origin: bottom left;
+  transform: scale(var(--tiktok-scale, 1));
+}
+.cook-video-frame[data-tiktok-sizing="video"] .cook-player-tiktok {
+  transform: none;
+}
+/* Expansion keeps PiP sizing until FLIP finishes; native controls wait for real sizing. */
+.cook-video-frame[data-tiktok-sizing="pip"] .cook-player-tiktok > iframe {
+  pointer-events: none;
+}
+.cook-video-top-gradient {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 110px;
+  z-index: 10;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 55%), transparent);
+  pointer-events: none;
+  visibility: hidden;
+}
+[data-expanded="true"] .cook-video-top-gradient { visibility: visible; }
+.cook-video-feedback { transition: opacity 160ms var(--ease-out-soft); }
+.cook-video-overlay {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 120ms var(--ease-out-soft), visibility 0s 120ms;
+}
+[data-expanded="true"] > .cook-video-overlay {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 120ms, 0s;
+}
+[data-expanded="true"] .cook-video-timers button { pointer-events: auto; }
+.cook-video-chips {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 0 20px calc(20px + env(safe-area-inset-bottom, 0px));
+  scrollbar-width: none;
+}
+.cook-video-chips::-webkit-scrollbar { display: none; }
+[data-expanded="true"] .cook-video-chips { pointer-events: auto; }
+.cook-video-chip {
+  display: flex;
+  flex: none;
+  height: var(--cook-chips-height);
+  align-items: center;
+  gap: 8px;
+  border-radius: 9999px;
+  padding-inline: 20px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+/* React 19.3 + Next 16.4 activate these on Link/router navigation; no experimental flag. */
+::view-transition { pointer-events: none; }
+::view-transition-group(.recipe-media) {
+  animation-duration: 320ms;
+  animation-timing-function: var(--ease-out-soft);
+}
+::view-transition-old(.recipe-content),
+::view-transition-old(.cook-content) { animation: cook-fade-out 150ms var(--ease-out-soft) both; }
+::view-transition-new(.recipe-content) { animation: cook-fade-in 200ms var(--ease-out-soft) both; }
+::view-transition-new(.cook-content) { animation: cook-step-in 240ms var(--ease-out-soft) both; }
+::view-transition-old(.cook-content) { animation: cook-step-out 180ms var(--ease-out-soft) both; }
+@keyframes cook-fade-in { from { opacity: 0; } }
+@keyframes cook-fade-out { to { opacity: 0; } }
+@keyframes cook-step-in { from { opacity: 0; transform: translateY(16px); } }
+@keyframes cook-step-out { to { opacity: 0; transform: translateY(16px); } }
+@media (prefers-reduced-motion: reduce) {
+  .cook-video-overlay, .cook-video-feedback, .share-confirmation > p { transition: none; }
+  ::view-transition-old(*), ::view-transition-new(*), ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
   }
 }

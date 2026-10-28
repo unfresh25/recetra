@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { adminDb } from "../db";
 import { createHousehold, householdSetup, personalSetup, signIn } from "../flows";
 
-test("cook mode keeps one YouTube player and seeks per step", async ({ page }) => {
+test("cook mode keeps one player across PiP, video view and hiding", async ({ page }) => {
   const { rest: db } = adminDb();
   const { data: egg } = await db.from("ingredients").select("id").eq("slug", "huevo").single();
   await db.from("recipes").delete().eq("source_video_id", "y_TyEhcejbE");
@@ -26,15 +26,22 @@ test("cook mode keeps one YouTube player and seeks per step", async ({ page }) =
 
   await page.goto(`/recipes/${id}`);
   await page.getByRole("button", { name: "Cocinar", exact: true }).click();
-  const iframe = page.locator("iframe");
+  const iframe = page.getByRole("main", { name: "Modo cocina" }).locator("iframe");
   await expect(iframe).toHaveCount(1, { timeout: 20_000 });
-  const firstHandle = await iframe.elementHandle();
-  const src1 = await iframe.getAttribute("src");
-  await page.waitForTimeout(4000);
+  await expect(iframe).toHaveAttribute("src", /start=36/);
+  await iframe.evaluate((element) => { element.dataset.sessionPlayer = "same"; });
+  await page.getByRole("button", { name: "Abrir modo video", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Modo video" })).toBeVisible();
+  await expect(iframe).toHaveAttribute("data-session-player", "same");
+  await page.getByRole("button", { name: "Volver a los pasos", exact: true }).click();
+  await page.getByRole("button", { name: "Ocultar video", exact: true }).click();
+  await expect(iframe).toHaveCount(1);
+  await expect(iframe).toBeHidden();
   await page.getByRole("button", { name: "Siguiente paso" }).click();
-  await page.waitForTimeout(2500);
-  const same = await page.evaluate((el) => el?.isConnected, firstHandle);
-  const time = await page.evaluate(() => (document.querySelector("iframe") as HTMLIFrameElement | null) && (window as unknown as { __t?: number }).__t);
-  console.log("SRC1", src1?.slice(0, 80), "| same iframe after step:", same, "| count:", await iframe.count(), time ?? "");
-  expect(same).toBe(true);
+  await page.getByRole("button", { name: "Video", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Paso 02 de 02" })).toBeVisible();
+  await expect(iframe).toBeVisible();
+  await expect(iframe).toHaveAttribute("data-session-player", "same");
+  // Timestamp changes use seekTo; the iframe URL and DOM node stay stable.
+  await expect(iframe).toHaveAttribute("src", /start=36/);
 });

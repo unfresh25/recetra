@@ -22,7 +22,7 @@ export function StepShell({
       <header className="flex flex-col gap-6 px-5 pt-safe">
         <div className="flex h-11 items-center gap-3">
           {backHref ? (
-            <Link href={backHref} aria-label="Volver" className="-ml-2 flex size-11 shrink-0 items-center justify-center text-ink">
+            <Link href={backHref} aria-label="Volver" className="btn-ghost -ml-2 flex size-11 shrink-0 items-center justify-center text-ink">
               <Icon name="arrow-left" size={26} />
             </Link>
           ) : (

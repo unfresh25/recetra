@@ -80,7 +80,7 @@ export function PhotoOptionStep({
             value={option.value}
             aria-label={option.label}
             isDisabled={atMax && !selected.has(option.value)}
-            className="mt-0 w-full data-[disabled=true]:opacity-40"
+            className="btn-ghost mt-0 w-full data-[disabled=true]:opacity-40"
           >
             <Checkbox.Content className="flex w-full items-center gap-2.5">
               {({ isSelected, isFocusVisible }) => (

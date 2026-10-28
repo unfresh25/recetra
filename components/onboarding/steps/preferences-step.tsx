@@ -37,7 +37,7 @@ function ChoiceList<T extends string>({
     <RadioGroup value={value} onChange={(next) => onChange(next as T)} className="flex flex-col gap-0">
       <Label className="mb-3 font-display text-[16px] leading-5 font-normal text-[#8f8f8f]">{label}</Label>
       {options.map((option) => (
-        <Radio key={option.value} value={option.value} className="w-full">
+        <Radio key={option.value} value={option.value} className="btn-ghost w-full">
           <Radio.Content className="flex w-full items-center gap-4 py-3.5">
             {({ isSelected, isFocusVisible }) => (
               <>

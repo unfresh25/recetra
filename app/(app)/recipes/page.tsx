@@ -59,7 +59,7 @@ async function RecipesContent({
             href={t.value === "mine" ? "/recipes" : "/recipes?tab=favorites"}
             aria-current={tab === t.value ? "page" : undefined}
             className={cn(
-              "flex h-11 items-center justify-center rounded-full text-[15px] font-semibold",
+              "btn-ghost flex h-11 items-center justify-center rounded-full text-[15px] font-semibold",
               tab === t.value
                 ? "text-brand underline decoration-2 underline-offset-8"
                 : "text-ink-muted",
@@ -92,7 +92,7 @@ async function MyRecipes({ householdId }: { householdId: string }) {
         action={
           <Link
             href="/recipes/import"
-            className="mt-2 font-semibold text-brand"
+            className="link-text mt-2 font-semibold text-brand"
           >
             Importar mi primera receta
           </Link>
@@ -143,7 +143,7 @@ async function Favorites({ memberId, who }: { memberId: string; who: string }) {
             aria-current={who === f.value ? "page" : undefined}
             className={cn(
               "h-9 rounded-full px-4 text-sm font-semibold leading-9",
-              who === f.value ? "bg-ink text-white" : "text-ink-muted",
+              who === f.value ? "btn-ink bg-ink text-white" : "btn-ghost text-ink-muted",
             )}
           >
             {f.label}
@@ -186,7 +186,7 @@ function InboxBell({ count }: { count: number }) {
       aria-label={
         count ? `${count} pendientes por confirmar` : "Pendientes por confirmar"
       }
-      className="relative flex size-11 items-center justify-center text-ink"
+      className="btn-ghost relative flex size-11 items-center justify-center text-ink"
     >
       <Icon name="inbox" />
       {count ? (

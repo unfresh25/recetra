@@ -41,7 +41,7 @@ async function Invitation({ params }: { params: PageProps<"/invite/[token]">["pa
       <div className="flex flex-col items-center gap-6 text-center">
         <Illustration name="invite" size={160} preload />
         <p className="max-w-72 text-[17px] text-ink">{STATUS_COPY[status as keyof typeof STATUS_COPY]}</p>
-        <Link href="/onboarding" className="text-center font-semibold text-brand">
+        <Link href="/onboarding" className="link-text text-center font-semibold text-brand">
           Crear mi propio hogar
         </Link>
       </div>

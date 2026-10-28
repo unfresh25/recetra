@@ -186,7 +186,7 @@ function CodeStep({ email, onBack }: { email: string; onBack: () => void }) {
             {wait > 0 ? (
               <span className="text-ink-faint">Reenviar en {wait} s</span>
             ) : (
-              <button type="button" onClick={resend} className="font-medium text-ink underline underline-offset-2">
+              <button type="button" onClick={resend} className="link-text font-medium text-ink">
                 Reenviar código
               </button>
             )}

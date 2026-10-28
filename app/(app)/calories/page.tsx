@@ -47,7 +47,7 @@ async function CalorieLog({ searchParams }: Pick<PageProps<"/calories">, "search
     <>
       <WeekNav weekStart={days[0]!} today={today} basePath="/calories" maxAhead={0} />
       {days[0] !== mondayOf(today) ? (
-        <Link href="/calories" scroll={false} className="-mt-3 self-center text-sm font-semibold text-brand">
+        <Link href="/calories" scroll={false} className="link-text -mt-3 self-center text-sm font-semibold text-brand">
           Volver a esta semana
         </Link>
       ) : null}
@@ -105,7 +105,7 @@ async function CalorieLog({ searchParams }: Pick<PageProps<"/calories">, "search
         </div>
         <div className="flex items-end gap-2">
           {week.map((d) => (
-            <Link key={d.day} href={`/calories?day=${d.day}`} scroll={false} className="flex flex-1 flex-col items-center gap-1" aria-label={`${dayLabel(d.day, "long")}: ${d.kcal} kcal`}>
+            <Link key={d.day} href={`/calories?day=${d.day}`} scroll={false} className="btn-ghost flex flex-1 flex-col items-center gap-1" aria-label={`${dayLabel(d.day, "long")}: ${d.kcal} kcal`}>
               <span className="relative flex h-24 w-full items-end justify-center">
                 <span className="absolute bottom-0 w-full rounded-t-lg bg-sunken" style={{ height: `${(d.plannedKcal / peak) * 100}%` }} />
                 <span className={cn("relative w-full rounded-t-lg", d.day === selected ? "bg-brand" : "bg-savings")} style={{ height: `${(d.kcal / peak) * 100}%` }} />

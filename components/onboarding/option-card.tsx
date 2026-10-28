@@ -30,9 +30,10 @@ export function OptionRow({
 }) {
   return (
     <label
+      aria-disabled={(disabled && !selected) || undefined}
       className={cn(
-        "flex min-h-16 cursor-pointer items-center gap-4 py-3 transition-opacity",
-        disabled && !selected && "cursor-not-allowed opacity-40",
+        "btn-ghost flex min-h-16 items-center gap-4 py-3",
+        disabled && !selected && "opacity-40",
         className,
       )}
     >

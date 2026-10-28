@@ -75,7 +75,7 @@ export function StoresStep({
         className="mt-5 flex flex-col gap-2.5"
       >
         {visible.map((store) => (
-          <Checkbox key={store.id} value={store.id} aria-label={store.name} className="mt-0 w-full">
+          <Checkbox key={store.id} value={store.id} aria-label={store.name} className="btn-ghost mt-0 w-full">
             <Checkbox.Content className="flex w-full items-center gap-2.5">
               {({ isSelected, isFocusVisible }) => (
                 <>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tokenizeStep } from "./step-tokens";
+import { stepIngredientIndexes, stepTokenIcon, tokenizeStep } from "./step-tokens";
 
 const ingredients = [["Cebolla larga", "cebollín"], ["Cebolla cabezona", "cebolla"], ["Tomate"], ["Pechuga de pollo", "pechuga"]];
 
@@ -37,5 +37,29 @@ describe("tokenizeStep", () => {
       { kind: "tool", text: "olla a presion", icon: "pot" },
       { kind: "tool", text: "bowl", icon: "rice-bowl" },
     ]);
+  });
+});
+
+describe("cook-mode token decisions", () => {
+  it("leaves ingredients plain while retaining unique ingredient matches for cards", () => {
+    const tokens = tokenizeStep("Agrega cebollín y tomate. Mezcla el tomate.", ingredients);
+    expect(stepIngredientIndexes(tokens)).toEqual([0, 2]);
+    expect(tokens.filter((token) => token.kind === "ingredient").map(stepTokenIcon)).toEqual([null, null, null]);
+    expect(tokens.map((token) => token.text).join("")).toBe("Agrega cebollín y tomate. Mezcla el tomate.");
+  });
+  it("keeps icons for tools, heat, temperature and tappable times", () => {
+    const tokens = tokenizeStep("En una sartén a fuego medio bajo por 7 minutos a 180 °C.", []);
+    expect(tokens.filter((token) => token.kind !== "text").map(stepTokenIcon)).toEqual(["pan", "fire", "timer", "thermometer"]);
+    expect(stepIngredientIndexes(tokens)).toEqual([]);
+  });
+  it.each([
+    ["5 a 7 minutos", 420],
+    ["7 a 5 minutos", 420],
+    ["5–7 min", 420],
+    ["1,5 a 2 horas", 7200],
+    ["20-30 segundos", 30],
+    ["2 o 3 min.", 180],
+  ])("uses the upper duration for %s", (text, seconds) => {
+    expect(tokenizeStep(text, [])).toEqual([{ kind: "time", text, seconds }]);
   });
 });
