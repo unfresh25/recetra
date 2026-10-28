@@ -5,7 +5,7 @@ import type { Adjustment } from "./types";
 import { addDays, mondayOf, todayInBogota, weekDays } from "./week";
 import type { PlacementWeek } from "./placement";
 
-/** Only existing plans for this week and next; no plan is created from recipe detail. */
+/** Both placement weeks are available, even before their first recipe is added. */
 export async function getPlacementWeeks(householdId: string, today: string): Promise<PlacementWeek[]> {
   "use cache: private";
   privateData();
@@ -17,9 +17,9 @@ export async function getPlacementWeeks(householdId: string, today: string): Pro
     .in("week_start", [monday, addDays(monday, 7)])
     .order("week_start");
   if (error) throw error;
-  return data.map((week) => ({
-    weekStart: week.week_start,
-    slots: week.plan_meals.map((meal) => ({ day: meal.day, mealType: meal.meal_type, title: meal.recipes?.title ?? null })),
+  return [monday, addDays(monday, 7)].map((weekStart) => ({
+    weekStart,
+    slots: (data.find((week) => week.week_start === weekStart)?.plan_meals ?? []).map((meal) => ({ day: meal.day, mealType: meal.meal_type, title: meal.recipes?.title ?? null })),
   }));
 }
 
@@ -106,15 +106,20 @@ export async function getWeekPlan(householdId: string, weekStart: string) {
   return { planId: plan.id, meals: views, members: members ?? [] };
 }
 
-/** Everything the Plan screen needs for the week containing `requestedDay` (today by default). */
+/** Only recorded past weeks and the two editable weeks can be selected. */
 export async function getPlanView(householdId: string, requestedDay: string | null) {
   "use cache: private";
   privateData();
   const today = todayInBogota();
-  const day = requestedDay ?? today;
-  const weekStart = mondayOf(day);
+  const monday = mondayOf(today);
+  const supabase = await createClient({ privateCache: true });
+  const { data: past, error } = await supabase.from("meal_plans").select("week_start")
+    .eq("household_id", householdId).gte("week_start", addDays(monday, -56)).lt("week_start", monday).order("week_start");
+  if (error) throw error;
+  const tabs = [...(past ?? []).map((plan) => plan.week_start), monday, addDays(monday, 7)];
+  const requestedWeek = requestedDay ? mondayOf(requestedDay) : monday;
+  const weekStart = tabs.includes(requestedWeek) ? requestedWeek : monday;
   const days = weekDays(weekStart);
-  const selected = days.includes(day) ? day : days[0]!;
   const week = await getWeekPlan(householdId, weekStart);
-  return { today, days, selected, week };
+  return { today, weekStart, days, week, tabs };
 }

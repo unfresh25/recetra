@@ -209,12 +209,25 @@ export function generatePlan(candidates: Candidate[], ctx: PlanContext): Planned
   const usedCounts = new Map<string, number>();
   const usedCore = new Set<string>();
   const plan: PlannedMeal[] = [];
+  const pinned = new Map((ctx.pinned ?? []).map((meal) => [`${meal.day}.${meal.mealType}`, meal]));
+  // Include choices later in the week too; never count a pinned meal twice.
+  for (const meal of pinned.values()) {
+    if (!meal.recipeId) continue;
+    usedCounts.set(meal.recipeId, (usedCounts.get(meal.recipeId) ?? 0) + 1);
+    const recipe = candidates.find((candidate) => candidate.id === meal.recipeId);
+    if (recipe) for (const id of coreIngredientIds(recipe)) usedCore.add(id);
+  }
   const totalSlots = DAYS * MEAL_ORDER.length;
   const exploreEvery = Math.max(1, Math.round(1 / EXPLORATION_SHARE));
 
   for (let d = 0; d < DAYS; d++) {
     const day = addDays(ctx.weekStart, d);
     for (const meal of MEAL_ORDER) {
+      const reserved = pinned.get(`${day}.${meal}`);
+      if (reserved) {
+        plan.push({ ...reserved, adjustments: [], emptyReason: null });
+        continue;
+      }
       const slotIndex = plan.length;
       const explore = slotIndex % exploreEvery === exploreEvery - 1 && slotIndex < totalSlots;
       const reasons = new Map<string, number>();

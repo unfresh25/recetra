@@ -1071,6 +1071,7 @@ export type Database = {
         Returns: string
       }
       can_read_recipe: { Args: { p_recipe_id: string }; Returns: boolean }
+      clear_plan_meal: { Args: { p_plan_meal_id: string }; Returns: undefined }
       create_household: {
         Args: {
           p_avatar_path?: string
@@ -1083,6 +1084,14 @@ export type Database = {
       create_invitation: { Args: never; Returns: string }
       current_household_id: { Args: never; Returns: string }
       current_member_id: { Args: never; Returns: string }
+      ensure_week_plan: {
+        Args: { p_servings: number; p_week_start: string }
+        Returns: string
+      }
+      fill_empty_plan_meals: {
+        Args: { p_meals: Json; p_week_start: string }
+        Returns: string
+      }
       get_invitation: {
         Args: { p_token: string }
         Returns: {
@@ -1106,11 +1115,10 @@ export type Database = {
       }
       recipe_like_counts: {
         Args: { p_recipe_ids: string[] }
-        Returns: { recipe_id: string; likes: number }[]
-      }
-      toggle_recipe_reaction: {
-        Args: { p_recipe_id: string; p_kind: Database["public"]["Enums"]["reaction_kind"] }
-        Returns: boolean
+        Returns: {
+          likes: number
+          recipe_id: string
+        }[]
       }
       remove_branch: { Args: { p_branch_id: string }; Returns: undefined }
       replace_household_stores: {
@@ -1159,6 +1167,13 @@ export type Database = {
           p_role: Database["public"]["Enums"]["ingredient_role"]
         }
         Returns: undefined
+      }
+      toggle_recipe_reaction: {
+        Args: {
+          p_kind: Database["public"]["Enums"]["reaction_kind"]
+          p_recipe_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {

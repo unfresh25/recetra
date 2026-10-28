@@ -13,10 +13,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/auth", () => ({ requireReadyMembership: mocks.requireReadyMembership }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.createClient }));
 vi.mock("@/lib/plan/data", () => ({ loadPlanInputs: mocks.loadPlanInputs }));
-vi.mock("@/lib/plan/engine", () => ({ generatePlan: mocks.generatePlan }));
+vi.mock("@/lib/plan/engine", () => ({ generatePlan: mocks.generatePlan, MEAL_ORDER: ["breakfast", "lunch", "dinner"] }));
 vi.mock("next/cache", () => ({ updateTag: mocks.updateTag }));
 
-import { generateWeek, refreshGeneratedWeek } from "@/lib/plan/actions";
+import { completeWeek, refreshGeneratedWeek } from "@/lib/plan/actions";
 import { DATA_TAG } from "@/lib/cache";
 
 function deferred() {
@@ -135,23 +135,82 @@ describe("generation refresh boundary", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     vi.useFakeTimers();
-    mocks.requireReadyMembership.mockResolvedValue({});
+    mocks.requireReadyMembership.mockResolvedValue({ household: { id: "household" } });
+    vi.setSystemTime(new Date("2026-10-21T12:00:00Z"));
     mocks.loadPlanInputs.mockResolvedValue({ candidates: [], ctx: {}, servings: 2 });
     mocks.generatePlan.mockReturnValue([]);
     mocks.rpc.mockResolvedValue({ error: null });
-    mocks.createClient.mockResolvedValue({ rpc: mocks.rpc });
+    const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }) };
+    mocks.createClient.mockResolvedValue({ rpc: mocks.rpc, from: vi.fn(() => query) });
   });
   afterEach(() => vi.useRealTimers());
 
   it("saves the generated week without invalidating the route that owns the progress view", async () => {
-    await expect(generateWeek("2026-10-25")).resolves.toEqual({});
-    expect(mocks.rpc).toHaveBeenCalledWith("save_week_plan", expect.objectContaining({ p_week_start: "2026-10-19" }));
+    await expect(completeWeek("2026-10-19")).resolves.toEqual({});
+    expect(mocks.rpc).toHaveBeenCalledWith("fill_empty_plan_meals", expect.objectContaining({ p_week_start: "2026-10-19" }));
     expect(mocks.updateTag).not.toHaveBeenCalled();
+  });
+
+  it.each(["2026-10-12", "2026-11-02", "2026-10-20", "bad-date"])("refuses an unavailable week before reading or writing: %s", async (week) => {
+    expect((await completeWeek(week)).error).toBeTruthy();
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it("pins placed and cooked slots, and submits only the remaining spaces", async () => {
+    const client = await mocks.createClient();
+    client.from().maybeSingle.mockResolvedValue({ data: { plan_meals: [
+      { day: "2026-10-19", meal_type: "lunch", recipe_id: "chosen", status: "planned" },
+      { day: "2026-10-20", meal_type: "lunch", recipe_id: "cooked", status: "cooked" },
+      { day: "2026-10-21", meal_type: "lunch", recipe_id: null, status: "cooked" },
+    ] }, error: null });
+    mocks.generatePlan.mockReturnValue([
+      { day: "2026-10-19", mealType: "breakfast", recipeId: "not-for-the-past", adjustments: [] },
+      { day: "2026-10-19", mealType: "lunch", recipeId: "chosen", adjustments: [] },
+      { day: "2026-10-20", mealType: "lunch", recipeId: "cooked", adjustments: [] },
+      { day: "2026-10-21", mealType: "lunch", recipeId: null, adjustments: [] },
+      { day: "2026-10-22", mealType: "lunch", recipeId: "suggested", adjustments: [] },
+      { day: "2026-10-23", mealType: "lunch", recipeId: null, adjustments: [], emptyReason: "Sin opciones" },
+    ]);
+    await expect(completeWeek("2026-10-19")).resolves.toEqual({});
+    const pinned = mocks.generatePlan.mock.calls[0]![1].pinned;
+    expect(pinned).toEqual(expect.arrayContaining([
+      { day: "2026-10-19", mealType: "lunch", recipeId: "chosen" },
+      { day: "2026-10-20", mealType: "lunch", recipeId: "cooked" },
+      { day: "2026-10-21", mealType: "lunch", recipeId: null },
+    ]));
+    expect(pinned.filter((meal: { day: string }) => meal.day < "2026-10-21")).toHaveLength(6);
+    expect(mocks.rpc).toHaveBeenCalledWith("fill_empty_plan_meals", { p_week_start: "2026-10-19", p_meals: [
+      { day: "2026-10-22", meal_type: "lunch", recipe_id: "suggested", servings: 2, adjustments: { removed: [] } },
+      { day: "2026-10-23", meal_type: "lunch", recipe_id: "", servings: 2, adjustments: { empty_reason: "Sin opciones" } },
+    ] });
+    expect(mocks.updateTag).not.toHaveBeenCalled();
+  });
+
+  it("leaves empty past days untouched while completing today's meals", async () => {
+    mocks.generatePlan.mockReturnValue([
+      { day: "2026-10-19", mealType: "breakfast", recipeId: "past-choice", adjustments: [] },
+      { day: "2026-10-21", mealType: "breakfast", recipeId: "today-choice", adjustments: [] },
+    ]);
+    await completeWeek("2026-10-19");
+    expect(mocks.generatePlan.mock.calls[0]![1].pinned).toContainEqual({ day: "2026-10-19", mealType: "breakfast", recipeId: null });
+    expect(mocks.rpc).toHaveBeenCalledWith("fill_empty_plan_meals", {
+      p_week_start: "2026-10-19",
+      p_meals: [{ day: "2026-10-21", meal_type: "breakfast", recipe_id: "today-choice", servings: 2, adjustments: { removed: [] } }],
+    });
+  });
+
+  it("does not complete a week when its existing choices cannot be read", async () => {
+    const client = await mocks.createClient();
+    client.from().maybeSingle.mockResolvedValue({ data: null, error: new Error("read failed") });
+    expect((await completeWeek("2026-10-19")).error).toBeTruthy();
+    expect(mocks.generatePlan).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it("invalidates and refreshes only after every step and the success message have been shown", async () => {
     const events = callbacks();
-    trackGeneration(generateWeek("2026-10-25"), { ...events, onComplete: refreshGeneratedWeek });
+    trackGeneration(completeWeek("2026-10-19"), { ...events, onComplete: refreshGeneratedWeek });
 
     await vi.advanceTimersByTimeAsync(500);
     expect(mocks.rpc).toHaveBeenCalledOnce();
@@ -168,7 +227,7 @@ describe("generation refresh boundary", () => {
   it("does not refresh when saving the plan fails", async () => {
     mocks.rpc.mockResolvedValue({ error: { message: "save failed" } });
     const events = callbacks();
-    trackGeneration(generateWeek("2026-10-25"), { ...events, onComplete: refreshGeneratedWeek });
+    trackGeneration(completeWeek("2026-10-19"), { ...events, onComplete: refreshGeneratedWeek });
 
     await vi.advanceTimersByTimeAsync(10_000);
 
@@ -188,7 +247,7 @@ describe("generation refresh boundary", () => {
   it("reports a refresh failure after pacing finishes", async () => {
     mocks.updateTag.mockImplementation(() => { throw new Error("refresh failed"); });
     const events = callbacks();
-    trackGeneration(generateWeek("2026-10-25"), { ...events, onComplete: refreshGeneratedWeek });
+    trackGeneration(completeWeek("2026-10-19"), { ...events, onComplete: refreshGeneratedWeek });
 
     await vi.advanceTimersByTimeAsync(3400);
 

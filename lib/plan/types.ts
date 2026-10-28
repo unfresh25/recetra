@@ -58,6 +58,8 @@ export type PlanContext = {
   /** Days since each recipe was last cooked (only recent ones). */
   daysSinceCooked: Record<string, number>;
   seed: number;
+  /** User choices and cooked slots are reserved before scoring any empty slots. */
+  pinned?: Pick<PlannedMeal, "day" | "mealType" | "recipeId">[];
 };
 
 export type Adjustment = {
