@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { RecipeCard } from "@/components/recipes/recipe-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Icon } from "@/components/ui/icon";
 import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { ScreenHeader } from "@/components/ui/screen-header";
 import { requireReadyMembership } from "@/lib/auth";
+import { parsePlanContext } from "@/lib/plan/search-context";
+import { dayLabel, dayOfMonth, todayInBogota } from "@/lib/plan/week";
 import { STYLE_OPTIONS } from "@/lib/onboarding/options";
 import { MEAL_TYPE_LABELS } from "@/lib/recipes/labels";
 import { searchRecipes } from "@/lib/recipes/queries";
@@ -26,8 +29,12 @@ export default function SearchPage({ searchParams }: PageProps<"/search">) {
 }
 
 async function SearchContent({ searchParams }: Pick<PageProps<"/search">, "searchParams">) {
-  const search = parseRecipeSearchParams(await searchParams);
   await requireReadyMembership();
+  await connection();
+  const today = todayInBogota();
+  const search = parseRecipeSearchParams(await searchParams, today);
+  const context = parsePlanContext(search.plan, today);
+  const withoutContext = recipeSearchParams({ ...search, plan: undefined });
   const filters: { key: keyof RecipeSearchFilters; label: string }[] = [];
   if (search.style) filters.push({ key: "style", label: STYLE_OPTIONS.find((option) => option.value === search.style)!.label });
   if (search.meal) filters.push({ key: "meal", label: MEAL_TYPE_LABELS[search.meal] });
@@ -36,6 +43,10 @@ async function SearchContent({ searchParams }: Pick<PageProps<"/search">, "searc
 
   return (
     <>
+      {context ? <div className="flex items-center justify-between gap-2 rounded-2xl bg-sunken py-2 pl-3 text-[12px]">
+        <p>Agregando {MEAL_TYPE_LABELS[context.mealType].toLowerCase()} · {dayLabel(context.day, "long").toLowerCase()} {dayOfMonth(context.day)}</p>
+        <Link href={`/search${withoutContext.size ? `?${withoutContext}` : ""}`} replace aria-label="Dejar de agregar al plan" className="btn-ghost flex size-9 shrink-0 items-center justify-center"><Icon name="close" size={16} /></Link>
+      </div> : null}
       <form action="/search" method="get" role="search" className="flex items-center gap-3">
         {[...recipeSearchParams({ ...search, q: "" })].map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
         <label htmlFor="recipe-search" className="sr-only">Nombre de receta</label>
@@ -51,7 +62,7 @@ async function SearchContent({ searchParams }: Pick<PageProps<"/search">, "searc
           })}
         </ul>
       ) : null}
-      {search.q || filters.length ? (
+      {search.q || filters.length || context ? (
         <Suspense key={recipeSearchParams(search).toString()} fallback={<PanLoaderScreen />}><SearchResults search={search} /></Suspense>
       ) : <p className="text-[15px] text-ink-muted">Busca por nombre de receta</p>}
     </>
@@ -59,10 +70,10 @@ async function SearchContent({ searchParams }: Pick<PageProps<"/search">, "searc
 }
 
 async function SearchResults({ search }: { search: RecipeSearch }) {
-  const { q, ...filters } = search;
+  const { q, plan, ...filters } = search;
   const recipes = await searchRecipes(q, filters);
   if (!recipes.length) {
     return <EmptyState illustration="empty-recipes" title={q ? `No encontramos recetas con “${q}”` : "No encontramos recetas con estos filtros"} description="Prueba con otro nombre o quita un filtro." />;
   }
-  return <ul className="divide-y divide-line" aria-label="Resultados de búsqueda">{recipes.map((recipe) => <li key={recipe.id}><RecipeCard recipe={recipe} /></li>)}</ul>;
+  return <ul className="divide-y divide-line" aria-label="Resultados de búsqueda">{recipes.map((recipe) => <li key={recipe.id}><RecipeCard recipe={recipe} plan={plan} /></li>)}</ul>;
 }

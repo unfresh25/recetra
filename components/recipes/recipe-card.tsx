@@ -7,7 +7,9 @@ import { RecipeThumb } from "./recipe-thumb";
 
 export function RecipeCard({
   recipe,
+  plan,
 }: {
+  plan?: string;
   recipe: {
     id: string;
     title: string;
@@ -20,7 +22,7 @@ export function RecipeCard({
   };
 }) {
   return (
-    <Link href={`/recipes/${recipe.id}`} className="link-tile flex items-center gap-4 py-3">
+    <Link href={`/recipes/${recipe.id}${plan ? `?plan=${encodeURIComponent(plan)}` : ""}`} className="link-tile flex items-center gap-4 py-3">
       <RecipeThumb path={recipe.coverPath} />
       <span className="min-w-0 flex-1">
         <span className="line-clamp-2 font-display text-[16px] font-bold leading-snug">{recipe.title}</span>

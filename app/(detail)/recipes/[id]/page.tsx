@@ -17,6 +17,7 @@ import { Icon } from "@/components/ui/icon";
 import { requireReadyMembership } from "@/lib/auth";
 import { householdPortions } from "@/lib/household/portions";
 import { getPlacementWeeks } from "@/lib/plan/queries";
+import { parsePlanContext } from "@/lib/plan/search-context";
 import { todayInBogota } from "@/lib/plan/week";
 import { recipeImageUrl } from "@/lib/recipes/images";
 import { MEAL_TYPE_LABELS, PLATFORM_LABELS } from "@/lib/recipes/labels";
@@ -94,7 +95,7 @@ async function RecipeContent({ params, searchParams }: Pick<PageProps<"/recipes/
               </a> : null}
             </header>
 
-            {recipe.status === "approved" ? <ActionPills recipeId={recipe.id} mealTypes={recipe.meal_types} weeks={weeks} today={today} /> : null}
+            {recipe.status === "approved" ? <ActionPills recipeId={recipe.id} mealTypes={recipe.meal_types} weeks={weeks} today={today} planContext={parsePlanContext(query.plan, today)} /> : null}
             {social.partner?.favorite ? <p className="-mt-3 flex items-center gap-2 text-sm text-ink-muted"><Icon name="heart" size={16} className="text-ink" /> A {social.partner.name} le encanta</p> : null}
 
             <div className="flex flex-col gap-3">

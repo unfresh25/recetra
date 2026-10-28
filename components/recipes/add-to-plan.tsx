@@ -1,7 +1,8 @@
 "use client";
 
 import { Drawer } from "@heroui/react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { PlanSearchContext } from "@/lib/plan/search-context";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -11,16 +12,18 @@ import type { MealType } from "@/lib/plan/types";
 import { mondayOf } from "@/lib/plan/week";
 import { MEAL_TYPES, MEAL_TYPE_LABELS } from "@/lib/recipes/labels";
 
-export function AddToPlan({ recipeId, mealTypes, weeks, today, onAdded }: {
+export function AddToPlan({ recipeId, mealTypes, weeks, today, onAdded, planContext }: {
+  planContext?: PlanSearchContext | null;
   recipeId: string;
   mealTypes: MealType[];
   weeks: PlacementWeek[];
   today: string;
   onAdded: (day: string) => void;
 }) {
-  const [open, setOpen] = useState(false);
-  const [weekStart, setWeekStart] = useState(weeks[0]?.weekStart ?? mondayOf(today));
-  const [selection, setSelection] = useState(() => defaultPlacement(weekStart, today, mealTypes));
+  const router = useRouter();
+  const [open, setOpen] = useState(Boolean(planContext));
+  const [weekStart, setWeekStart] = useState(planContext ? mondayOf(planContext.day) : weeks[0]?.weekStart ?? mondayOf(today));
+  const [selection, setSelection] = useState(() => planContext ?? defaultPlacement(weekStart, today, mealTypes));
   const [error, setError] = useState<string>();
   const [pending, startTransition] = useTransition();
   const week = weeks.find((entry) => entry.weekStart === weekStart) ?? weeks[0];
@@ -34,7 +37,8 @@ export function AddToPlan({ recipeId, mealTypes, weeks, today, onAdded }: {
         if (result.error) setError(result.error);
         else {
           setOpen(false);
-          onAdded(selection.day);
+          if (planContext) router.push(`/plan?week=${mondayOf(selection.day)}`);
+          else onAdded(selection.day);
         }
       } catch {
         setError("No pudimos agregar la receta al plan. Intenta de nuevo.");
@@ -73,15 +77,12 @@ export function AddToPlan({ recipeId, mealTypes, weeks, today, onAdded }: {
                   {MEAL_TYPES.map((mealType) => <Button key={mealType} size="sm" disabled={pending} variant={selection.mealType === mealType ? "primary" : "secondary"} aria-pressed={selection.mealType === mealType} onPress={() => { setSelection({ ...selection, mealType }); setError(undefined); }} className="border-line shadow-none">{MEAL_TYPE_LABELS[mealType]}</Button>)}
                 </div>
                 <p className="text-sm text-ink-muted" aria-live="polite">
-                  {selection.day === today ? "Hoy" : "En el plan"}: {slot ? slot.title ?? "Sin receta asignada" : "No hay una comida en este espacio"}
+                  En el plan: {slot?.title ?? "libre"}
                 </p>
-              </> : <div className="flex flex-col gap-3 py-3">
-                <p className="text-sm text-ink-muted">Aún no tienes plan esta semana</p>
-                <Link href="/plan" className="link-text font-display">Armar mi semana</Link>
-              </div>}
+              </> : null}
               {error ? <p role="alert" className="text-sm text-ink">{error}</p> : null}
             </Drawer.Body>
-            {week ? <Drawer.Footer><Button block size="md" loading={pending} disabled={!slot || selection.day < today} onPress={save} className="bg-ink text-white shadow-none">Agregar al plan</Button></Drawer.Footer> : null}
+            {week ? <Drawer.Footer><Button block size="md" loading={pending} disabled={selection.day < today} onPress={save} className="bg-ink text-white shadow-none">Agregar al plan</Button></Drawer.Footer> : null}
           </Drawer.Dialog>
         </Drawer.Content>
       </Drawer.Backdrop>

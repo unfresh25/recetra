@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
+import { Drawer } from "@heroui/react";
 import { Icon } from "@/components/ui/icon";
 import { getAlternatives, replaceMeal, type Alternative } from "@/lib/plan/actions";
 
@@ -14,24 +14,8 @@ const REASONS = [
   { value: "not_today", label: "Solo hoy no" },
 ] as const;
 
-export function ReplaceButton({ planMealId, title }: { planMealId: string; title: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={`Reemplazar ${title}`}
-        className="btn-ghost flex size-9 shrink-0 items-center justify-center text-ink-muted"
-      >
-        <Icon name="refresh" size={18} />
-      </button>
-      {open ? <ReplaceSheet planMealId={planMealId} title={title} onClose={() => setOpen(false)} /> : null}
-    </>
-  );
-}
-
-function ReplaceSheet({ planMealId, title, onClose }: { planMealId: string; title: string; onClose: () => void }) {
+export function ReplaceSheet({ planMealId, title, onClose }: { planMealId: string; title: string; onClose: () => void }) {
+  const loadVersion = useRef(0);
   const [reason, setReason] = useState<string | null>(null);
   const [options, setOptions] = useState<Alternative[] | null>(null);
   const [loading, startLoading] = useTransition();
@@ -40,41 +24,53 @@ function ReplaceSheet({ planMealId, title, onClose }: { planMealId: string; titl
 
   function load(next: string | null) {
     setReason(next);
-    startLoading(async () => setOptions(await getAlternatives(planMealId, next)));
+    setError(undefined);
+    const version = ++loadVersion.current;
+    startLoading(async () => {
+      try {
+        const result = await getAlternatives(planMealId, next);
+        if (version === loadVersion.current) setOptions(result);
+      } catch {
+        if (version === loadVersion.current) setError("No pudimos buscar opciones. Intenta de nuevo.");
+      }
+    });
   }
 
   function choose(recipeId: string) {
     setError(undefined);
     startSaving(async () => {
-      const result = await replaceMeal(planMealId, recipeId, reason);
-      if (result.error) setError(result.error);
-      else onClose();
+      try {
+        const result = await replaceMeal(planMealId, recipeId, reason);
+        if (result.error) setError(result.error);
+        else onClose();
+      } catch {
+        setError("No pudimos reemplazarla. Intenta de nuevo.");
+      }
     });
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-label="Reemplazar comida"
-        className="mx-auto max-h-[85dvh] w-full max-w-xl overflow-y-auto rounded-t-[28px] bg-canvas px-5 pt-3 pb-safe"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <span className="mx-auto mb-4 block h-1.5 w-10 rounded-full bg-line" />
-        <p className="font-display text-xl font-bold">Reemplazar</p>
-        <p className="mb-4 line-clamp-1 text-sm text-ink-muted">{title}</p>
-
+    <Drawer.Backdrop isOpen onOpenChange={(open) => { if (!open) onClose(); }} isDismissable={!saving} isKeyboardDismissDisabled={saving} className="[--focus:var(--color-ink)]">
+      <Drawer.Content placement="bottom">
+        <Drawer.Dialog aria-label="Reemplazar comida" className="mx-auto w-full max-w-xl border-t border-line bg-canvas px-5 pb-safe text-ink shadow-none [&_button:focus-visible]:outline-ink">
+          <Drawer.Handle />
+          {!saving ? <Drawer.CloseTrigger className="btn-ghost" aria-label="Cerrar"><Icon name="close" size={20} /></Drawer.CloseTrigger> : null}
+          <Drawer.Header>
+            <Drawer.Heading className="font-display text-[24px]">Reemplazar</Drawer.Heading>
+            <p className="line-clamp-2 text-sm text-ink-muted">{title}</p>
+          </Drawer.Header>
+          <Drawer.Body>
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">¿Por qué? (opcional)</p>
         <div className="mb-5 flex flex-wrap gap-2">
           {REASONS.map((r) => (
-            <Chip key={r.value} selected={reason === r.value} onClick={() => load(reason === r.value ? null : r.value)} className="h-9 px-3 text-sm">
+            <Button key={r.value} size="sm" disabled={saving} variant={reason === r.value ? "primary" : "secondary"} aria-pressed={reason === r.value} onPress={() => load(reason === r.value ? null : r.value)} className="h-9 border-line px-3 text-sm">
               {r.label}
-            </Chip>
+            </Button>
           ))}
         </div>
 
         {options === null && !loading ? (
-          <Button variant="secondary" size="md" block onClick={() => load(reason)}>
+          <Button variant="secondary" size="md" block onPress={() => load(reason)}>
             Ver opciones
           </Button>
         ) : null}
@@ -97,7 +93,7 @@ function ReplaceSheet({ planMealId, title, onClose }: { planMealId: string; titl
                         {o.adjustments.length ? ` · sin ${o.adjustments.map((a) => a.ingredientName.toLowerCase()).join(", ")}` : ""}
                       </span>
                     </span>
-                    <Icon name="arrow-right" size={18} className="text-brand" />
+                    <Icon name="arrow-right" size={18} className="text-ink" />
                   </button>
                 </li>
               ))}
@@ -106,11 +102,11 @@ function ReplaceSheet({ planMealId, title, onClose }: { planMealId: string; titl
             <p className="py-6 text-center text-sm text-ink-muted">No hay otras recetas aptas para este momento. Importa más recetas.</p>
           )
         ) : null}
-        {error ? <p role="alert" className="mt-3 text-sm text-brand">{error}</p> : null}
-        <button type="button" onClick={onClose} className="btn-ghost mt-3 h-12 w-full font-semibold text-ink-muted">
-          Cancelar
-        </button>
-      </div>
-    </div>
+        {error ? <p role="alert" className="mt-3 text-sm text-warning">{error}</p> : null}
+          </Drawer.Body>
+          <Drawer.Footer><Button variant="ghost" size="md" block disabled={saving} onPress={onClose}>Cancelar</Button></Drawer.Footer>
+        </Drawer.Dialog>
+      </Drawer.Content>
+    </Drawer.Backdrop>
   );
 }

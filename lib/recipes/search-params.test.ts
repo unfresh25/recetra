@@ -19,4 +19,14 @@ describe("parseRecipeSearchParams", () => {
     params.delete("style");
     expect(parseRecipeSearchParams(Object.fromEntries(params))).toEqual({ q: "pollo & arroz", meal: "dinner", max: 20, video: true });
   });
+  it("keeps validated planning context across searches and filter changes", () => {
+    const search = parseRecipeSearchParams({ plan: "2026-10-29.lunch", meal: "lunch", q: "arroz" }, "2026-10-29");
+    const params = recipeSearchParams(search);
+    params.delete("meal");
+    expect(parseRecipeSearchParams(Object.fromEntries(params), "2026-10-29")).toEqual({ q: "arroz", plan: "2026-10-29.lunch" });
+  });
+  it("drops stale and malformed planning context", () => {
+    expect(parseRecipeSearchParams({ plan: "2026-10-28.lunch" }, "2026-10-29")).toEqual({ q: "" });
+    expect(parseRecipeSearchParams({ plan: "2026-10-29.snack" }, "2026-10-29")).toEqual({ q: "" });
+  });
 });

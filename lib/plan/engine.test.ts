@@ -133,6 +133,65 @@ describe("checkEligibility", () => {
 describe("generatePlan", () => {
   const catalog = [pericos, sancocho, arrozCamarones, ajiaco, cilantroSalsa, wrap, lasagna];
 
+  it("keeps the seeded result for a week without pinned slots", () => {
+    expect(generatePlan(catalog, ctx()).map((meal) => meal.recipeId)).toMatchInlineSnapshot(`
+      [
+        "pericos",
+        "ajiaco",
+        "wrap",
+        "pericos",
+        "sancocho",
+        "wrap",
+        "pericos",
+        "ajiaco",
+        "wrap",
+        "pericos",
+        "sancocho",
+        "wrap",
+        "pericos",
+        "ajiaco",
+        "wrap",
+        "pericos",
+        "sancocho",
+        "wrap",
+        "pericos",
+        "ajiaco",
+        "wrap",
+      ]
+    `);
+    expect(generatePlan(catalog, { ...ctx(), pinned: [] })).toEqual(generatePlan(catalog, ctx()));
+  });
+
+  it("keeps all pinned choices, including recipes no longer in the eligible catalog", () => {
+    const pinned = [
+      { day: "2026-10-19", mealType: "lunch" as const, recipeId: "retired-recipe" },
+      { day: "2026-10-25", mealType: "dinner" as const, recipeId: sancocho.id },
+      { day: "2026-10-20", mealType: "breakfast" as const, recipeId: null },
+    ];
+    const plan = generatePlan(catalog, ctx({ pinned }));
+    expect(plan).toHaveLength(21);
+    for (const meal of pinned) expect(plan.find((slot) => slot.day === meal.day && slot.mealType === meal.mealType)).toMatchObject(meal);
+  });
+
+  it("counts a choice at the end of the week toward repetition before filling Monday", () => {
+    const a = recipe("a", ["breakfast"], []);
+    const b = recipe("b", ["breakfast"], []);
+    const plan = generatePlan([a, b], ctx({ pinned: [{ day: "2026-10-25", mealType: "breakfast", recipeId: a.id }] }));
+    expect(plan[0]!.recipeId).toBe(b.id);
+    expect(plan[18]!.recipeId).toBe(a.id);
+  });
+
+  it("reuses core ingredients from future pinned recipes when scoring empty slots", () => {
+    const core = ["tomate", "papa", "cebolla", "zanahoria"].map((name) => ing(name, "produce"));
+    const unrelated = recipe("unrelated", ["breakfast"], []);
+    const shared = recipe("shared", ["breakfast"], core);
+    const chosen = recipe("chosen", ["dinner"], core);
+    const candidates = [unrelated, shared, chosen];
+    expect(generatePlan(candidates, ctx())[0]!.recipeId).toBe(unrelated.id);
+    expect(generatePlan(candidates, ctx({ pinned: [{ day: "2026-10-25", mealType: "dinner", recipeId: chosen.id }] }))[0]!.recipeId).toBe(shared.id);
+  });
+
+
   it("fills 21 slots, each with a recipe of the right meal type", () => {
     const plan = generatePlan(catalog, ctx());
     expect(plan).toHaveLength(21);

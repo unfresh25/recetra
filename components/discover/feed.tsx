@@ -75,8 +75,8 @@ function TodayPlan({ meals }: { meals: DiscoverData["todayPlan"] }) {
         </ul>
       ) : (
         <div className="flex flex-wrap items-baseline justify-between gap-2 text-[13px]">
-          <p className="text-ink-muted">Aún no tienes plan esta semana</p>
-          <Link href="/plan" className="link-text">Armar mi semana</Link>
+          <p className="text-ink-muted">Tu semana está en blanco</p>
+          <Link href="/plan" className="link-text">Ir al plan</Link>
         </div>
       )}
     </section>

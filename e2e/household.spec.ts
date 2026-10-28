@@ -24,7 +24,7 @@ test("a couple creates a household and joins it through an invitation", async ({
   await householdSetup(ownerPage);
   await personalSetup(ownerPage, { dislike: "Cilantro" });
   await expect(ownerPage).toHaveURL(/\/plan$/);
-  await expect(ownerPage.getByText("Casa Borja").first()).toBeVisible({ timeout: 20_000 });
+  await expect(ownerPage.getByRole("heading", { name: "Tu semana está en blanco" })).toBeVisible();
   await ownerPage.screenshot({ path: "e2e/__screens__/04-plan.png" });
 
   await ownerPage.getByRole("link", { name: "Perfil" }).click();
@@ -48,7 +48,7 @@ test("a couple creates a household and joins it through an invitation", async ({
   await preferencesSetup(partnerPage);
   await personalSetup(partnerPage, { allergy: /Mariscos/ });
   await expect(partnerPage).toHaveURL(/\/plan$/);
-  await expect(partnerPage.getByText("Casa Borja").first()).toBeVisible({ timeout: 20_000 });
+  await expect(partnerPage.getByRole("heading", { name: "Tu semana está en blanco" })).toBeVisible();
 
   // The invitation is single-use.
   const intruder = await (await browser.newContext()).newPage();

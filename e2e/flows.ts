@@ -62,6 +62,14 @@ export async function personalSetup(page: Page, opts: { allergy?: RegExp; dislik
   await expect(page).toHaveURL(/\/plan$/);
 }
 
+/** A first visit leaves the week empty; generation is always an explicit action. */
+export async function completePlanWeek(page: Page, expectedPlanned: number, emptyWeek = true) {
+  await page.getByRole("button", { name: emptyWeek ? "Completar semana automáticamente" : "Completar semana", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Completando semana" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Completando semana" })).toBeHidden({ timeout: 20_000 });
+  await expect(page.getByText(`${expectedPlanned} de 21 comidas`, { exact: true })).toBeVisible();
+}
+
 export async function signIn(page: Page, email: string) {
   await page.getByLabel("Correo electrónico").fill(email);
   await page.getByRole("button", { name: "Continuar" }).click();

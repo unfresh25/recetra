@@ -5,8 +5,9 @@ import { createContext, use, useOptimistic, useState, useTransition, type ReactN
 import { Button } from "@/components/ui/button";
 import { AddToPlan } from "./add-to-plan";
 import type { PlacementWeek } from "@/lib/plan/placement";
+import type { PlanSearchContext } from "@/lib/plan/search-context";
 import type { MealType } from "@/lib/plan/types";
-import { dayLabel, dayOfMonth } from "@/lib/plan/week";
+import { dayLabel, dayOfMonth, mondayOf } from "@/lib/plan/week";
 import { Icon } from "@/components/ui/icon";
 import { toggleReaction } from "@/lib/plan/actions";
 import { LikePill } from "./like-button";
@@ -56,14 +57,14 @@ export function FavoriteButton() {
 }
 
 /** Reactions share the hero's optimistic state; plan feedback stays outside the scroll row. */
-export function ActionPills({ recipeId, mealTypes, weeks, today }: { recipeId: string; mealTypes: MealType[]; weeks: PlacementWeek[]; today: string }) {
+export function ActionPills({ recipeId, mealTypes, weeks, today, planContext }: { planContext?: PlanSearchContext | null; recipeId: string; mealTypes: MealType[]; weeks: PlacementWeek[]; today: string }) {
   const { state, toggle, pending } = useReactions();
   const [addedDay, setAddedDay] = useState<string>();
   const pillClass = "h-[38px] shrink-0 gap-2 border-line px-4 text-[13.5px] shadow-none";
   return (
     <div className="flex flex-col gap-3">
       <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <AddToPlan recipeId={recipeId} mealTypes={mealTypes} weeks={weeks} today={today} onAdded={setAddedDay} />
+        <AddToPlan recipeId={recipeId} mealTypes={mealTypes} weeks={weeks} today={today} planContext={planContext} onAdded={setAddedDay} />
         <Link href="/ask" className="btn-outline inline-flex h-[38px] shrink-0 items-center gap-2 rounded-full border border-line px-4 font-display text-[13.5px]">
           <Icon name="chef-hat" size={18} /> Preguntar
         </Link>
@@ -74,7 +75,7 @@ export function ActionPills({ recipeId, mealTypes, weeks, today }: { recipeId: s
           <Icon name="ban" size={18} /> {state.veto ? "Vetada" : "Vetar"}
         </Button>
       </div>
-      {addedDay ? <p role="status" className="text-sm text-ink">Agregada al plan del {dayLabel(addedDay, "long").toLowerCase()} {dayOfMonth(addedDay)}. <Link href={`/plan?day=${addedDay}`} className="link-text font-semibold">Ver plan</Link></p> : null}
+      {addedDay ? <p role="status" className="text-sm text-ink">Agregada al plan del {dayLabel(addedDay, "long").toLowerCase()} {dayOfMonth(addedDay)}. <Link href={`/plan?week=${mondayOf(addedDay)}`} className="link-text font-semibold">Ver plan</Link></p> : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { mondayOf, todayInBogota, weekDays } from "../../lib/plan/week";
 import { seedCatalog, seedStorePrices } from "../db";
-import { createHousehold, householdSetup, personalSetup, signIn } from "../flows";
+import { completePlanWeek, createHousehold, householdSetup, personalSetup, signIn } from "../flows";
 
 // Needs the production build: the service worker only registers there.
 test("the shopping list opens without signal", async ({ page, context }) => {
@@ -16,7 +17,9 @@ test("the shopping list opens without signal", async ({ page, context }) => {
   await createHousehold(page, "Jorge", "Casa Offline");
   await householdSetup(page);
   await personalSetup(page, {});
-  await expect(page.getByRole("heading", { name: /Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo/ })).toBeVisible({ timeout: 20_000 });
+  const today = todayInBogota();
+  const expectedPlanned = weekDays(mondayOf(today)).filter((day) => day >= today).length * 3;
+  await completePlanWeek(page, expectedPlanned);
   await page.getByRole("link", { name: "Lista de compras", exact: true }).click();
   await expect(page.getByRole("button", { name: /Arroz blanco/ })).toBeVisible();
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, { timeout: 15_000 }).catch(() => page.reload());
