@@ -1,4 +1,38 @@
-import type { BuyUnit, IngredientUnits } from "./units";
+import type { Adjustment } from "@/lib/plan/types";
+import { toBuyAmount, type BuyUnit, type IngredientUnits } from "./units";
+
+export type ShoppingSource = {
+  planMealId: string;
+  recipeId: string;
+  title: string;
+  day: string;
+  mealType: "breakfast" | "lunch" | "dinner";
+  coverPath: string | null;
+  amount: number | null;
+  unit: BuyUnit;
+};
+
+export type ShoppingIngredient = IngredientUnits & {
+  id: string;
+  name: string;
+  category: string;
+  pantry_staple: boolean;
+};
+
+export type ShoppingMeal = {
+  id: string;
+  day: string;
+  meal_type: ShoppingSource["mealType"];
+  servings: number;
+  adjustments: { removed?: Adjustment[] } | null;
+  recipes: {
+    id: string;
+    title: string;
+    servings: number;
+    source_image_path: string | null;
+    recipe_ingredients: { ingredient_id: string; quantity: number | null; unit: string | null; ingredients: ShoppingIngredient | null }[];
+  } | null;
+};
 
 /** Pure shopping math: what to buy for the week, where, and what it costs. */
 export type Need = {
@@ -11,7 +45,43 @@ export type Need = {
   unit: BuyUnit;
   units: IngredientUnits;
   recipes: string[];
+  sources: ShoppingSource[];
 };
+
+/** Aggregate after adjustments, preserving each meal's scaled contribution in purchase units. */
+export function aggregateNeeds(meals: ShoppingMeal[], substitutes = new Map<string, ShoppingIngredient>(), covers = new Map<string, string | null>()): Need[] {
+  const needs = new Map<string, Need>();
+  for (const meal of meals) {
+    const recipe = meal.recipes;
+    if (!recipe) continue;
+    const scale = meal.servings / Math.max(recipe.servings, 1);
+    const removed = new Map((meal.adjustments?.removed ?? []).map((a) => [a.ingredientId, a]));
+    for (const line of recipe.recipe_ingredients) {
+      const adjustment = removed.get(line.ingredient_id);
+      const ingredient = adjustment ? (adjustment.substituteName ? substitutes.get(adjustment.substituteName) : null) : line.ingredients;
+      if (!ingredient) continue;
+      const amount = toBuyAmount(line.quantity == null ? null : line.quantity * scale, line.unit, ingredient);
+      const unit = ingredient.purchase_unit ?? ingredient.base_unit;
+      const need = needs.get(ingredient.id) ?? {
+        ingredientId: ingredient.id, name: ingredient.name, category: ingredient.category, staple: ingredient.pantry_staple,
+        amount: null, unit, units: ingredient, recipes: [], sources: [],
+      };
+      if (amount) need.amount = (need.amount ?? 0) + amount.amount;
+      if (!need.recipes.includes(recipe.title)) need.recipes.push(recipe.title);
+      const source = need.sources.find((s) => s.planMealId === meal.id);
+      if (source) {
+        if (amount) source.amount = (source.amount ?? 0) + amount.amount;
+      } else {
+        need.sources.push({
+          planMealId: meal.id, recipeId: recipe.id, title: recipe.title, day: meal.day, mealType: meal.meal_type,
+          coverPath: covers.get(recipe.id) ?? recipe.source_image_path, amount: amount?.amount ?? null, unit,
+        });
+      }
+      needs.set(ingredient.id, need);
+    }
+  }
+  return [...needs.values()];
+}
 
 export type Offer = {
   storeId: string;

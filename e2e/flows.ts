@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { readOtp } from "./mailpit";
 
 export async function hideDevOverlay(page: Page) {
@@ -13,10 +13,14 @@ export async function hideDevOverlay(page: Page) {
 
 const next = (page: Page, name = "Continuar") => page.getByRole("button", { name, exact: true }).click();
 
+export async function toggleCheckbox(checkbox: Locator) {
+  // HeroUI hides the input; click its wrapping label, preserving first()/nth() selection.
+  await checkbox.locator("xpath=ancestor::label[1]").click();
+}
+
 async function selectOption(page: Page, name: string | RegExp) {
   const checkbox = page.getByRole("checkbox", { name, exact: true });
-  // HeroUI hides the input; its wrapping label is the visible pointer target.
-  await page.locator("label").filter({ has: checkbox }).click();
+  await toggleCheckbox(checkbox);
   await expect(checkbox).toBeChecked();
 }
 

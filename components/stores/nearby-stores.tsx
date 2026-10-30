@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Chip } from "@/components/ui/chip";
 import { Icon } from "@/components/ui/icon";
 import { PanLoaderScreen } from "@/components/ui/pan-loader";
 import { StoreLogo } from "@/components/ui/store-logo";
@@ -73,18 +72,21 @@ export function NearbyStores({ stores, branches }: { stores: NearbyStore[]; bran
       <BranchMap branches={visible} stores={byId} here={here} onSelect={setSelected} />
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button size="sm" variant="secondary" onClick={locate} loading={locating}>
+        <Button size="sm" variant="secondary" onPress={locate} loading={locating}>
           <Icon name="location" size={16} /> {here ? "Actualizar mi ubicación" : "Usar mi ubicación"}
         </Button>
-        {locationError ? <span className="text-sm text-brand">{locationError}</span> : null}
+        {locationError ? <span className="text-sm text-warning">{locationError}</span> : null}
       </div>
 
       <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1" aria-label="Filtrar por tienda">
         {stores.map((s) => (
-          <Chip
+          <Button
+            size="sm"
+            className="shrink-0"
+            variant={!hidden.has(s.id) ? "primary" : "secondary"}
+            aria-pressed={!hidden.has(s.id)}
             key={s.id}
-            selected={!hidden.has(s.id)}
-            onClick={() =>
+            onPress={() =>
               setHidden((h) => {
                 const next = new Set(h);
                 if (next.has(s.id)) next.delete(s.id);
@@ -92,10 +94,9 @@ export function NearbyStores({ stores, branches }: { stores: NearbyStore[]; bran
                 return next;
               })
             }
-            leading={<StoreLogo store={s} size={18} />}
           >
-            {s.name}
-          </Chip>
+            <StoreLogo store={s} size={18} />{s.name}
+          </Button>
         ))}
       </div>
 
@@ -103,7 +104,7 @@ export function NearbyStores({ stores, branches }: { stores: NearbyStore[]; bran
         {list.map((b) => {
           const store = byId.get(b.storeId)!;
           return (
-            <li key={b.id} className={cn("flex items-center gap-3 py-3", selected === b.id && "-mx-3 rounded-2xl bg-surface px-3")}>
+            <li key={b.id} className={cn("flex items-center gap-3 py-3", selected === b.id && "-mx-3 rounded-2xl bg-sunken px-3")}>
               <StoreLogo store={store} size={36} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{b.name}</span>
@@ -119,7 +120,7 @@ export function NearbyStores({ stores, branches }: { stores: NearbyStore[]; bran
                 }}
                 target="_blank"
                 rel="noopener"
-                className="btn-ghost flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3 font-display text-sm font-bold text-brand"
+                className="btn-outline flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-line px-3 font-display text-sm text-ink"
               >
                 <Icon name="route" size={18} /> Ruta
               </a>
@@ -169,7 +170,7 @@ function AddBranch({ stores, here, onLocate }: { stores: NearbyStore[]; here: Po
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="btn-ghost flex items-center gap-2 self-start pb-4 font-semibold text-brand">
+      <button type="button" onClick={() => setOpen(true)} className="btn-ghost flex items-center gap-2 self-start pb-4 font-medium text-ink">
         <Icon name="add" size={18} /> Agregar mi sucursal
       </button>
     );
@@ -193,9 +194,10 @@ function AddBranch({ stores, here, onLocate }: { stores: NearbyStore[]; here: Po
       <p className="text-sm text-ink-muted">Párate en la tienda o cerca: guardamos tu ubicación actual como su dirección.</p>
       <div className="flex flex-wrap gap-2">
         {stores.map((s) => (
-          <Chip key={s.id} selected={storeId === s.id} onClick={() => setStoreId(s.id)} leading={<StoreLogo store={s} size={18} />}>
-            {s.name}
-          </Chip>
+          <Button key={s.id} size="sm" variant={storeId === s.id ? "primary" : "secondary"} aria-pressed={storeId === s.id} onPress={() => setStoreId(s.id)}>
+            <StoreLogo store={s} size={18} />
+            <StoreLogo store={s} size={18} />{s.name}
+          </Button>
         ))}
       </div>
       <TextField label="Nombre" name="name" placeholder="Ara de la 84" required error={error} />
