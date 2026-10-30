@@ -51,7 +51,7 @@ export default function BranchMap({
       {branches.map((b) => (
         <Marker key={b.id} position={b} icon={pin(stores.get(b.storeId)!)} eventHandlers={{ click: () => onSelect(b.id) }} title={b.name} />
       ))}
-      {here ? <CircleMarker center={here} radius={8} pathOptions={{ color: "#fff", weight: 3, fillColor: "#e8202a", fillOpacity: 1 }} /> : null}
+      {here ? <CircleMarker center={here} radius={8} pathOptions={{ color: "#fff", weight: 3, fillColor: "#18181b", fillOpacity: 1 }} /> : null}
       <Fit points={focus} />
     </MapContainer>
   );

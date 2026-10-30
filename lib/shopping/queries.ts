@@ -1,12 +1,10 @@
 import "server-only";
 import { privateData } from "@/lib/cache";
-import type { Adjustment } from "@/lib/plan/types";
 import { mondayOf, todayInBogota } from "@/lib/plan/week";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
-import { planShopping, type Need, type Offer } from "./list";
-import { toBuyAmount, type IngredientUnits } from "./units";
+import { aggregateNeeds, planShopping, type Offer, type ShoppingIngredient, type ShoppingMeal } from "./list";
 
 export type PendingMatch = { matchId: string; ingredientId: string; ingredientName: string; offer: Offer };
 
@@ -37,63 +35,33 @@ export async function buildShoppingPlan(supabase: SupabaseClient<Database>, hous
   const allStores = (storeRows ?? []).flatMap((r) => (r.stores ? [r.stores] : [])).sort((a, b) => a.sort_order - b.sort_order);
   const toView = (s: (typeof allStores)[number]): ShoppingStore => ({ id: s.id, slug: s.slug, name: s.name, logo_url: s.logo_url, brand_color: s.brand_color });
   const isPriced = (s: (typeof allStores)[number]) => PRICED_SOURCES.has(s.source) && !UNPRICED_SLUGS.has(s.slug);
+  const householdStores = allStores.map(toView);
   const stores = allStores.filter(isPriced).map(toView);
   const unpricedStores = allStores.filter((s) => !isPriced(s)).map((s) => s.name);
-  if (!plan) return { hasPlan: false as const, stores, unpricedStores };
+  if (!plan) return { hasPlan: false as const, stores, householdStores, unpricedStores };
 
   const { data: meals } = await supabase
     .from("plan_meals")
-    .select("servings, adjustments, recipes (id, title, servings, recipe_ingredients (ingredient_id, quantity, unit, ingredients (" + INGREDIENT_FIELDS + ")))")
+    .select("id, day, meal_type, servings, adjustments, recipes (id, title, servings, source_image_path, recipe_ingredients (ingredient_id, quantity, unit, ingredients (" + INGREDIENT_FIELDS + ")))")
     .eq("meal_plan_id", plan.id)
     .eq("status", "planned")
     .gte("day", today)
     .not("recipe_id", "is", null);
 
-  type IngredientRow = { id: string; name: string; category: string; base_unit: "g" | "ml" | "unit"; purchase_unit: "g" | "ml" | "unit" | null; unit_weight_g: number | null; density_g_ml: number | null; pantry_staple: boolean };
-  type MealRow = {
-    servings: number;
-    adjustments: { removed?: Adjustment[] } | null;
-    recipes: { id: string; title: string; servings: number; recipe_ingredients: { ingredient_id: string; quantity: number | null; unit: string | null; ingredients: IngredientRow | null }[] } | null;
-  };
-  const rows = (meals ?? []) as unknown as MealRow[];
+  const rows = (meals ?? []) as unknown as ShoppingMeal[];
 
   // Substitutes are stored by name ("Perejil"); resolve them to catalog ingredients.
   const substituteNames = [...new Set(rows.flatMap((m) => (m.adjustments?.removed ?? []).flatMap((a) => (a.substituteName ? [a.substituteName] : []))))];
   const { data: substitutes } = substituteNames.length
     ? await supabase.from("ingredients").select(INGREDIENT_FIELDS).in("name", substituteNames)
-    : { data: [] as IngredientRow[] };
-  const substituteByName = new Map(((substitutes ?? []) as IngredientRow[]).map((s) => [s.name, s]));
+    : { data: [] as ShoppingIngredient[] };
+  const substituteByName = new Map(((substitutes ?? []) as ShoppingIngredient[]).map((s) => [s.name, s]));
 
-  const needs = new Map<string, Need & { measured: boolean }>();
-  function add(ingredient: IngredientRow, quantity: number | null, unit: string | null, scale: number, recipe: string) {
-    const units: IngredientUnits = ingredient;
-    const amount = quantity != null ? toBuyAmount(quantity * scale, unit, units) : null;
-    const target = ingredient.purchase_unit ?? ingredient.base_unit;
-    const need = needs.get(ingredient.id) ?? {
-      ingredientId: ingredient.id, name: ingredient.name, category: ingredient.category, staple: ingredient.pantry_staple,
-      amount: null, unit: target, units, recipes: [], measured: false,
-    };
-    if (amount) {
-      need.amount = (need.amount ?? 0) + amount.amount;
-      need.measured = true;
-    }
-    if (!need.recipes.includes(recipe)) need.recipes.push(recipe);
-    needs.set(ingredient.id, need);
-  }
-
-  for (const meal of rows) {
-    const recipe = meal.recipes;
-    if (!recipe) continue;
-    const scale = meal.servings / Math.max(recipe.servings, 1);
-    const removed = new Map((meal.adjustments?.removed ?? []).map((a) => [a.ingredientId, a]));
-    for (const line of recipe.recipe_ingredients) {
-      if (!line.ingredients) continue;
-      const adjustment = removed.get(line.ingredient_id);
-      if (!adjustment) add(line.ingredients, line.quantity, line.unit, scale, recipe.title);
-      else if (adjustment.substituteName && substituteByName.has(adjustment.substituteName))
-        add(substituteByName.get(adjustment.substituteName)!, line.quantity, line.unit, scale, recipe.title);
-    }
-  }
+  const { data: overrides } = await supabase.from("household_recipe_overrides")
+    .select("recipe_id, cover_image_path").eq("household_id", householdId);
+  const covers = new Map((overrides ?? []).map((o) => [o.recipe_id, o.cover_image_path]));
+  const list = aggregateNeeds(rows, substituteByName, covers);
+  const needs = new Map(list.map((need) => [need.ingredientId, need]));
 
   const ingredientIds = [...needs.keys()];
   const storeIds = stores.map((s) => s.id);
@@ -132,11 +100,11 @@ export async function buildShoppingPlan(supabase: SupabaseClient<Database>, hous
   }
 
   const pinned = new Map((pinnedRows ?? []).map((p) => [p.ingredient_id, p.brand]));
-  const list = [...needs.values()].map(({ measured, ...need }) => ({ ...need, amount: measured ? need.amount : null }));
   const staples = new Set(list.filter((n) => n.staple).map((n) => n.ingredientId));
   return {
     hasPlan: true as const,
     stores,
+    householdStores,
     unpricedStores,
     pending: pending.filter((p) => !staples.has(p.ingredientId)),
     ...planShopping(list, offers, storeIds, pinned),

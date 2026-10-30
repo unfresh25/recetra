@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { planShopping, type Need, type Offer } from "./list";
+import { aggregateNeeds, planShopping, type Need, type Offer, type ShoppingIngredient, type ShoppingMeal } from "./list";
 
 const units = { base_unit: "g" as const, purchase_unit: "g" as const, unit_weight_g: null, density_g_ml: null };
 const need = (id: string, amount: number | null, extra: Partial<Need> = {}): Need => ({
-  ingredientId: id, name: id, category: "grains", staple: false, amount, unit: "g", units, recipes: ["R"], ...extra,
+  ingredientId: id, name: id, category: "grains", staple: false, amount, unit: "g", units, recipes: ["R"], sources: [], ...extra,
 });
 const offer = (storeId: string, productId: string, packageQty: number, priceCop: number, brand: string | null = null): Offer => ({
   storeId, productId, name: productId, brand, packageQty, packageUnit: "g", priceCop, capturedAt: "2026-10-17", url: null,
@@ -71,5 +71,59 @@ describe("planShopping", () => {
       ["d1"],
     );
     expect(plan.items[0]!.picks.d1).toMatchObject({ packages: 1, costCop: 4000 });
+  });
+});
+
+const ingredient = (id: string, extra: Partial<ShoppingIngredient> = {}): ShoppingIngredient => ({
+  ...units, id, name: id, category: "grains", pantry_staple: false, ...extra,
+});
+const meal = (id: string, extra: Partial<ShoppingMeal> = {}): ShoppingMeal => ({
+  id, day: "2026-10-28", meal_type: "lunch", servings: 2, adjustments: null,
+  recipes: { id: "recipe-1", title: "Arroz con pollo", servings: 4, source_image_path: "original.jpg", recipe_ingredients: [
+    { ingredient_id: "rice", quantity: 600, unit: "g", ingredients: ingredient("rice") },
+  ] }, ...extra,
+});
+
+describe("aggregateNeeds sources", () => {
+  it("keeps repeated recipes as separate meals and scales each contribution", () => {
+    const needs = aggregateNeeds([meal("wed"), meal("thu", { day: "2026-10-29", servings: 4, meal_type: "dinner" })]);
+    expect(needs).toHaveLength(1);
+    expect(needs[0]).toMatchObject({ amount: 900, unit: "g", recipes: ["Arroz con pollo"], sources: [
+      { planMealId: "wed", recipeId: "recipe-1", title: "Arroz con pollo", day: "2026-10-28", mealType: "lunch", coverPath: "original.jpg", amount: 300, unit: "g" },
+      { planMealId: "thu", recipeId: "recipe-1", day: "2026-10-29", mealType: "dinner", amount: 600, unit: "g" },
+    ] });
+    expect(planShopping(needs, new Map(), ["d1"]).items[0]!.sources).toEqual(needs[0]!.sources);
+  });
+
+  it("removes adjusted ingredients and attributes substitutions to the same meal", () => {
+    const original = meal("wed");
+    original.recipes!.recipe_ingredients.push({ ingredient_id: "salt", quantity: 10, unit: "g", ingredients: ingredient("salt", { pantry_staple: true }) });
+    original.adjustments = { removed: [{ ingredientId: "rice", ingredientName: "Arroz", substituteName: "Quinua", memberNames: [] }, { ingredientId: "salt", ingredientName: "Sal", substituteName: null, memberNames: [] }] };
+    const needs = aggregateNeeds([original], new Map([["Quinua", ingredient("quinoa")]]));
+    expect(needs.map((n) => n.ingredientId)).toEqual(["quinoa"]);
+    expect(needs[0]!.sources).toMatchObject([{ planMealId: "wed", amount: 300, unit: "g" }]);
+    expect(aggregateNeeds([original])).toEqual([]); // An unresolved substitute never reintroduces the removed ingredient.
+  });
+
+  it("merges duplicate lines within a meal, converts units and uses household covers", () => {
+    const original = meal("wed");
+    original.recipes!.recipe_ingredients = [
+      { ingredient_id: "rice", quantity: 0.5, unit: "kg", ingredients: ingredient("rice") },
+      { ingredient_id: "rice", quantity: 200, unit: "g", ingredients: ingredient("rice") },
+      { ingredient_id: "rice", quantity: null, unit: "al gusto", ingredients: ingredient("rice") },
+    ];
+    const [need] = aggregateNeeds([original], new Map(), new Map([["recipe-1", "custom.jpg"]]));
+    expect(need).toMatchObject({ amount: 350, sources: [{ amount: 350, unit: "g", coverPath: "custom.jpg" }] });
+    expect(need!.sources).toHaveLength(1);
+  });
+
+  it("retains unknown quantities and staples without inventing amounts", () => {
+    const original = meal("wed");
+    original.recipes!.recipe_ingredients = [
+      { ingredient_id: "salt", quantity: null, unit: "al gusto", ingredients: ingredient("salt", { pantry_staple: true }) },
+      { ingredient_id: "missing", quantity: 1, unit: "g", ingredients: null },
+    ];
+    const [need] = aggregateNeeds([original, meal("empty", { recipes: null })]);
+    expect(need).toMatchObject({ staple: true, amount: null, sources: [{ amount: null, unit: "g" }] });
   });
 });

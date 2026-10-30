@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { StoreLogo } from "@/components/ui/store-logo";
 import { formatCop } from "@/lib/onboarding/options";
@@ -33,13 +34,14 @@ export function MatchReview({ pending, stores }: { pending: PendingMatch[]; stor
   return (
     <div className="flex flex-col">
       <p className="pb-2 text-sm text-ink-muted">{left.length} por revisar</p>
-      {error ? <p className="pb-2 text-sm text-brand">{error}</p> : null}
-      <ul className="divide-y divide-line">
+      {error ? <p role="alert" className="pb-2 text-sm text-warning">{error}</p> : null}
+      {!left.length ? <p role="status" className="py-6 text-center font-display text-2xl">Todo revisado</p> : null}
+      <ul className="flex flex-col gap-3">
         {left.map((p) => {
           const store = byId.get(p.offer.storeId);
           return (
-            <li key={p.matchId} className="flex flex-col gap-3 py-4">
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-ink-muted">{p.ingredientName}</p>
+            <li key={p.matchId} className="flex flex-col gap-3 rounded-[20px] bg-sunken p-4">
+              <p className="flex items-center gap-2 font-display text-[18px]">{p.ingredientName}<Icon name="arrow-right" size={16} className="text-ink-muted" /></p>
               <div className="flex items-center gap-3">
                 {store ? <StoreLogo store={store} size={32} /> : null}
                 <span className="min-w-0 flex-1">
@@ -50,11 +52,11 @@ export function MatchReview({ pending, stores }: { pending: PendingMatch[]; stor
                 </span>
               </div>
               <div className="flex gap-3">
-                <Button size="md" variant="secondary" onClick={() => answer(p.matchId, true)}>
-                  Sí, es este
+                <Button size="md" variant="primary" onPress={() => answer(p.matchId, true)}>
+                  Sí, es ese
                 </Button>
-                <Button size="md" variant="ghost" onClick={() => answer(p.matchId, false)}>
-                  No es
+                <Button size="md" variant="secondary" onPress={() => answer(p.matchId, false)}>
+                  No
                 </Button>
               </div>
             </li>
